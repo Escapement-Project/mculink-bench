@@ -8,7 +8,7 @@ cargo run --release --manifest-path tools/swd-throughput/Cargo.toml -- \
 ```
 
 `tools/throughput.py` runs it as one half of a firmware comparison and keeps the result in
-`bench/throughput/`. probe-rs is pinned to a revision of the fork that carries this firmware's
+`results/throughput/`. probe-rs is pinned to a revision of the fork that carries mculink-verge's
 CMSIS-DAP changes. A probe-rs change moves these numbers, so move the pin on purpose.
 
 ## Why it is not one number

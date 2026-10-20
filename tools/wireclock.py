@@ -3,15 +3,15 @@
 # requires-python = ">=3.11"
 # dependencies = ["capstone", "libusb1", "numpy", "pyusb", "pyserial", "rich", "unicorn"]
 # ///
-"""The SWD clock on the wire against the clock asked for, from a logic analyser, kept in bench/wireclock/.
+"""The SWD clock on the wire against the clock asked for, from a logic analyser, kept in results/wireclock/.
 
     uv run tools/wireclock.py run --label gcc --image build/mculink_cjtag.elf
     uv run tools/wireclock.py run --label stock --serial <serial> --image <stock .s19>
     uv run tools/wireclock.py run --label clang --serial <serial> --image <elf> --clock 1 --clock 10 --clock 50
     uv run tools/wireclock.py analyse <dir kept with --keep>
-    uv run tools/wireclock.py compare bench/wireclock/2026-10-20-*.json
-    uv run tools/wireclock.py positions bench/wireclock/2026-10-20-stock.json --clock 50
-    uv run tools/wireclock.py model build/mculink_cjtag_core1.elf bench/wireclock/2026-10-20-gcc.json
+    uv run tools/wireclock.py compare results/wireclock/2026-10-20-*.json
+    uv run tools/wireclock.py positions results/wireclock/2026-10-20-stock.json --clock 50
+    uv run tools/wireclock.py model build/mculink_cjtag_core1.elf results/wireclock/2026-10-20-gcc.json
 
 At each clock of tools/cycles.py's table the probe runs the same commands while the analyser
 records SWDIO and SWCLK at the target. KINDS lists them: single and block reads and writes of the
@@ -55,7 +55,7 @@ import dap  # noqa: E402
 import throughput  # noqa: E402
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-RESULTS = os.path.join(REPO, "bench", "wireclock")
+RESULTS = os.path.join(REPO, "results", "wireclock")
 ANALYSER = "http://127.0.0.1:10530/"
 
 MATRIX = "wire-1"
@@ -876,7 +876,7 @@ def main() -> int:
     run.add_argument("--chip", default="MSPM0L1306")
     run.add_argument("--clock", type=float, action="append", help="MHz asked; repeat for several, default the table")
     run.add_argument("--note", default="")
-    run.add_argument("--out", help="result path; default bench/wireclock/<date>-<label>.json")
+    run.add_argument("--out", help="result path; default results/wireclock/<date>-<label>.json")
     run.add_argument("--force", action="store_true", help="replace an existing result file")
     run.add_argument("--keep", help="keep each clock's exported recording and probe log in this directory")
     run.add_argument("--analyser", default=ANALYSER, help="Logic 2's automation endpoint")

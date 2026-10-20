@@ -3,13 +3,13 @@
 # requires-python = ">=3.11"
 # dependencies = ["libusb1", "pyusb", "pyserial", "rich"]
 # ///
-"""SWD throughput of the attached probe, the same cases every time, kept in bench/throughput/.
+"""SWD throughput of the attached probe, the same cases every time, kept in results/throughput/.
 
     uv run tools/throughput.py run --label gcc --image build/mculink_cjtag.elf
     uv run tools/throughput.py run --label stock --serial <serial> \
         --image <LinkServer>/MCU-LINK/probe_firmware/MCU-LINK_CMSIS-DAP_V3_172.s19
     uv run tools/throughput.py run --label now --serial <serial>    # whatever the probe runs
-    uv run tools/throughput.py compare bench/throughput/2026-10-20-*.json --clock 50
+    uv run tools/throughput.py compare results/throughput/2026-10-20-*.json --clock 50
 
 Two hosts measure each probe. tools/dap.py sends one command over and over and times it: the
 commands the emulator models (DAP_TransferBlock and DAP_Transfer on the AP's DRW, reads and writes,
@@ -45,7 +45,7 @@ import coverage  # noqa: E402
 import dap  # noqa: E402
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-RESULTS = os.path.join(REPO, "bench", "throughput")
+RESULTS = os.path.join(REPO, "results", "throughput")
 SWD_THROUGHPUT = os.path.join(REPO, "tools", "swd-throughput")
 
 MATRIX = "swd-1"
@@ -438,7 +438,7 @@ def main() -> int:
     run.add_argument("--serial", required=True, help="the probe to measure, as it is before --image flashes it")
     run.add_argument("--chip", default="MSPM0L1306")
     run.add_argument("--note", default="", help="free text kept with the result, such as the name of NXP's image")
-    run.add_argument("--out", help="result path; default bench/throughput/<date>-<label>.json")
+    run.add_argument("--out", help="result path; default results/throughput/<date>-<label>.json")
     run.add_argument("--force", action="store_true", help="replace an existing result file")
     run.add_argument("--quick", action="store_true", help="a few cases, to try the script; not comparable")
     run.add_argument("--no-probe-rs", action="store_true", help="leave out the probe-rs half")
