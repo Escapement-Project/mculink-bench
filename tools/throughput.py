@@ -141,7 +141,7 @@ def identify(probe: dap.Probe) -> dict:
         body = reply[1:]
         if body[:5] == b"CJTAG":
             ours = {"format": body[5], "flags": body[6], "build": body[8 : 8 + body[7]].decode(errors="replace")}
-    except RuntimeError:  # stock answers ID_DAP_Invalid, which command() reports as out of step
+    except RuntimeError:  # stock echoes a bare 0x82; ID_DAP_Invalid is out of step to command()
         pass
     return {"dap_info": info, "ours": ours}
 
