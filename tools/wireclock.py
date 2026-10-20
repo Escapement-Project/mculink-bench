@@ -1,22 +1,23 @@
 #!/usr/bin/env -S uv run --script
 # /// script
 # requires-python = ">=3.11"
-# dependencies = ["capstone", "libusb1", "numpy", "pyusb", "pyserial", "rich", "unicorn"]
+# dependencies = ["capstone", "libusb1", "numpy", "pyusb", "rich", "unicorn"]
 # ///
 """The SWD clock on the wire against the clock asked for, from a logic analyser, kept in results/wireclock/.
 
-    uv run tools/wireclock.py run --label gcc --image build/mculink_cjtag.elf
+    uv run tools/wireclock.py run --label gcc --serial <serial> --image ../mculink-verge/build/mculink_cjtag.elf
     uv run tools/wireclock.py run --label stock --serial <serial> --image <stock .s19>
     uv run tools/wireclock.py run --label clang --serial <serial> --image <elf> --clock 1 --clock 10 --clock 50
     uv run tools/wireclock.py analyse <dir kept with --keep>
     uv run tools/wireclock.py compare results/wireclock/2026-10-20-*.json
     uv run tools/wireclock.py positions results/wireclock/2026-10-20-stock.json --clock 50
-    uv run tools/wireclock.py model build/mculink_cjtag_core1.elf results/wireclock/2026-10-20-gcc.json
+    uv run tools/wireclock.py model --firmware ../mculink-verge \
+        ../mculink-verge/build/mculink_cjtag_core1.elf results/wireclock/2026-10-20-gcc.json
 
-At each clock of tools/cycles.py's table the probe runs the same commands while the analyser
-records SWDIO and SWCLK at the target. KINDS lists them: single and block reads and writes of the
-AP's TAR, which the AP answers without a bus access so nothing waits, and DPIDR reads eight to a
-command and two commands deep, the case stock misreads from 25 MHz asked.
+At each clock of mculink-verge's tools/cycles.py table the probe runs the same commands while the
+analyser records SWDIO and SWCLK at the target. KINDS lists them: single and block reads and writes
+of the AP's TAR, which the AP answers without a bus access so nothing waits, and DPIDR reads eight
+to a command and two commands deep, the case NXP's firmware misreads from 25 MHz asked for.
 
 A recording gives two readings. Where every clock pulse is resolved, each command's rising edges are
 laid out as the transfers it carries, and every period and both its phases are averaged by
@@ -26,7 +27,8 @@ are not all resolved at 100 MS/s, and there the second reading takes over: TAR h
 so SWDIO changes on every data bit, and a bit lasts a whole period rather than one phase.
 
 `model` sets a result for our firmware beside what tools/cycles.py's emulator predicts for the same
-commands on CPU 1's image, position by position.
+commands on CPU 1's image, position by position. The emulator is mculink-verge's: `--firmware`
+names a checkout of it.
 
 The analyser is driven through Logic 2's local automation endpoint, MCP over HTTP.
 """
@@ -39,7 +41,6 @@ import json
 import os
 import shutil
 import struct
-import subprocess
 import sys
 import tempfile
 import time
@@ -50,8 +51,7 @@ from rich.console import Console
 from rich.progress import BarColumn, MofNCompleteColumn, Progress, TextColumn, TimeElapsedColumn
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import coverage  # noqa: E402
-import dap  # noqa: E402
+import cmsis_dap as dap  # noqa: E402
 import throughput  # noqa: E402
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -614,9 +614,9 @@ def analyse_capture(directory: str, log: list[dict], swdio: int, swclk: int) -> 
 # ---- commands -------------------------------------------------------------------------------
 
 
-def provenance(elf: str | None) -> dict:
-    record = throughput.provenance(elf)
-    measuring = ["tools/wireclock.py", "tools/throughput.py", "tools/dap.py", "tools/coverage.py", "tools/flash.py"]
+def provenance(elf: str | None, verge: str) -> dict:
+    record = throughput.provenance(elf, verge)
+    measuring = ["tools/wireclock.py", "tools/throughput.py", "tools/cmsis_dap.py"]
     record["sources"] = {p: hashlib.sha256(open(os.path.join(REPO, p), "rb").read()).hexdigest() for p in measuring}
     record.pop("probe_rs", None)
     return record
@@ -627,10 +627,7 @@ def cmd_run(args) -> int:
     if os.path.exists(path) and not args.force:
         raise SystemExit(f"{path} exists; pass --force to replace it")
     if args.elf:
-        flashed = subprocess.run(["uv", "run", "tools/flash.py", "--cycle", "--serial", args.serial,
-                                  "--image", args.elf], cwd=REPO, capture_output=True, text=True)
-        if flashed.returncode != 0:
-            raise SystemExit(f"flash.py did not bring the image up:\n{flashed.stdout}{flashed.stderr}")
+        throughput.flash(args.verge, args.elf, args.serial)
         time.sleep(2)
         attached = [p.serial for p in dap.find()]
         if args.serial not in attached and len(attached) == 1:
@@ -638,7 +635,6 @@ def cmd_run(args) -> int:
     analyser = Analyser(args.analyser)
     devices = analyser.call("get_devices").get("devices", [])
     probe = throughput.open_probe(args.serial)
-    probe.wire = "swd"
     firmware = throughput.identify(probe)
     ours = firmware["ours"] is not None
     channels = sorted((args.swdio, args.swclk))
@@ -648,14 +644,14 @@ def cmd_run(args) -> int:
     record = {
         "matrix": MATRIX, "label": args.label, "note": args.note,
         "taken": datetime.datetime.now().astimezone().isoformat(timespec="seconds"),
-        "serial": args.serial, "chip": args.chip, "firmware": firmware, "provenance": provenance(args.elf),
+        "serial": args.serial, "chip": args.chip, "firmware": firmware, "provenance": provenance(args.elf, args.verge),
         "analyser": {"devices": devices, "sample_rate": SAMPLE_RATE, "swdio": args.swdio, "swclk": args.swclk},
         "settings": {"kinds": [{"name": n, "request": r.hex(), "commands": c, "depth": d} for n, r, c, d in KINDS],
                      "pattern": f"0x{PATTERN:08x}"},
         "clocks": [],
     }
     dpidr = throughput.attach(probe, 1_000_000, ours)
-    coverage.power_up_and_halt(probe, 0)
+    dap.power_up_and_halt(probe, 0)
     record["target"] = {"dpidr": f"0x{dpidr:08x}"}
     with Progress(TextColumn("{task.description}"), BarColumn(), MofNCompleteColumn(), TimeElapsedColumn(),
                   console=console) as progress:
@@ -786,11 +782,12 @@ def cmd_positions(args) -> int:
 CPU_HZ = 150_000_000
 
 
-def model_clock(core1: str, mhz: float) -> dict:
+def model_clock(firmware: str, core1: str, mhz: float) -> dict:
     """What the emulator puts on the wire for each kind at one clock: periods by role, in cycles.
 
     Its target never waits, so a model has no WAIT transfers to set beside a measured one.
     """
+    sys.path.insert(0, os.path.join(firmware, "tools"))
     import cycles  # noqa: PLC0415  -- the emulator, needed by this command alone
 
     out = {}
@@ -831,7 +828,7 @@ def cmd_model(args) -> int:
     for clock in record["clocks"]:
         if args.clock and clock["clock_mhz"] not in args.clock:
             continue
-        model = model_clock(args.core1, clock["clock_mhz"])
+        model = model_clock(args.firmware, args.core1, clock["clock_mhz"])
         compared, worst = 0, (0.0, "")
         for kind in clock["kinds"]:
             if not kind["wire"].get("resolved"):
@@ -872,6 +869,7 @@ def main() -> int:
     run.add_argument("--label", required=True, help="names the result: gcc, clang, stock")
     run.add_argument("--elf", "--image", dest="elf",
                      help="flash this image first, ours or an S-record of NXP's firmware; leave out to measure what runs")
+    run.add_argument("--verge", default="verge", help="the verge binary that flashes --image")
     run.add_argument("--serial", required=True, help="the probe to measure, as it is before --image flashes it")
     run.add_argument("--chip", default="MSPM0L1306")
     run.add_argument("--clock", type=float, action="append", help="MHz asked; repeat for several, default the table")
@@ -897,6 +895,8 @@ def main() -> int:
     positions.add_argument("--clock", type=float, required=True)
     positions.set_defaults(run=cmd_positions)
     model = sub.add_parser("model", help="a result for our firmware against the emulator")
+    model.add_argument("--firmware", required=True,
+                       help="a checkout of mculink-verge, whose tools/cycles.py is the emulator")
     model.add_argument("core1", help="CPU 1's image, built from the same tree as the one measured")
     model.add_argument("result")
     model.add_argument("--clock", type=float, action="append", help="these clocks only, every position shown")

@@ -1,17 +1,17 @@
 #!/usr/bin/env -S uv run --script
 # /// script
 # requires-python = ">=3.11"
-# dependencies = ["libusb1", "pyusb", "pyserial", "rich"]
+# dependencies = ["libusb1", "pyusb", "rich"]
 # ///
 """SWD throughput of the attached probe, the same cases every time, kept in results/throughput/.
 
-    uv run tools/throughput.py run --label gcc --image build/mculink_cjtag.elf
+    uv run tools/throughput.py run --label gcc --serial <serial> --image ../mculink-verge/build/mculink_cjtag.elf
     uv run tools/throughput.py run --label stock --serial <serial> \
         --image <LinkServer>/MCU-LINK/probe_firmware/MCU-LINK_CMSIS-DAP_V3_172.s19
     uv run tools/throughput.py run --label now --serial <serial>    # whatever the probe runs
     uv run tools/throughput.py compare results/throughput/2026-10-20-*.json --clock 50
 
-Two hosts measure each probe. tools/dap.py sends one command over and over and times it: the
+Two hosts measure each probe. tools/cmsis_dap.py sends one command over and over and times it: the
 commands the emulator models (DAP_TransferBlock and DAP_Transfer on the AP's DRW, reads and writes,
 one word to a full packet), the same on DP registers, which no target slows, at depths 1, 2 and 8
 and at five clocks. tools/swd-throughput times probe-rs's memory reads and writes end to end.
@@ -21,6 +21,8 @@ results from two matrices side by side.
 
 The target is an MSPM0L1306, held out of deep sleep and halted. The AP cases read and write the
 first 1 KiB of its SRAM, which the AHB-AP's address wraps within, and the page is put back.
+
+`--image` flashes the probe through verge (`--verge` names its binary) and records verge's version.
 """
 
 import argparse
@@ -41,8 +43,7 @@ from rich.console import Console
 from rich.progress import BarColumn, MofNCompleteColumn, Progress, TextColumn, TimeElapsedColumn
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import coverage  # noqa: E402
-import dap  # noqa: E402
+import cmsis_dap as dap  # noqa: E402
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RESULTS = os.path.join(REPO, "results", "throughput")
@@ -80,7 +81,7 @@ DAP_TRANSFER_CONFIGURE = 0x04
 DAP_SWD_CONFIGURE = 0x13
 DAP_VENDOR_IDENTIFY = 0x82
 
-le = coverage.le
+le = dap.le
 
 
 def cases(quick: bool = False) -> list[dict]:
@@ -160,10 +161,10 @@ def attach(probe: dap.Probe, hz: int, ours: bool) -> int:
     probe.swj_clock(hz)
     dpidr = dap.swd_reset(probe)
     probe.command(bytes([dap.DAP_TRANSFER, 0, 2, 0x00]) + le(0x1E) + bytes([0x04]) + le(0x5000_0000))
-    coverage.wait_powered(probe, 0)
-    if dpidr == coverage.MSPM0_DPIDR:
-        probe.command(bytes([dap.DAP_TRANSFER, 0, 3, DP_SELECT_WRITE]) + le(coverage.MSPM0_PWR_AP_SELECT)
-                      + bytes([0x01]) + le(coverage.MSPM0_DPREC0_DEBUG) + bytes([DP_SELECT_WRITE]) + le(0))
+    dap.wait_powered(probe, 0)
+    if dpidr == dap.MSPM0_DPIDR:
+        probe.command(bytes([dap.DAP_TRANSFER, 0, 3, DP_SELECT_WRITE]) + le(dap.MSPM0_PWR_AP_SELECT)
+                      + bytes([0x01]) + le(dap.MSPM0_DPREC0_DEBUG) + bytes([DP_SELECT_WRITE]) + le(0))
     else:
         probe.command(bytes([dap.DAP_TRANSFER, 0, 1, DP_SELECT_WRITE]) + le(0))
     return dpidr
@@ -228,11 +229,11 @@ def timed(probe: dap.Probe, serial: str, case: dict, request: bytes, commands: i
 def custom_host(probe: dap.Probe, serial: str, ours: bool, quick: bool, progress: Progress,
                 console: Console) -> tuple[list, dict]:
     todo = cases(quick)
-    overall = progress.add_task("dap.py cases", total=len(todo))
+    overall = progress.add_task("cmsis_dap.py cases", total=len(todo))
     repeats = progress.add_task("case", total=REPEATS)
     limit = min(probe.out_ep.wMaxPacketSize, probe.in_ep.wMaxPacketSize)
     dpidr = attach(probe, 1_000_000, ours)
-    coverage.power_up_and_halt(probe, 0)
+    dap.power_up_and_halt(probe, 0)
     page = page_io(probe)
     target = {"dpidr": f"0x{dpidr:08x}"}
     results = []
@@ -306,14 +307,14 @@ def probe_rs(serial: str, chip: str, quick: bool, console: Console) -> dict:
     return {"exit": run.returncode, "report": run.stdout, "points": rows}
 
 
-def provenance(elf: str | None) -> dict:
+def provenance(elf: str | None, verge: str) -> dict:
     def out(*args: str) -> str:
         return subprocess.run(args, cwd=REPO, capture_output=True, text=True).stdout.strip()
 
     manifest = open(os.path.join(SWD_THROUGHPUT, "Cargo.toml")).read()
     # The code that took the measurement, by content, so a result names its source even when the
     # tree it ran from was not committed.
-    measuring = ["tools/throughput.py", "tools/dap.py", "tools/coverage.py", "tools/flash.py",
+    measuring = ["tools/throughput.py", "tools/cmsis_dap.py",
                  "tools/swd-throughput/Cargo.toml", "tools/swd-throughput/Cargo.lock",
                  "tools/swd-throughput/src/main.rs"]
     record = {
@@ -330,6 +331,7 @@ def provenance(elf: str | None) -> dict:
     except Exception:  # the version is a note, not a requirement
         pass
     if elf:
+        record["verge"] = subprocess.run([verge, "--version"], capture_output=True, text=True).stdout.strip()
         full = os.path.abspath(elf)
         record["image"] = {
             # Outside the repo a path names nothing a reader has; the hash identifies the image.
@@ -342,28 +344,31 @@ def provenance(elf: str | None) -> dict:
     return record
 
 
+def flash(verge: str, elf: str, serial: str) -> None:
+    flashed = subprocess.run([verge, "update", "--file", elf, "--serial", serial, "--yes"],
+                             capture_output=True, text=True)
+    if flashed.returncode != 0:
+        raise SystemExit(f"verge did not bring the image up:\n{flashed.stdout}{flashed.stderr}")
+
+
 def cmd_run(args) -> int:
     path = args.out or os.path.join(RESULTS, f"{datetime.date.today().isoformat()}-{args.label}.json")
     if os.path.exists(path) and not args.force:
         raise SystemExit(f"{path} exists; pass --force to replace it")
     if args.elf:
-        flashed = subprocess.run(["uv", "run", "tools/flash.py", "--cycle", "--serial", args.serial,
-                                  "--image", args.elf], cwd=REPO, capture_output=True, text=True)
-        if flashed.returncode != 0:
-            raise SystemExit(f"flash.py did not bring the image up:\n{flashed.stdout}{flashed.stderr}")
+        flash(args.verge, args.elf, args.serial)
         time.sleep(2)
         # Stock and ours give the same unit different serials: follow it when it is the only one.
         attached = [p.serial for p in dap.find()]
         if args.serial not in attached and len(attached) == 1:
             args.serial = attached[0]
     probe = open_probe(args.serial)
-    probe.wire = "swd"
     firmware = identify(probe)
     console = Console(stderr=True)
     record = {
         "matrix": f"{MATRIX}-quick" if args.quick else MATRIX, "label": args.label, "note": args.note,
         "taken": datetime.datetime.now().astimezone().isoformat(timespec="seconds"),
-        "serial": args.serial, "chip": args.chip, "firmware": firmware, "provenance": provenance(args.elf),
+        "serial": args.serial, "chip": args.chip, "firmware": firmware, "provenance": provenance(args.elf, args.verge),
         "settings": {"clocks_mhz": CLOCKS_MHZ, "depths": DEPTHS, "repeats": REPEATS, "run_seconds": RUN_SECONDS},
     }
     with Progress(TextColumn("{task.description}"), BarColumn(), MofNCompleteColumn(), TimeElapsedColumn(),
@@ -403,7 +408,7 @@ def cmd_compare(args) -> int:
                 if keep(c["clock_mhz"], c["depth"]):
                     key = (c["command"], c["access"], c["depth"], c["clock_mhz"], c["words"])
                     table.setdefault(key, [None] * len(records))[i] = None if c["error"] else c[metric]
-        print(f"tools/dap.py, {unit}\n")
+        print(f"tools/cmsis_dap.py, {unit}\n")
         print("| command | access | depth | MHz | words | " + " | ".join(labels) + " |")
         print("| --- " * (5 + len(labels)) + "|")
         for key in sorted(table):
@@ -435,6 +440,7 @@ def main() -> int:
     run.add_argument("--label", required=True, help="names the result: gcc, clang, stock")
     run.add_argument("--elf", "--image", dest="elf",
                      help="flash this image first, ours or an S-record of NXP's firmware; leave out to measure what runs")
+    run.add_argument("--verge", default="verge", help="the verge binary that flashes --image")
     run.add_argument("--serial", required=True, help="the probe to measure, as it is before --image flashes it")
     run.add_argument("--chip", default="MSPM0L1306")
     run.add_argument("--note", default="", help="free text kept with the result, such as the name of NXP's image")
