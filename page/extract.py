@@ -11,7 +11,6 @@ import sys
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LABELS = ("gcc", "clang", "stock")
-READ_ROLES = ("ap-read", "rdbuff", "dp-read")
 
 
 def throughput(date: str) -> dict | None:
@@ -53,23 +52,6 @@ def throughput(date: str) -> dict | None:
     return out if out["firmwares"] else None
 
 
-def fastest_read(clock: dict) -> dict | None:
-    """The shortest mean period over the read roles of every resolved kind: where the analyser's view
-    of SWCLK is clean for all three firmwares."""
-    best = None
-    for k in clock["kinds"]:
-        if not k["wire"].get("resolved"):
-            continue
-        for role, r in k["wire"]["roles"].items():
-            if not role.startswith(READ_ROLES):
-                continue
-            periods = r["period_ns"]["mean"]
-            j = min(range(len(periods)), key=periods.__getitem__)
-            if best is None or periods[j] < best["ns"]:
-                best = {"ns": round(periods[j], 2), "position": j, "role": role, "kind": k["name"]}
-    return best
-
-
 def wire(date: str) -> dict | None:
     out = {}
     for label in LABELS:
@@ -85,10 +67,9 @@ def wire(date: str) -> dict | None:
                 if f"{d}_data_ns" in s:
                     row[d] = round(1000 / s[f"{d}_data_ns"], 3)
                     row[f"{d}_from"] = s[f"{d}_data_from"]
-            f = fastest_read(c)
-            if f:
-                row["fastest"] = round(1000 / f["ns"], 3)
-                row["fastest_at"] = f["position"]
+            if "fastest" in s:
+                row["fastest"] = round(1000 / s["fastest"]["period_ns"], 3)
+                row["fastest_at"] = s["fastest"]["position"]
             pipelined = next((k for k in c["kinds"] if k["depth"] > 1), None)
             if pipelined:
                 w = pipelined["wire"]

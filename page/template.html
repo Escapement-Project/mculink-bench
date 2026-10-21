@@ -293,7 +293,7 @@ footer code { font: 400 12px/1.4 var(--data); color: var(--text); overflow-wrap:
       <div class="mbody"><div id="w-write"></div></div>
     </article>
     <article class="module">
-      <div class="mhead"><h2>Fastest read period</h2><span class="micro">MHz · shortest mean period anywhere in a read</span></div>
+      <div class="mhead"><h2>Fastest period</h2><span class="micro">MHz · shortest mean period anywhere in a transfer</span></div>
       <div class="mbody"><div id="w-fast"></div><p id="w-fast-text"></p></div>
     </article>
     <article class="module">
@@ -589,7 +589,7 @@ function renderWire() {
   const so = overList("stock"), go = overList("gcc");
   $("w-fast-text").textContent = [
     so.length ? `Stock clocks its acknowledge faster than the clock asked for at ${so.join(", ")} MHz, and from 25 MHz asked its whole transfer is the same, period for period, up to 50.` : "",
-    go.length ? `Ours goes over at ${go.join(", ")} MHz, at one edge each; the README says where.` : "Ours never reads faster than asked.",
+    go.length ? `Ours goes over at ${go.join(", ")} MHz, at one edge each; the README says where.` : "Ours never runs faster than asked.",
     "Ours' points stop at 25 MHz, where the analyser stops resolving every pulse.",
   ].filter(Boolean).join(" ");
   const delay = stock?.rows.find((r) => r.delay != null)?.delay;

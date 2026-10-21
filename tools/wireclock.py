@@ -580,19 +580,8 @@ def summarise(kinds: list[dict]) -> dict:
             if fastest is None or period[j] < fastest["period_ns"]:
                 fastest = {"kind": k["name"], "role": role, "position": j, "period_ns": round(float(period[j]), 3),
                            "high_ns": r["high_ns"]["mean"][j], "low_ns": r["low_ns"]["mean"][j]}
-    # Reads alone as well. Where ours drives SWDIO, the level it just drove moves where this
-    # analyser sees SWCLK rise, by up to 10 ns, so a write's data periods alternate long and short in
-    # pairs that sum exactly, and its shortest single period is the analyser's, not the probe's.
-    reads = [(k, role, r) for k in resolved for role, r in k["wire"]["roles"].items() if role.startswith(READ_ROLES)]
-    fastest_read = None
-    for k, role, r in reads:
-        period = np.array(r["period_ns"]["mean"])
-        j = int(period.argmin())
-        if fastest_read is None or period[j] < fastest_read["period_ns"]:
-            fastest_read = {"kind": k["name"], "role": role, "position": j, "period_ns": round(float(period[j]), 3)}
     if fastest:
         out["fastest"] = fastest
-        out["fastest_read"] = fastest_read
         out["shortest_high_ns"] = min(min(r["high_ns"]["mean"]) for k in resolved for r in k["wire"]["roles"].values())
         out["shortest_low_ns"] = min(min(r["low_ns"]["mean"]) for k in resolved for r in k["wire"]["roles"].values())
     return out
@@ -743,7 +732,7 @@ def cmd_compare(args) -> int:
     labels = [f"{r['label']} {r['taken'][:10]}" if labels.count(r["label"]) > 1 else r["label"] for r in records]
     clocks = sorted({c["clock_mhz"] for r in records for c in r["clocks"]})
     for title, key in (("read data bits", "read_data_ns"), ("write data bits", "write_data_ns"),
-                       ("fastest period anywhere", "fastest"), ("fastest period in a read", "fastest_read")):
+                       ("fastest period anywhere", "fastest")):
         print(f"{title}, MHz on the wire (s: timed from SWDIO, every other figure from SWCLK)\n")
         print("| asked | " + " | ".join(labels) + " |")
         print("| --- " * (1 + len(labels)) + "|")
