@@ -80,6 +80,7 @@ DP_SELECT_WRITE = 0x08
 DAP_TRANSFER_CONFIGURE = 0x04
 DAP_SWD_CONFIGURE = 0x13
 DAP_VENDOR_IDENTIFY = 0x82
+DAP_VENDOR_STAGE = 0x8C
 
 le = dap.le
 
@@ -365,12 +366,19 @@ def cmd_run(args) -> int:
             args.serial = appeared[0]
     probe = open_probe(args.serial)
     firmware = identify(probe)
+    if args.stage is not None:
+        if firmware["ours"] is None:
+            raise SystemExit("--stage needs our firmware")
+        reply = probe.command(bytes([DAP_VENDOR_STAGE, args.stage]))
+        if reply[1] != 0 or reply[2] != args.stage:
+            raise SystemExit(f"vendor 0x8C answered {reply[:3].hex()}; this build may not stage commands")
     console = Console(stderr=True)
     record = {
         "matrix": f"{MATRIX}-quick" if args.quick else MATRIX, "label": args.label, "note": args.note,
         "taken": datetime.datetime.now().astimezone().isoformat(timespec="seconds"),
         "serial": args.serial, "chip": args.chip, "firmware": firmware, "provenance": provenance(args.elf, args.verge),
-        "settings": {"clocks_mhz": CLOCKS_MHZ, "depths": DEPTHS, "repeats": REPEATS, "run_seconds": RUN_SECONDS},
+        "settings": {"clocks_mhz": CLOCKS_MHZ, "depths": DEPTHS, "repeats": REPEATS, "run_seconds": RUN_SECONDS,
+                     "stage": args.stage},
     }
     with Progress(TextColumn("{task.description}"), BarColumn(), MofNCompleteColumn(), TimeElapsedColumn(),
                   console=console) as progress:
@@ -449,6 +457,8 @@ def main() -> int:
     run.add_argument("--force", action="store_true", help="replace an existing result file")
     run.add_argument("--quick", action="store_true", help="a few cases, to try the script; not comparable")
     run.add_argument("--no-probe-rs", action="store_true", help="leave out the probe-rs half")
+    run.add_argument("--stage", type=int, choices=(0, 1),
+                     help="ours: whether CPU 0 stages commands for CPU 1 (vendor 0x8C); left as it is if absent")
     run.set_defaults(run=cmd_run)
     compare = sub.add_parser("compare", help="set result files side by side as markdown tables")
     compare.add_argument("files", nargs="+")
