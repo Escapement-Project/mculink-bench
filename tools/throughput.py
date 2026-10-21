@@ -356,12 +356,13 @@ def cmd_run(args) -> int:
     if os.path.exists(path) and not args.force:
         raise SystemExit(f"{path} exists; pass --force to replace it")
     if args.elf:
+        before = {p.serial for p in dap.find()} - {args.serial}
         flash(args.verge, args.elf, args.serial)
         time.sleep(2)
-        # Stock and ours give the same unit different serials: follow it when it is the only one.
-        attached = [p.serial for p in dap.find()]
-        if args.serial not in attached and len(attached) == 1:
-            args.serial = attached[0]
+        # Stock and ours give the same unit different serials: follow it when it is the only new one.
+        appeared = [p.serial for p in dap.find() if p.serial not in before]
+        if args.serial not in appeared and len(appeared) == 1:
+            args.serial = appeared[0]
     probe = open_probe(args.serial)
     firmware = identify(probe)
     console = Console(stderr=True)
