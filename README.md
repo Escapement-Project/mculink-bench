@@ -19,6 +19,32 @@ provenance names that repository's paths, `tools/dap.py`, `tools/coverage.py` an
 among them, with their hashes. Those hashes stay true of mculink-verge's history, so the files are
 left as recorded.
 
+## Measured 2026-10-21: after reads at 50 MHz
+
+The same matrix, probe and target. Our images are mculink-verge `34431f1`, and stock is V3.172
+again; results in `results/throughput/2026-10-21-{gcc,clang,stock}.json`.
+Since 2026-10-20 our SWD reads run at 50 MHz on the wire when 50 is asked, where they ran at 37.5.
+
+At 50 MHz asked, KiB/s:
+
+| case | gcc 10-20 | gcc 10-21 | clang 10-20 | clang 10-21 |
+| --- | --- | --- | --- | --- |
+| block read, 127 words, depth 1 | 1947 | 1948 | 1947 | 2020 |
+| block read, 127 words, depth 8 | 2676 | 2707 | 2686 | 2717 |
+| DAP_Transfer read, 127 words, depth 8 | 1646 | 1547 | 1645 | 1548 |
+| probe-rs read32, 4 KiB | 1657 | 1725 | 1548 | 1813 |
+
+- Full-packet block reads barely move with the faster wire: 1% at 8 queued. The wire was not what
+  held them back. At 8 queued they run at 2,707 KiB/s, and block writes, already at 50 MHz on
+  2026-10-20, at 3,226.
+- DAP_Transfer reads at 50 MHz are 6% slower, on gcc and clang alike, for AP and DP registers alike.
+- probe-rs moves no more than its run-to-run spread. Its writes, which did not change, moved by up
+  to 10% between the two dates at 64 and 256 bytes. A single-word round trip still costs 68 us.
+- At 10 and 20 MHz, where reads do not use the timer, every case is within a few percent of
+  2026-10-20.
+- Stock is 1 to 3% below its own 2026-10-20 figures, which is how far the bench itself drifted. It
+  fails at 50 MHz as before (53 of 480 cases), and probe-rs through stock failed at 30 MHz this time.
+
 ## Measured 2026-10-20: ours with gcc and clang against stock V3.172
 
 `tools/throughput.py`, matrix `swd-1`, on the MSPM0L1306, one probe flashed in turn with each image
