@@ -65,15 +65,18 @@ probe-rs, 4 KiB at a time, attach excluded, KiB/s:
   to 2266): something on the read path other than the wire binds there.
 - What each firmware puts on the wire for each requested clock is in the next section.
 
-## The wire, measured 2026-10-20: requested against delivered clock
+## The wire, measured 2026-10-21: requested against delivered clock
 
-`tools/wireclock.py`, matrix `wire-1`, the same images, the analyser at the L1306's header (D6
-SWDIO, D7 SWCLK, 100 MS/s). Results in `results/wireclock/2026-10-20-{gcc,clang,stock}.json`, the
-exported captures and probe logs kept outside this repository (1.1 GB), which
-`wireclock.py analyse <dir> --result <json>` reads again. All three were captured by earlier
-revisions of the script whose probe side is identical to the committed one, and analysed by the
-committed one; each file names both by hash. clang was taken at three clocks, as the falsifier.
-Retake all three after the firmware is feature-complete and optimised, with the throughput.
+`tools/wireclock.py`, matrix `wire-1`, the same images as the throughput above, the analyser at the
+L1306's header (D6 SWDIO, D7 SWCLK, 100 MS/s). Results in
+`results/wireclock/2026-10-21-{gcc,clang,stock}.json`, the exported captures and probe logs in
+a directory outside this repository, which `wireclock.py analyse <dir> --result <json>`
+reads again. clang was taken at three clocks, as the falsifier.
+
+The 2026-10-20 results (`results/wireclock/2026-10-20-*.json`) are kept, and superseded by these:
+their captures were unreliable. They carried spurious edges on SWDIO (a quarter of its changes on
+ours at 10 MHz, against 0.6% here), misplaced where SWCLK crossed, and made one of ours' edges look
+early at 10 MHz (mculink-verge's BACKLOG item 16). With the same images, that edge is on time.
 
 Data bits, the median period over a transfer's data phase, in MHz (s: timed from SWDIO, see
 below), and stock's fastest period anywhere in a transfer:
@@ -84,79 +87,66 @@ below), and stock's fastest period anywhere in a transfer:
 | 2 | 2.00 / 2.00 | | 1.79 / 1.85 | 2.06, acknowledge |
 | 3 | 3.00 / 3.00 | | 2.50 / 2.63 | 3.07, acknowledge |
 | 5 | 5.00 / 5.00 | | 3.56 / 3.85 | 4.84, acknowledge |
-| 8 | 7.89 / 7.89 | | 5.01 / 5.56 | 7.91, acknowledge |
-| 10 | 10.00 / 10.00 | 10.00 / 10.00 | 6.38 / 7.14 | 11.63, acknowledge |
-| 12 | 11.54 / 11.55 | | 6.37 / 7.14 | 11.61, acknowledge |
-| 14 | 13.63 / 13.55 | | 6.40 / 7.14 | 11.71, acknowledge |
-| 16 | 14.99 / 14.87 | | 9.06 / 9.37 | 18.80, acknowledge |
-| 20 | 18.76 / 18.74 | 18.77 / 18.74 | 9.08 / 9.38 | 18.83, acknowledge |
-| 25 | 24.98 / 24.89 | | 9.62 / 10.80 | 19.12, request |
-| 30 | 29.63 s / 29.70 s | | 9.64 / 10.80 | 19.06, request |
-| 40 | 37.50 s / 37.50 s | | 9.61 / 10.80 | 19.09, request |
-| 50 | 37.50 s / 50.00 s | 37.50 s / 50.00 s | 9.63 / 10.80 | 19.16, request |
+| 8 | 7.89 / 7.89 | | 5.01 / 5.56 | 7.95, acknowledge |
+| 10 | 10.00 / 10.00 | 10.00 / 10.00 | 6.40 / 7.14 | 11.61, acknowledge |
+| 12 | 11.54 / 11.54 | | 6.39 / 7.14 | 11.66, acknowledge |
+| 14 | 13.64 / 13.63 | | 6.38 / 7.14 | 11.59, acknowledge |
+| 16 | 14.99 / 14.99 | | 9.09 / 9.38 | 18.81, acknowledge |
+| 20 | 18.75 / 18.74 | 18.75 / 18.75 | 9.08 / 9.37 | 18.92, acknowledge |
+| 25 | 25.00 / 24.98 | | 9.63 / 10.72 | 18.94, request |
+| 30 | 30.03 / 29.84 | | 9.62 / 10.72 | 18.98, request |
+| 40 | 37.33 s / 37.50 s | | 9.63 / 10.72 | 18.99, request |
+| 50 | 37.33 s / 50.00 s | 37.33 s / 50.00 s | 9.60 / 10.72 | 18.98, request |
 
 - **Ours delivers the clock asked for, or the step under it.** The steps are 150 MHz over whole
   cycles: 11.54 is 13 cycles, 13.64 is 11, 18.75 is 8. At 50 MHz asked, reads run at 37.5 and writes
   at 50, which is what the emulator says: a read clock is four instructions. mculink-verge's BACKLOG
   item 15 has the timer that would bring reads to 50.
-- **One edge comes a cycle early at 10 MHz.** In `DAP_Transfer`'s first RDBUFF after a write,
-  rising edge 1 arrives 6.2 ns early in gcc and 7.5 ns in clang, so that one period is 93.8 ns
-  (10.7 MHz) against the 100 asked; the two periods around the edge sum to exactly 200. The block
-  path's RDBUFF after a write is normal, and so is every other clock from 1 to 25 MHz. The emulator
-  puts the edge on time, so this is a hardware cost it does not model, in the write path like the
-  turnaround below. It is the one place a read of ours runs faster than asked, which the gate exists
-  to prevent; mculink-verge's BACKLOG item 16. At 25 MHz readings run up to 3% over, where the
-  analyser loses pulses.
+- **No period of ours is shorter than asked.** The fastest period anywhere in a transfer is within
+  1 ns of the emulator's at every clock from 1 to 30 MHz. The figures `compare` prints run up to 3%
+  over the step at 30 MHz, which is 1 ns at that period.
 - **The emulator matches the wire.** `wireclock.py model --firmware <checkout> <core1 elf>
   <result>` sets every position beside mculink-verge's `tools/cycles.py` prediction, for every role
-  the emulator has (its target never waits, so a WAIT transfer has no prediction). Reads agree
-  within 0.5 ns at every position at 1 to 5 and 10 MHz, within 1.7 ns at 8 and 12 to 20 MHz, and
-  within 3.3 ns at 25, in every kind. Writes agree except one position (next bullet) and the alternating artifact below. clang matches gcc within
-  1 ns at every position at 20 MHz. At 10 MHz it does too, but for the first two periods of a WAIT
-  retry, compiled C on both (5 ns, a cycle), and the start of a write's data, where the artifact
-  builds up (up to 4.5 ns).
-- **The turnaround before a write's data is 4 cycles longer than the model says**, at every clock
-  from 1 to 10 MHz (26.7 ns, measured 3.95 to 4.01 cycles). From 12 to 20 MHz it is about 3 cycles,
-  split over two positions. It is a DIRSET store to the GPIO block, not an APB one. Longer is the
-  safe direction; it costs a 10 MHz write about 0.6% and is a gap in mculink-verge's `tools/m33.py`.
-- **Stock tops out at 9.6 MHz for reads and 10.8 for writes, from 25 MHz asked.** The wire is the
+  the emulator has (its target never waits, so a WAIT transfer has no prediction). Every position of
+  every kind agrees within 1 ns at every clock from 1 to 30 MHz, except one (next bullet). The
+  2026-10-20 run's larger differences, up to 3.3 ns and an alternation in writes, are gone. clang
+  matches gcc within 1 ns at every position at 10 and 20 MHz, WAIT retries included.
+- **The turnaround before a write's data is longer than the model says**: 4 cycles from 1 to
+  10 MHz (26.7 ns), 3 from 12 to 20, split over two positions from 14, then 1 at 25 and 2 at 30.
+  It is a DIRSET store to the GPIO block, not an APB one. Longer is the safe direction; it costs a
+  10 MHz write about 0.6% and is a gap in mculink-verge's `tools/m33.py`.
+- **Stock tops out at 9.6 MHz for reads and 10.7 for writes, from 25 MHz asked.** The wire is the
   same from 25 to 50 MHz asked, period for period. Below that it moves in three steps (to 8, 10 to
   14, 16 to 20), and its data rate is always well under the request: 6.4 MHz at 10 asked.
 - **Stock clocks its acknowledge faster than asked**: 11.6 MHz at 10 asked, 18.8 at 16 asked,
-  2 to 3% over at 2 and 3 asked. From 25 asked its fastest period is the request, 52 ns (19.1 MHz),
-  with the acknowledge close behind at 59 ns.
+  2 to 3% over at 2 and 3 asked. From 25 asked its fastest period is the request, 53 ns (19.0 MHz).
 - **Stock's misreads at 25 MHz asked and above are the probe, not the target.** The depth-2 kind
-  (2,000 commands of eight DPIDR reads) misread 4, 1, 1 and 2 times at 25, 30, 40 and 50 MHz asked
+  (2,000 commands of eight DPIDR reads) misread 5, 4, 7 and 1 times at 25, 30, 40 and 50 MHz asked
   and never below. On the wire, every misread transfer carries OK and the right DPIDR. Every one
   follows a 3.24 us stall at position 8, the clock that launches the first acknowledge bit. The
   stalls that misread come at depth 2, when the next command arrives. After the stall, position 9,
-  where the second acknowledge bit is read, lasts 40 to 50 ns against the usual 59. Stalls at that
-  position that read correctly leave it at 50 to 60. Stalls land at every position about equally;
-  only position 8 ones misread, 8 of 89 from 25 MHz asked and 0 of 575 at 20 and below. The
-  reported acknowledge, 3, is OK read one bit late on the second bit, and the 34 clocks that
-  follow on the wire are the probe's protocol-error recovery, not data.
+  where the second acknowledge bit is read, lasts 40 to 50 ns against the usual 59. Stalls land at
+  every position about equally; only position 8 ones misread, 17 of 79 from 25 MHz asked and 0 of
+  553 at 20 and below. The reported acknowledge, 3, is OK read one bit late on the second bit, and
+  the clocks that follow on the wire are the probe's protocol-error recovery, not data.
 - **The L1306's reply arrives about 20 ns after the rising edge that launches it**, at its own
   pins (median, in 10 ns samples).
 
 What the analyser can and cannot see here, which shaped the script:
 
-- **Pulses of 20 ns are always caught and 13 ns ones are not**, so ours' clock is resolved pulse by
-  pulse up to 25 MHz (where about one pulse in 1,000 to 1,500 is lost) and not from 30. Above that
-  the data bits are timed from SWDIO: TAR holds 0x55555555, so every data bit changes the line, and
-  a bit lasts a whole period rather than a phase. Stock is resolved at every clock.
-- **SWCLK's highs read 7.8 ns long and its lows 7.8 ns short**, against the generator's exact 3 + 3
-  cycles at 25 MHz. Periods, rise to rise, carry no such offset: they are what met the model above.
-  Phases in the result files are as the analyser saw them; this Logic 8's threshold is fixed.
-- **The target's SWDIO edges cross the threshold up to 20 ns apart by direction**, so its bits are
+- **Ours' clock is resolved pulse by pulse up to 30 MHz asked**, every command at every clock.
+  From 40 MHz asked both phases of a read clock are two cycles, 13.3 ns, and the analyser loses
+  them, so the data bits are timed from SWDIO: TAR holds 0x55555555, so every data bit changes the
+  line, and a bit lasts a whole period rather than a phase. Stock is resolved at every clock.
+- **SWCLK's highs read about 1.6 ns long and its lows 1.6 ns short**, against the generator's exact
+  3 + 3 cycles at 25 MHz. Periods, rise to rise, carry no such offset. Phases in the result files
+  are as the analyser saw them; this Logic 8's threshold is fixed.
+- **The target's SWDIO edges cross the threshold about 10 ns apart by direction**, so its bits are
   timed rising to rising, and the analysis takes nothing from target bits it needs: the probe
   checked every word, and a transfer's length comes from the command's layout and its edge count.
-- **Each line's edges put one-sample pulses on the other where it is low.** On SWDIO at SWCLK's
-  edges: a quarter of all SWDIO changes on ours at 10 MHz, a twentieth to a tenth on stock. On
-  SWCLK, just before a rising edge in a write's data: ours at 2 to 8 MHz (10 to 22,211 a capture),
-  stock at no clock up to 25. The target saw none of them; every word written read back. The level
-  ours drives also moves where the analyser sees SWCLK rise, by up to 10 ns, so a write's data
-  periods alternate long and short in pairs that sum exactly. Ours' fastest write period is the
-  analyser's, not the probe's, so `compare` and the results page take the fastest period from reads.
+- **SWCLK's edges put one-sample pulses on SWDIO**, 0.4 to 1.2% of SWDIO's changes on ours
+  from 2 to 10 MHz and 3% on stock at 10, nearly all at a SWCLK edge. SWCLK carries none at 2 to
+  10 MHz. The target saw none of them; every word written read back.
 
 ## Retaking, after the optimisation work
 
