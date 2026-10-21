@@ -127,8 +127,8 @@ below), and stock's fastest period anywhere in a transfer:
 
 - **Ours delivers the clock asked for, or the step under it.** The steps are 150 MHz over whole
   cycles: 11.54 is 13 cycles, 13.64 is 11, 18.75 is 8. At 50 MHz asked, reads run at 37.5 and writes
-  at 50, which is what the emulator says: a read clock is four instructions. mculink-verge's BACKLOG
-  item 15 has the timer that would bring reads to 50.
+  at 50, which is what the emulator says: a read clock is four instructions. A timer that brought
+  reads to 50 was built and removed again (mculink-verge's BUSES.md says why).
 - **No period of ours is shorter than asked.** The fastest period anywhere in a transfer is within
   1 ns of the emulator's at every clock from 1 to 30 MHz. The figures `compare` prints run up to 3%
   over the step at 30 MHz, which is 1 ns at that period.
