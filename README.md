@@ -23,7 +23,8 @@ left as recorded.
 
 The same matrix, probe and target. Our images are mculink-verge `34431f1`, and stock is V3.172
 again; results in `results/throughput/2026-10-21-{gcc,clang,stock}.json`.
-Since 2026-10-20 our SWD reads run at 50 MHz on the wire when 50 is asked, where they ran at 37.5.
+In this image our SWD reads run at 50 MHz on the wire when 50 is asked, where they ran at 37.5,
+with a timer making the clock. mculink-verge removed them again the same day.
 
 At 50 MHz asked, KiB/s:
 
@@ -34,9 +35,9 @@ At 50 MHz asked, KiB/s:
 | DAP_Transfer read, 127 words, depth 8 | 1646 | 1547 | 1645 | 1548 |
 | probe-rs read32, 4 KiB | 1657 | 1725 | 1548 | 1813 |
 
-- Full-packet block reads barely move with the faster wire: 1% at 8 queued. The wire was not what
-  held them back. At 8 queued they run at 2,707 KiB/s, and block writes, already at 50 MHz on
-  2026-10-20, at 3,226.
+- Full-packet block reads barely move with the faster wire: 1% at 8 queued. Starting and stopping
+  the timer stalls the core on the peripheral bus, and that used up most of what the faster wire
+  saved.
 - DAP_Transfer reads at 50 MHz are 6% slower, on gcc and clang alike, for AP and DP registers alike.
 - probe-rs moves no more than its run-to-run spread. Its writes, which did not change, moved by up
   to 10% between the two dates at 64 and 256 bytes. A single-word round trip still costs 68 us.
