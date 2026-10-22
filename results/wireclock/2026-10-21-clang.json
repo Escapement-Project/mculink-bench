@@ -56,7 +56,6 @@
  "analyser": {
   "devices": [
    {
-    "deviceId": "0000000000000000",
     "deviceType": "Logic8",
     "isSimulation": false
    }

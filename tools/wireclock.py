@@ -622,7 +622,8 @@ def cmd_run(args) -> int:
         if args.serial not in attached and len(attached) == 1:
             args.serial = attached[0]
     analyser = Analyser(args.analyser)
-    devices = analyser.call("get_devices").get("devices", [])
+    # The model, not the serial: a result is published, and the unit's identity tells a reader nothing.
+    devices = [{k: v for k, v in d.items() if k != "deviceId"} for d in analyser.call("get_devices").get("devices", [])]
     probe = throughput.open_probe(args.serial)
     firmware = throughput.identify(probe)
     ours = firmware["ours"] is not None
