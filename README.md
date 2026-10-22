@@ -99,12 +99,14 @@ probe-rs, 4 KiB at a time, attach excluded, KiB/s:
 `tools/wireclock.py`, matrix `wire-1`, the same images as the throughput above, the analyser at the
 L1306's header (D6 SWDIO, D7 SWCLK, 100 MS/s). Results in
 `results/wireclock/2026-10-21-{gcc,clang,stock}.json`. The exported captures and probe logs are
-too large to keep here; `wireclock.py analyse <dir> --result <json>` reads them again. clang was taken at three clocks, as the falsifier.
+too large to keep here; `wireclock.py analyse <dir> --result <json>` reads them again. clang was taken at three clocks
+only, as a cross-check.
 
 The 2026-10-20 results (`results/wireclock/2026-10-20-*.json`) are kept, and superseded by these:
 their captures were unreliable. They carried spurious edges on SWDIO (a quarter of its changes on
 ours at 10 MHz, against 0.6% here), misplaced where SWCLK crossed, and made one of ours' edges look
-early at 10 MHz (mculink-verge's BACKLOG item 16). With the same images, that edge is on time.
+early at 10 MHz. The analyser's ground was not connected to the target's then. With the same images
+and the ground connected, that edge is on time.
 
 Data bits, the median period over a transfer's data phase, in MHz (s: timed from SWDIO, see
 below), and stock's fastest period anywhere in a transfer:
