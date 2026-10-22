@@ -198,3 +198,7 @@ every time, so its results double as a check that the bench itself has not moved
 6. The results page: add the new date to `page/sets.json` with its result labels, then build and
    publish the page as `page/README.md` says. It opens on the newest date, and its set picker offers
    and switches between them.
+
+## Licence
+
+Apache-2.0, in `LICENSE`.
