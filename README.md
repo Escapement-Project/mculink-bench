@@ -14,10 +14,12 @@ against NXP's stock firmware on the same probe and target.
 `verge` on the PATH or name it with `--verge`. Only `wireclock.py model` needs the firmware itself:
 `--firmware` names a checkout of mculink-verge, whose emulator it runs.
 
-The results of 2026-10-20 were taken while these tools lived in the firmware's repository. Their
-provenance names that repository's paths, `tools/dap.py`, `tools/coverage.py` and `tools/flash.py`
-among them, with their hashes. Those hashes stay true of mculink-verge's history, so the files are
-left as recorded.
+Every result records the code that took it by path and hash, and the firmware it measured by
+build. Those hashes and builds come from the repositories' history before they were published,
+which is not public, so they identify a result's code but cannot be checked out. The results of
+2026-10-20 were taken while these tools lived in the firmware's repository, so their provenance
+names that repository's paths, `tools/dap.py`, `tools/coverage.py` and `tools/flash.py` among
+them.
 
 ## Measured 2026-10-21: after reads at 50 MHz
 
@@ -96,9 +98,8 @@ probe-rs, 4 KiB at a time, attach excluded, KiB/s:
 
 `tools/wireclock.py`, matrix `wire-1`, the same images as the throughput above, the analyser at the
 L1306's header (D6 SWDIO, D7 SWCLK, 100 MS/s). Results in
-`results/wireclock/2026-10-21-{gcc,clang,stock}.json`, the exported captures and probe logs in
-a directory outside this repository, which `wireclock.py analyse <dir> --result <json>`
-reads again. clang was taken at three clocks, as the falsifier.
+`results/wireclock/2026-10-21-{gcc,clang,stock}.json`. The exported captures and probe logs are
+too large to keep here; `wireclock.py analyse <dir> --result <json>` reads them again. clang was taken at three clocks, as the falsifier.
 
 The 2026-10-20 results (`results/wireclock/2026-10-20-*.json`) are kept, and superseded by these:
 their captures were unreliable. They carried spurious edges on SWDIO (a quarter of its changes on
@@ -185,11 +186,12 @@ every time, so its results double as a check that the bench itself has not moved
    (`mculink_cjtag.elf` and `mculink_cjtag_core1.elf`, which `wireclock.py model` needs) and the
    stock S-record in one directory, `<dir>`, with a `SHA256SUMS`.
 2. With no analyser recording running, throughput for each image:
-   `uv run tools/throughput.py run --label gcc --image <dir>/gcc-<build>.elf`, the same for clang,
-   and `--label stock --image <dir>/MCU-LINK_CMSIS-DAP_V3_172.s19 --note "LinkServer's ..."`.
+   `uv run tools/throughput.py run --label gcc --serial <serial> --image <dir>/gcc-<build>.elf`,
+   the same for clang, and `--label stock --image <dir>/MCU-LINK_CMSIS-DAP_V3_172.s19 --note
+   "LinkServer's ..."`.
 3. With the analyser on D6 SWDIO and D7 SWCLK at the target:
    `uv run tools/wireclock.py run --label gcc --serial <serial> --image <dir>/gcc-<build>.elf
-   <captures>/gcc`, the same for stock, and clang with `--clock 10
+   --keep <captures>/gcc`, the same for stock, and clang with `--clock 10 --clock 20 --clock 50`.
    A full sweep takes about a minute after the image is flashed.
 4. Put the bench image back with `verge update --file <the image>`.
 5. Set the dates side by side: `throughput.py compare` and `wireclock.py compare` take both dates'
