@@ -1,0 +1,28 @@
+{
+  "date": "2026-10-22",
+  "probe": "J-Link Ultra+",
+  "target": "MSPM0L1306",
+  "firmware": "J-Link Ultra V4, compiled 2022-09-22",
+  "host_tool": "probe-rs commit 7b17871e1d60f68881a28841bcf1c8763345ea50",
+  "path": "probe-rs read32/write32, 4096-byte SRAM transfers; two usable runs",
+  "target_state": "Main flash erased during SEGGER attach; target left halted",
+  "probe_rs": [
+    {"mhz": 1, "read_kib_s": 81.4, "write_kib_s": 78.2},
+    {"mhz": 2, "read_kib_s": 157.2, "write_kib_s": 153.1},
+    {"mhz": 5, "read_kib_s": 366.5, "write_kib_s": 358.2},
+    {"mhz": 10, "read_kib_s": 642.9, "write_kib_s": 640.3},
+    {"mhz": 20, "read_kib_s": 1034.7, "write_kib_s": 1040.0},
+    {"mhz": 30, "read_kib_s": 1385.8, "write_kib_s": 1317.1}
+  ],
+  "probe_rs_50mhz": "Both timed attempts failed with SWD protocol errors; no throughput result",
+  "segger_tool": "JLinkExe V9.88 TestRSpeed/TestWSpeed, KByte/s as reported",
+  "jlinkexe": [
+    {"mhz": 1, "read_kbyte_s": 82, "write_kbyte_s": 83},
+    {"mhz": 2, "read_kbyte_s": 160, "write_kbyte_s": 163},
+    {"mhz": 5, "read_kbyte_s": 364, "write_kbyte_s": 404},
+    {"mhz": 10, "read_kbyte_s": 630, "write_kbyte_s": 762},
+    {"mhz": 20, "read_kbyte_s": 1024, "write_kbyte_s": 1260},
+    {"mhz": 30, "read_kbyte_s": 1260, "write_kbyte_s": 1260},
+    {"mhz": 50, "read_kbyte_s": 1560, "write_kbyte_s": 1820}
+  ]
+}

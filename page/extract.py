@@ -14,7 +14,7 @@ LABELS = ("gcc", "clang", "stock")
 
 
 def throughput(date: str) -> dict | None:
-    out = {"firmwares": [], "custom": {}, "probe_rs": {}, "fails": {}}
+    out = {"firmwares": [], "custom": {}, "probe_rs": {}, "fails": {}, "errors": {}}
     for label in LABELS:
         path = f"{REPO}/results/throughput/{date}-{label}.json"
         if not os.path.exists(path):
@@ -29,16 +29,18 @@ def throughput(date: str) -> dict | None:
             "packets": [fw["dap_info"]["max packet count"], fw["dap_info"]["max packet size"]],
             "taken": r["taken"],
         })
-        cases, fails = {}, []
+        cases, fails, errors = {}, [], {}
         for c in r["custom_host"]:
             key = f"{c['command']}|{c['access']}|{c['words']}|{c['depth']}|{c['clock_mhz']}"
             if c["error"]:
                 cases[key] = None
                 fails.append(key)
+                errors[key] = c["error"]
             else:
                 cases[key] = [round(c["commands_per_s"]), round(c["kib_per_s"], 1)]
         out["custom"][label] = cases
         out["fails"][label] = fails
+        out["errors"][label] = errors
         out["probe_rs"][label] = [
             {"khz": int(p["speed_khz"]), "arm": p["arm"], "bytes": int(p["bytes"]),
              "us": p["median_us"], "kib": round(p["bytes_per_second"] / 1024, 1)}
@@ -104,12 +106,31 @@ def wire(date: str) -> dict | None:
     return out or None
 
 
-sets = {}
-for date in sys.argv[2:]:
-    t, w = throughput(date), wire(date)
-    if t is None:
-        sys.exit(f"no throughput results for {date}")
-    t["wire"] = w or {}
-    sets[date] = t
-json.dump({"sets": sets, "order": sys.argv[2:]}, open(sys.argv[1], "w"), separators=(",", ":"))
-print({d: {"firmwares": len(s["firmwares"]), "wire": list(s["wire"])} for d, s in sets.items()})
+def build_data(dates: list[str]) -> dict:
+    sets = {}
+    for date in dates:
+        t, w = throughput(date), wire(date)
+        if t is None:
+            raise ValueError(f"no throughput results for {date}")
+        t["wire"] = w or {}
+        if date == "2026-10-24":
+            t["context"] = "The target main flash had been erased during the J-Link attach on 2026-10-22. No image was restored before this retake. The target stayed halted, and the harness changed only its SRAM test page."
+        sets[date] = t
+    reference_path = f"{os.path.dirname(__file__)}/reference/jlink-2026-10-22.json"
+    with open(reference_path) as f:
+        reference = json.load(f)
+    return {"sets": sets, "order": dates, "references": {"jlink": reference}}
+
+
+def main() -> None:
+    if len(sys.argv) < 3:
+        sys.exit("usage: extract.py OUTPUT.json DATE [DATE ...]")
+    data = build_data(sys.argv[2:])
+    with open(sys.argv[1], "w") as f:
+        json.dump(data, f, separators=(",", ":"))
+    print({d: {"firmwares": len(s["firmwares"]), "wire": list(s["wire"])}
+           for d, s in data["sets"].items()})
+
+
+if __name__ == "__main__":
+    main()
