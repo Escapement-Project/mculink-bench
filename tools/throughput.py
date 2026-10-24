@@ -239,11 +239,26 @@ def custom_host(probe: dap.Probe, serial: str, ours: bool, quick: bool, progress
     target = {"dpidr": f"0x{dpidr:08x}"}
     results = []
     clock = None
+    clock_errors = {}
     try:
         for case in todo:
+            if case["clock_mhz"] in clock_errors:
+                results.append(dict(case, runs=[], error=clock_errors[case["clock_mhz"]]))
+                progress.advance(overall)
+                continue
             if case["clock_mhz"] != clock:
                 clock = case["clock_mhz"]
-                attach(probe, clock * 1_000_000, ours)
+                try:
+                    attach(probe, clock * 1_000_000, ours)
+                except RuntimeError as error:
+                    # One unsupported clock must not discard the completed lower-clock cases.
+                    message = f"could not attach at {clock} MHz: {error}"
+                    clock_errors[clock] = message
+                    probe.release()
+                    probe = open_probe(serial)
+                    results.append(dict(case, runs=[], error=message))
+                    progress.advance(overall)
+                    continue
             request = payload(case["command"], case["access"], case["words"])
             label = f"{case['clock_mhz']:>2} MHz {case['command']:<8} {case['access']:<8} {case['words']:>3} words depth {case['depth']}"
             progress.update(repeats, completed=0, description=label)
