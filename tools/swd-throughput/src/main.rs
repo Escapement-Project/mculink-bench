@@ -1,4 +1,4 @@
-//! How fast is this probe's SWD, end to end through probe-rs?
+//! How fast are this probe's debug wires, end to end through probe-rs?
 //!
 //! The question behind it is whether a firmware change slowed the probe down, and "slower" has two
 //! separate shapes. A change to the bit loop costs per byte; a change to command dispatch or the USB
@@ -49,8 +49,28 @@ impl Arm {
     const CLOCKS_PER_WORD: f64 = 46.0;
 }
 
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Default, clap::ValueEnum)]
+enum Protocol {
+    #[default]
+    Swd,
+    Jtag,
+    Cjtag,
+}
+
+impl Protocol {
+    fn wire_protocol(self) -> WireProtocol {
+        match self {
+            Self::Swd => WireProtocol::Swd,
+            Self::Jtag => WireProtocol::Jtag,
+            Self::Cjtag => WireProtocol::CJtag,
+        }
+    }
+}
+
 #[derive(clap::Parser)]
-#[command(about = "SWD throughput of a probe, decomposed into fixed and per-byte cost")]
+#[command(
+    about = "Probe throughput over SWD, JTAG or cJTAG, decomposed into fixed and per-byte cost"
+)]
 struct Cli {
     /// Chip to attach to. The vendor's own debug sequence runs, as it would in normal use.
     #[arg(long, default_value = "MSPM0L1306")]
@@ -60,7 +80,11 @@ struct Cli {
     #[arg(long)]
     probe: Option<String>,
 
-    /// SWD clock speeds to sweep, in kHz.
+    /// Debug wire protocol to select.
+    #[arg(long, value_enum, default_value_t = Protocol::Swd)]
+    protocol: Protocol,
+
+    /// Wire clock speeds to sweep, in kHz.
     #[arg(long, value_delimiter = ',', default_values_t = [1000u32, 2000, 5000, 10000, 20000, 30000, 50000])]
     speeds: Vec<u32>,
 
@@ -342,7 +366,7 @@ fn attach(cli: &Cli, speed_khz: u32) -> anyhow::Result<(Session, u32)> {
     };
 
     let mut probe = lister.open(selector)?;
-    probe.select_protocol(WireProtocol::Swd)?;
+    probe.select_protocol(cli.protocol.wire_protocol())?;
     let actual = probe.set_speed(speed_khz)?;
     let session = probe.attach(
         TargetSelector::Unspecified(cli.chip.clone()),
@@ -473,11 +497,19 @@ fn report(
         out,
         "\nfixed cost per transfer and the ceiling a large one approaches\n"
     );
-    let _ = writeln!(
-        out,
-        "{:>8} {:>8} {:>10} {:>12} {:>12} {:>8}",
-        "kHz", "arm", "fixed us", "ceiling KiB/s", "wire KiB/s", "of wire"
-    );
+    if cli.protocol == Protocol::Swd {
+        let _ = writeln!(
+            out,
+            "{:>8} {:>8} {:>10} {:>12} {:>12} {:>8}",
+            "kHz", "arm", "fixed us", "ceiling KiB/s", "wire KiB/s", "of wire"
+        );
+    } else {
+        let _ = writeln!(
+            out,
+            "{:>8} {:>8} {:>10} {:>12}",
+            "kHz", "arm", "fixed us", "ceiling KiB/s"
+        );
+    }
     for speed in &cli.speeds {
         // The clock the probe actually took, not the one asked for: a probe that rounds down to a
         // divisor of its own clock would otherwise be charged for the difference.
@@ -493,16 +525,27 @@ fn report(
             }
             let (fixed, per_byte) = fit(&selected);
             let ceiling = 1.0 / per_byte;
-            let _ = writeln!(
-                out,
-                "{:>8} {:>8} {:>10.1} {:>12.1} {:>12.1} {:>7.0}%",
-                speed,
-                arm.name(),
-                fixed * 1e6,
-                ceiling / 1024.0,
-                wire / 1024.0,
-                ceiling / wire * 100.0,
-            );
+            if cli.protocol == Protocol::Swd {
+                let _ = writeln!(
+                    out,
+                    "{:>8} {:>8} {:>10.1} {:>12.1} {:>12.1} {:>7.0}%",
+                    speed,
+                    arm.name(),
+                    fixed * 1e6,
+                    ceiling / 1024.0,
+                    wire / 1024.0,
+                    ceiling / wire * 100.0,
+                );
+            } else {
+                let _ = writeln!(
+                    out,
+                    "{:>8} {:>8} {:>10.1} {:>12.1}",
+                    speed,
+                    arm.name(),
+                    fixed * 1e6,
+                    ceiling / 1024.0,
+                );
+            }
         }
     }
 

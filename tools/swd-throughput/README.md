@@ -1,11 +1,15 @@
 # swd-throughput
 
-How fast is a probe's SWD, end to end through probe-rs, and **which part of it is slow**.
+How fast is a probe's debug wire, end to end through probe-rs, and **which part of it is slow**.
 
 ```
 cargo run --release --manifest-path tools/swd-throughput/Cargo.toml -- \
     --probe 1fc9:0143 --chip MSPM0L1306 --csv sweep.csv
 ```
+
+Select `--protocol swd`, `jtag` or `cjtag`. The default is SWD. Use separate result files for each
+protocol. The report only shows the ideal wire ceiling for SWD because its clock model is specific
+to SWD transactions.
 
 `tools/throughput.py` runs it as one half of a firmware comparison and keeps the result in
 `results/throughput/`. probe-rs is pinned to a revision of the fork that carries mculink-verge's
@@ -23,7 +27,7 @@ So every arm runs at several transfer sizes and the times are fit to `a + b * by
 fixed cost of a transfer and `1/b` is the ceiling a large one approaches. A firmware change that
 reorders the bit loop moves `1/b`; one that adds a vendor command check moves `a`.
 
-Sweeping the SWD clock on top of that says which of the two is binding. **Throughput that stops
+Sweeping the wire clock on top of that says which of the two is binding. **Throughput that stops
 rising with the clock is bound by something off the wire**, and a slower bit loop would then cost
 nothing measurable at all. That is the question worth answering before touching a probe's firmware.
 
