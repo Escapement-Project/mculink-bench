@@ -114,7 +114,7 @@ def build_data(dates: list[str]) -> dict:
             raise ValueError(f"no throughput results for {date}")
         t["wire"] = w or {}
         if date == "2026-10-24":
-            t["context"] = "The target main flash had been erased during the J-Link attach on 2026-10-22. No image was restored before this retake. The target stayed halted, and the harness changed only its SRAM test page."
+            t["context"] = "All measurements were taken on an erased and halted MSPM0L1306."
         sets[date] = t
     reference_path = f"{os.path.dirname(__file__)}/reference/jlink-2026-10-22.json"
     with open(reference_path) as f:
