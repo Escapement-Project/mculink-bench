@@ -1,34 +1,39 @@
 # mculink-bench
 
-Throughput and wire-clock measurements of the MCU-Link running mculink-verge's firmware, set
-against NXP's stock firmware on the same probe and target.
+Throughput and wire-clock measurements comparing Verge with NXP's stock firmware on the same
+MCU-Link and target.
 
 - `tools/throughput.py` measures SWD throughput over a fixed set of cases, through its own CMSIS-DAP
   host (`tools/cmsis_dap.py`) and through probe-rs (`tools/swd-throughput/`). Results are in
   `results/throughput/`.
-- `tools/wireclock.py` records the SWD clock on the wire with a logic analyser, and sets it beside
-  the clock that was asked for. Results are in `results/wireclock/`.
+- `tools/wireclock.py` compares the SWD clock asked for with logic analyser recordings. Results are
+  in `results/wireclock/`.
 - `page/` builds the results page from the throughput and wire-clock results.
 
-`--image` flashes the probe through verge before measuring, ours or a stock S-record alike; put
-`verge` on the PATH or name it with `--verge`. Only `wireclock.py model` needs the firmware itself:
+`--image` flashes Verge or a stock S-record through `verge` before measuring. Put `verge` on the
+PATH or select it with `--verge`. `wireclock.py model` also needs the firmware source:
 `--firmware` names a checkout of mculink-verge, whose emulator it runs.
 
-Every result records the code that took it by path and hash, and the firmware it measured by
-build. Those hashes and builds come from the repositories' history before they were published,
-which is not public, so they identify a result's code but cannot be checked out. The results of
-2026-10-20 were taken while these tools lived in the firmware's repository, so their provenance
-names that repository's paths, `tools/dap.py`, `tools/coverage.py` and `tools/flash.py` among
-them.
+Results identify the measuring code by path and hash, and the firmware by build. These identifiers
+refer to private development history; they cannot be checked out from the published repositories.
+The 2026-10-20 results predate the repository split. Their provenance includes paths from the
+firmware repository, including `tools/dap.py`, `tools/coverage.py` and `tools/flash.py`.
+
+## Latest results: 2026-10-24
+
+The [measurements page](page/index.html) compares Verge build `e7c7acf` with GCC and Clang against stock
+V3.172 and includes a J-Link Ultra reference. Raw results are in
+`results/throughput/2026-10-24-{gcc,clang,stock}.json`. The older results below retain their original
+firmware versions and test conditions.
 
 ## Measured 2026-10-21: after reads at 50 MHz
 
-The same matrix, probe and target. Our images are mculink-verge `34431f1`, and stock is V3.172
-again; results in `results/throughput/2026-10-21-{gcc,clang,stock}.json`.
-In this image our SWD reads run at 50 MHz on the wire when 50 is asked, where they ran at 37.5,
-with a timer making the clock. mculink-verge removed them again the same day.
+This run used the same matrix, probe and target as 2026-10-20. The Verge build is `34431f1` and
+stock is V3.172. Results are in `results/throughput/2026-10-21-{gcc,clang,stock}.json`.
+This build used a timer to reach 50 MHz SWD reads, up from 37.5 MHz. The timer path was removed
+the same day.
 
-At 50 MHz asked, KiB/s:
+At a requested 50 MHz, KiB/s:
 
 | case | gcc 10-20 | gcc 10-21 | clang 10-20 | clang 10-21 |
 | --- | --- | --- | --- | --- |
@@ -37,15 +42,14 @@ At 50 MHz asked, KiB/s:
 | DAP_Transfer read, 127 words, depth 8 | 1646 | 1547 | 1645 | 1548 |
 | probe-rs read32, 4 KiB | 1657 | 1725 | 1548 | 1813 |
 
-- Full-packet block reads barely move with the faster wire: 1% at 8 queued. Starting and stopping
-  the timer stalls the core on the peripheral bus, and that used up most of what the faster wire
-  saved.
+- Full-packet block reads improved by 1% with eight commands queued. Starting and stopping the
+  timer stalls the core on the peripheral bus, consuming most of the time saved by the faster wire.
 - DAP_Transfer reads at 50 MHz are 6% slower, on gcc and clang alike, for AP and DP registers alike.
-- probe-rs moves no more than its run-to-run spread. Its writes, which did not change, moved by up
-  to 10% between the two dates at 64 and 256 bytes. A single-word round trip still costs 68 us.
+- probe-rs results remained within run-to-run variation. Its unchanged write path varied by up
+  to 10% between the two dates at 64 and 256 bytes. A single-word round trip still costs 68 µs.
 - At 10 and 20 MHz, where reads do not use the timer, every case is within a few percent of
   2026-10-20.
-- Stock is 1 to 3% below its own 2026-10-20 figures, which is how far the bench itself drifted. It
+- Stock throughput is 1 to 3% below its 2026-10-20 figures, showing variation between runs. It
   fails at 50 MHz as before (53 of 480 cases), and probe-rs through stock failed at 30 MHz this time.
 
 ## Measured 2026-10-20: ours with gcc and clang against stock V3.172
@@ -57,7 +61,7 @@ same three commands (the script's docstring) once the firmware is feature-comple
 
 Full-packet block commands through the AP, KiB/s (127-word reads, 126-word writes):
 
-| asked | depth | gcc read | clang read | stock read | gcc write | clang write | stock write |
+| requested | depth | GCC read | Clang read | stock read | GCC write | Clang write | stock write |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 1 MHz | 1 | 82 | 83 | 77 | 82 | 82 | 77 |
 | 5 MHz | 1 | 392 | 393 | 293 | 389 | 392 | 296 |
@@ -70,7 +74,7 @@ Full-packet block commands through the AP, KiB/s (127-word reads, 126-word write
 
 probe-rs, 4 KiB at a time, attach excluded, KiB/s:
 
-| asked | gcc read32 | clang | stock | gcc write32 | clang | stock |
+| requested | GCC read32 | Clang | stock | GCC write32 | Clang | stock |
 | --- | --- | --- | --- | --- | --- | --- |
 | 1 MHz | 82 | 80 | 76 | 82 | 82 | 77 |
 | 5 MHz | 383 | 386 | 287 | 389 | 392 | 296 |
@@ -79,20 +83,20 @@ probe-rs, 4 KiB at a time, attach excluded, KiB/s:
 | 30 MHz | 1575 | 1591 | 661 | 1606 | 1777 | 733 |
 | 50 MHz | 1657 | 1548 | failed | 2266 | 2283 | failed |
 
-- Ours is ahead at every clock through probe-rs: 6 to 8% at 1 MHz, 1.4x at 10 MHz and 1.8x at
-  20 MHz. Past 20 MHz asked stock gains little (reads 634 to 661 KiB/s at 30, writes 664 to 733),
-  while ours keeps climbing to 50.
-- A single-word round trip costs the same on all three, 68 to 69 us from 10 MHz up: that is the
-  host and USB, not the probe.
-- Stock at 50 MHz asked misreads acknowledges (3 or 6, neither valid) partway through runs whenever
-  commands are pipelined or queued: 55 and 56 of 480 cases in two runs, all at depths 2 and 8,
-  none at depth 1. probe-rs fails there too, and once of two runs at 30 MHz.
-- gcc and clang are within a few percent of each other everywhere but one place: 1-word commands
-  at 8 queued at 50 MHz, where gcc falls off the CPU 0 cliff (21,586 against 36,473 commands/s for
-  a 1-word AP read through DAP_Transfer) and clang mostly does not. At 10 MHz both run about 51k.
-- probe-rs's 4 KiB reads barely rise from 30 to 50 MHz on ours (1575 to 1657) while writes do (1606
-  to 2266): something on the read path other than the wire binds there.
-- What each firmware puts on the wire for each requested clock is in the next section.
+- Verge is faster at every completed probe-rs clock: 6 to 8% at 1 MHz, 1.4× at 10 MHz and 1.8×
+  at 20 MHz. From a requested 20 to 30 MHz, stock reads rise from 634 to 661 KiB/s and writes from
+  664 to 733 KiB/s. Verge throughput continues increasing up to a requested 50 MHz.
+- A single-word round trip takes 68 to 69 µs on all three builds from 10 MHz upward, so the host
+  and USB set it, not the probe.
+- At a requested 50 MHz, stock misreads acknowledgements (3 or 6, neither valid) with pipelined or
+  queued commands: 55 and 56 of 480 cases in two runs, all at depths 2 and 8, none at depth 1.
+  probe-rs also failed at 50 MHz and in one of two runs at 30 MHz.
+- GCC and Clang are within a few percent except for one-word commands with eight queued at
+  50 MHz. GCC handles 21,586 commands/s for a one-word AP read through DAP_Transfer, against
+  Clang's 36,473. At 10 MHz both handle about 51,000 commands/s.
+- probe-rs's 4 KiB reads rise from 1575 to 1657 KiB/s on Verge between requested clocks of 30 and
+  50 MHz. Writes rise from 1606 to 2266 KiB/s. The higher requested clock improves reads much less
+  than writes.
 
 ## The wire, measured 2026-10-21: requested against delivered clock
 
@@ -102,16 +106,16 @@ L1306's header (D6 SWDIO, D7 SWCLK, 100 MS/s). Results in
 too large to keep here; `wireclock.py analyse <dir> --result <json>` reads them again. clang was taken at three clocks
 only, as a cross-check.
 
-The 2026-10-20 results (`results/wireclock/2026-10-20-*.json`) are kept, and superseded by these:
-their captures were unreliable. They carried spurious edges on SWDIO (a quarter of its changes on
-ours at 10 MHz, against 0.6% here), misplaced where SWCLK crossed, and made one of ours' edges look
-early at 10 MHz. The analyser's ground was not connected to the target's then. With the same images
-and the ground connected, that edge is on time.
+These results supersede `results/wireclock/2026-10-20-*.json`, whose captures were unreliable.
+The earlier captures showed spurious SWDIO edges: a quarter of Verge's changes at 10 MHz, against
+0.6% here. They also misplaced crossings with SWCLK, making one Verge edge appear early at 10 MHz.
+The analyser's ground was disconnected from the target. With the same images and ground connected,
+that edge is on time. The earlier files remain available.
 
 Data bits, the median period over a transfer's data phase, in MHz (s: timed from SWDIO, see
 below), and stock's fastest period anywhere in a transfer:
 
-| asked | gcc read / write | clang | stock read / write | stock fastest, where |
+| requested | GCC read / write | Clang | stock read / write | stock fastest, where |
 | --- | --- | --- | --- | --- |
 | 1 | 1.00 / 1.00 | | 0.93 / 0.94 | 0.99, acknowledge |
 | 2 | 2.00 / 2.00 | | 1.79 / 1.85 | 2.06, acknowledge |
@@ -128,61 +132,66 @@ below), and stock's fastest period anywhere in a transfer:
 | 40 | 37.33 s / 37.50 s | | 9.63 / 10.72 | 18.99, request |
 | 50 | 37.33 s / 50.00 s | 37.33 s / 50.00 s | 9.60 / 10.72 | 18.98, request |
 
-- **Ours delivers the clock asked for, or the step under it.** The steps are 150 MHz over whole
-  cycles: 11.54 is 13 cycles, 13.64 is 11, 18.75 is 8. At 50 MHz asked, reads run at 37.5 and writes
-  at 50, which is what the emulator says: a read clock is four instructions. A timer that brought
-  reads to 50 was built and removed again (mculink-verge's BUSES.md says why).
-- **No period of ours is shorter than asked.** The fastest period anywhere in a transfer is within
+- **Clock steps.** Verge delivers the requested clock or the next lower step. The steps divide
+  150 MHz by whole cycles: 11.54 MHz is 13 cycles, 13.64 MHz is 11, 18.75 MHz is 8.
+  At a requested 50 MHz, reads run at 37.5 MHz and writes at 50 MHz, matching the emulator.
+  A read clock is four instructions. The timer path for 50 MHz reads was removed; see
+  mculink-verge's BUSES.md for the reason.
+- **Shortest periods.** Verge's fastest period anywhere in a transfer is within
   1 ns of the emulator's at every clock from 1 to 30 MHz. The figures `compare` prints run up to 3%
   over the step at 30 MHz, which is 1 ns at that period.
-- **The emulator matches the wire.** `wireclock.py model --firmware <checkout> <core1 elf>
-  <result>` sets every position beside mculink-verge's `tools/cycles.py` prediction, for every role
+- **Emulator comparison.** `wireclock.py model --firmware <checkout> <core1 elf>
+  <result>` compares every position with mculink-verge's `tools/cycles.py` prediction, for every role
   the emulator has (its target never waits, so a WAIT transfer has no prediction). Every position of
   every kind agrees within 1 ns at every clock from 1 to 30 MHz, except one (next bullet). The
   2026-10-20 run's larger differences, up to 3.3 ns and an alternation in writes, are gone. clang
   matches gcc within 1 ns at every position at 10 and 20 MHz, WAIT retries included.
-- **The turnaround before a write's data is longer than the model says**: 4 cycles from 1 to
+- **Write turnaround.** The measured turnaround exceeds the model by 4 cycles from 1 to
   10 MHz (26.7 ns), 3 from 12 to 20, split over two positions from 14, then 1 at 25 and 2 at 30.
   It is a DIRSET store to the GPIO block, not an APB one. Longer is the safe direction; it costs a
   10 MHz write about 0.6% and is a gap in mculink-verge's `tools/m33.py`.
-- **Stock tops out at 9.6 MHz for reads and 10.7 for writes, from 25 MHz asked.** The wire is the
-  same from 25 to 50 MHz asked, period for period. Below that it moves in three steps (to 8, 10 to
-  14, 16 to 20), and its data rate is always well under the request: 6.4 MHz at 10 asked.
-- **Stock clocks its acknowledge faster than asked**: 11.6 MHz at 10 asked, 18.8 at 16 asked,
-  2 to 3% over at 2 and 3 asked. From 25 asked its fastest period is the request, 53 ns (19.0 MHz).
-- **Stock's misreads at 25 MHz asked and above are the probe, not the target.** The depth-2 kind
-  (2,000 commands of eight DPIDR reads) misread 5, 4, 7 and 1 times at 25, 30, 40 and 50 MHz asked
-  and never below. On the wire, every misread transfer carries OK and the right DPIDR. Every one
-  follows a 3.24 us stall at position 8, the clock that launches the first acknowledge bit. The
+- **Stock data rates.** Stock reaches 9.6 MHz reads and 10.7 MHz writes at a requested 25 MHz.
+  Wire periods remain the same for requests from 25 to 50 MHz. Below that, requests fall into
+  three groups: up to 8 MHz, 10 to 14 MHz, and 16 to 20 MHz. The data rate stays below the request:
+  reads run at 6.4 MHz for a 10 MHz request.
+- **Stock acknowledgement rates.** Stock reaches 11.6 MHz for a 10 MHz request and 18.8 MHz for
+  16 MHz. At requests of 2 and 3 MHz, it exceeds the requested clock by 2 to 3%.
+  From a requested 25 MHz, the request phase has the shortest period: 53 ns (19.0 MHz).
+- **Stock acknowledgement errors.** At requested clocks of 25 MHz and above, stock reports errors
+  for replies that are correct on the wire. The depth-2 case used 2,000 commands of eight DPIDR
+  reads. It misread 5, 4, 7 and 1 times at requested clocks of 25, 30, 40 and 50 MHz, and never
+  below. On the wire, every misread transfer carries OK and the expected DPIDR. Every one
+  follows a 3.24 µs stall at position 8, the clock that launches the first acknowledgement bit. The
   stalls that misread come at depth 2, when the next command arrives. After the stall, position 9,
   where the second acknowledge bit is read, lasts 40 to 50 ns against the usual 59. Stalls land at
-  every position about equally; only position 8 ones misread, 17 of 79 from 25 MHz asked and 0 of
-  553 at 20 and below. The reported acknowledge, 3, is OK read one bit late on the second bit, and
+  every position about equally; only position 8 stalls led to misreads: 17 of 79 at requests of
+  25 MHz and above, and 0 of 553 at 20 MHz and below.
+  The reported acknowledgement, 3, is OK read one bit late on the second bit, and
   the clocks that follow on the wire are the probe's protocol-error recovery, not data.
-- **The L1306's reply arrives about 20 ns after the rising edge that launches it**, at its own
-  pins (median, in 10 ns samples).
+- **Target reply delay.** The L1306's reply arrives about 20 ns after the rising edge that launches
+  it, measured at the target pins (median, in 10 ns samples).
 
-What the analyser can and cannot see here, which shaped the script:
+Capture limits:
 
-- **Ours' clock is resolved pulse by pulse up to 30 MHz asked**, every command at every clock.
-  From 40 MHz asked both phases of a read clock are two cycles, 13.3 ns, and the analyser loses
+- **Pulse resolution.** The analyser resolves every Verge SWCLK pulse up to a requested 30 MHz.
+  From a requested 40 MHz, both phases of a read clock are two cycles, 13.3 ns. The analyser loses
   them, so the data bits are timed from SWDIO: TAR holds 0x55555555, so every data bit changes the
   line, and a bit lasts a whole period rather than a phase. Stock is resolved at every clock.
-- **SWCLK's highs read about 1.6 ns long and its lows 1.6 ns short**, against the generator's exact
-  3 + 3 cycles at 25 MHz. Periods, rise to rise, carry no such offset. Phases in the result files
-  are as the analyser saw them; this Logic 8's threshold is fixed.
-- **The target's SWDIO edges cross the threshold about 10 ns apart by direction**, so its bits are
-  timed rising to rising, and the analysis takes nothing from target bits it needs: the probe
-  checked every word, and a transfer's length comes from the command's layout and its edge count.
-- **SWCLK's edges put one-sample pulses on SWDIO**, 0.4 to 1.2% of SWDIO's changes on ours
+- **SWCLK phase offset.** High phases read about 1.6 ns long and low phases 1.6 ns short against
+  the generator's exact 3 + 3 cycles at 25 MHz. Rise-to-rise periods have no such offset. The result
+  files retain the captured phases; this Logic 8 has a fixed threshold.
+- **SWDIO threshold offset.** Rising and falling target edges cross the threshold about 10 ns
+  apart, so target bits are timed rising to rising. The analysis does not depend on decoding
+  target data. The probe checks each word; command layout and edge count determine transfer length.
+- **Crosstalk.** SWCLK edges produce one-sample SWDIO pulses: 0.4 to 1.2% of SWDIO's changes on Verge
   from 2 to 10 MHz and 3% on stock at 10, nearly all at a SWCLK edge. SWCLK carries none at 2 to
-  10 MHz. The target saw none of them; every word written read back.
+  10 MHz. None reached the target: every written word read back correctly.
 
 ## Retaking, after the optimisation work
 
-Same matrices, same commands, new images. A result compares only with one of the same matrix name
-(`swd-1`, `wire-1`); change the cases and the name changes with them. Stock is the same S-record
-every time, so its results double as a check that the bench itself has not moved.
+Retake with the same matrices and commands. Compare results with the same matrix name (`swd-1`,
+`wire-1`); rename the matrix if its cases change. Keep the stock S-record fixed for a controlled
+comparison. Record any stock version change separately.
 
 1. Build gcc and clang from the tree to be measured. Keep both images of each build
    (`mculink_cjtag.elf` and `mculink_cjtag_core1.elf`, which `wireclock.py model` needs) and the
@@ -201,7 +210,7 @@ every time, so its results double as a check that the bench itself has not moved
    <dir>/gcc-<build>-core1.elf results/wireclock/<date>-gcc.json` checks the emulator again.
 6. The results page: add the new date to `page/sets.json` with its result labels, then build and
    publish the page as `page/README.md` says. It opens on the newest date, and its set picker offers
-   and switches between them.
+   the others.
 
 ## Licence
 

@@ -1,6 +1,6 @@
 # swd-throughput
 
-How fast is a probe's debug wire, end to end through probe-rs, and **which part of it is slow**.
+Measures throughput through probe-rs and estimates fixed and per-byte transfer costs.
 
 ```
 cargo run --release --manifest-path tools/swd-throughput/Cargo.toml -- \
@@ -13,48 +13,47 @@ to SWD transactions.
 
 `tools/throughput.py` runs it as one half of a firmware comparison and keeps the result in
 `results/throughput/`. probe-rs is pinned to a revision of the fork that carries mculink-verge's
-CMSIS-DAP changes. A probe-rs change moves these numbers, so move the pin on purpose.
+CMSIS-DAP changes. Record pin changes when comparing results; host changes can affect throughput.
 
-## Why it is not one number
+## Transfer costs
 
-"Slower" has two shapes, and a single throughput figure cannot tell them apart:
+The report separates two costs:
 
-- **Per byte.** The probe's bit loop, and the SWD clock it runs at.
-- **Per transfer.** Command dispatch, the USB round trip, whatever the firmware does before the
-  first clock edge. Paid in full whether the transfer carries 4 bytes or 4096.
+- **Per byte.** The probe's bit loop and SWD clock.
+- **Per transfer.** Command dispatch, USB round trips and firmware setup before the first clock
+  edge. These costs apply to both small and large transfers.
 
-So every arm runs at several transfer sizes and the times are fit to `a + b * bytes`. `a` is the
+Each workload runs at several transfer sizes. Times are fitted to `a + b * bytes`. `a` is the
 fixed cost of a transfer and `1/b` is the ceiling a large one approaches. A firmware change that
-reorders the bit loop moves `1/b`; one that adds a vendor command check moves `a`.
+changes the bit loop can affect `1/b`; an extra command-dispatch check can affect `a`.
 
-Sweeping the wire clock on top of that says which of the two is binding. **Throughput that stops
-rising with the clock is bound by something off the wire**, and a slower bit loop would then cost
-nothing measurable at all. That is the question worth answering before touching a probe's firmware.
+The clock sweep says which cost binds. Where throughput stops rising with the clock, something off
+the wire bounds it, and a slower bit loop there costs no throughput the tool can measure. Check
+which cost binds before changing a probe's firmware.
 
-## Arms
+## Workloads
 
 `read32`, `write32`, `read8`, `write8` at each size and clock, plus `rt`: single-word reads timed
 one at a time. Nothing can be batched in `rt`, so it is one round trip per word and it is the
 figure most sensitive to per-command overhead.
 
 The `of wire` column compares the fitted ceiling against an idealised SWD wire at the clock the
-probe actually took — 46 clocks a word, being the 8-bit request, the turnarounds, the acknowledge,
-32 data bits and parity. A probe near 100% there is limited by the wire and nothing else can be.
+probe reports: 46 clocks per word for the request, turnarounds, acknowledgement, data and parity.
+A result near 100% approaches that model's wire limit.
 
 ## What it does to the target
 
 The core is halted (pass `--no-halt` to leave it running, which puts the target's own bus traffic
 into the measurement). The region under test is read first and written back before exit, so the
-write arms do not leave the part's RAM clobbered.
+write workloads restore the original RAM contents.
 
-**Transfers must fit the RAM region they start in**, and this is checked rather than trusted: a
-read past the end of RAM does not fail loudly, it returns words and times whatever the bus does
-with an unmapped address. On a part with 4 KiB of SRAM the largest size is 4096, which leaves the
-fit short of leverage — read the intercept with that in mind, and prefer a part with more RAM when
-the per-byte figure is the one in question.
+Transfers must fit the selected RAM region. The tool checks this because unmapped reads can
+return data without an error. A target with 4 KiB of SRAM limits the largest transfer to 4096
+bytes, giving the fit a smaller size range. Use a target with more RAM to estimate per-byte costs
+over larger transfers.
 
 ## Reading the result
 
-Quote the clock the probe reported, not the one asked for. A probe that can only divide its own
-clock will round down, and charging it for the difference makes every figure look worse than it is;
-the tool warns when the two differ and uses the reported one in the wire comparison.
+Quote both the clock asked for and the clock the probe reports. Clock dividers can round a request
+down. The tool warns when the two differ and uses the reported clock for its wire comparison. A
+reported clock is not a wire measurement; use an analyser recording to verify it.
