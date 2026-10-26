@@ -287,7 +287,18 @@ def custom_host(probe: dap.Probe, serial: str, ours: bool, quick: bool, progress
                     probe = open_probe(serial)
                     attach(probe, clock * 1_000_000, ours)
                 if case["access"] == "ap-write":
-                    page_io(probe, page)  # the reads that follow check against the page as it was
+                    # The reads that follow check against the page as it was. A probe that misreads
+                    # acknowledges at this clock can fail the restore too: retry it from a fresh
+                    # attach, and if it still fails, the read cases record the mismatch.
+                    for _ in range(3):
+                        try:
+                            page_io(probe, page)
+                            break
+                        except Exception as error:
+                            console.print(f"{label}: [red]restoring the test page: {error}[/red]")
+                            probe.release()
+                            probe = open_probe(serial)
+                            attach(probe, clock * 1_000_000, ours)
             if entry["runs"] and entry["error"] is None:
                 rates = [r["done"] / r["seconds"] for r in entry["runs"]]
                 entry["commands_per_s"] = statistics.median(rates)
