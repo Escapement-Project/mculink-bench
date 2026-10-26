@@ -3,7 +3,7 @@
 Build the standalone page from the committed throughput and wire-clock results:
 
 ```sh
-uv run python -I build.py 2026-10-20 2026-10-21 2026-10-24
+uv run python -I build.py 2026-10-20 2026-10-21 2026-10-24 2026-10-25
 ```
 
 The last date opens by default. Earlier dates remain available in the date selector. The generated
@@ -11,7 +11,7 @@ The last date opens by default. Earlier dates remain available in the date selec
 JSON:
 
 ```sh
-uv run python -I extract.py /tmp/measurements.json 2026-10-20 2026-10-21 2026-10-24
+uv run python -I extract.py measurements.json 2026-10-20 2026-10-21 2026-10-24 2026-10-25
 ```
 
 Every comparison on the page holds the host fixed. Verge, stock and the J-Link Ultra are compared

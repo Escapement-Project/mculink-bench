@@ -19,12 +19,13 @@ refer to private development history; they cannot be checked out from the publis
 The 2026-10-20 results predate the repository split. Their provenance includes paths from the
 firmware repository, including `tools/dap.py`, `tools/coverage.py` and `tools/flash.py`.
 
-## Latest results: 2026-10-24
+## Latest results: 2026-10-25
 
-The [measurements page](page/index.html) compares Verge build `e7c7acf` with GCC and Clang against stock
-V3.172 and includes a J-Link Ultra reference. Raw results are in
-`results/throughput/2026-10-24-{gcc,clang,stock}.json`. The older results below retain their original
-firmware versions and test conditions.
+The [measurements page](page/index.html) compares Verge build `2edfec6` with GCC and Clang against
+stock V3.174, NXP's current release, and includes a J-Link Ultra reference. Raw results are in
+`results/throughput/2026-10-25-{gcc,clang,stock}.json`, and `2026-10-25-RETAKE.md` describes the
+set. The 2026-10-24 set, with build `e7c7acf` and stock V3.172, stays on the page for comparison.
+The older results below keep their original firmware versions and test conditions.
 
 ## Measured 2026-10-21: after reads at 50 MHz
 
