@@ -9,6 +9,8 @@ MCU-Link and target.
 - `tools/wireclock.py` compares the SWD clock asked for with logic analyser recordings. Results are
   in `results/wireclock/`.
 - `page/` builds the results page from the throughput and wire-clock results.
+- `tools/i2c-eeprom/` is firmware that makes an LP-MSPM0L1306 an I2C EEPROM, the target for
+  testing a probe's I2C bridge.
 
 `--image` flashes Verge or a stock S-record through `verge` before measuring. Put `verge` on the
 PATH or select it with `--verge`. `wireclock.py model` also needs the firmware source:

@@ -1,0 +1,10 @@
+[target.'cfg(all(target_arch = "arm", target_os = "none"))']
+runner = "probe-rs run --chip MSPM0L1306 --protocol swd"
+
+[build]
+target = "thumbv6m-none-eabi"
+
+[env]
+DEFMT_LOG = "info"
+# The part has 4 KiB of SRAM and the array takes 1 KiB of it.
+DEFMT_RTT_BUFFER_SIZE = "256"
