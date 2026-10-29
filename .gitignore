@@ -2,3 +2,5 @@ __pycache__/
 tools/swd-throughput/target/
 page/data.json
 tools/i2c-eeprom/target/
+tools/dio-marker/target/
+tools/dio-marker/target-toggle/
