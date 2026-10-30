@@ -3,7 +3,9 @@
 //!
 //! - `MODE=marker` (the default): every 10 ms PA12 rises with LED2's red (PA26, J12 fitted), the
 //!   CPU spins for 2 ms, and both fall; the rest of the period it sleeps. The current step and the
-//!   marker's edges come from the same moments, so a recording shows how well they line up.
+//!   marker's edges come from the same moments, so a recording shows how well they line up. The
+//!   time driver times both phases, to its 30.5 us tick: `asm::delay` only promises at least the
+//!   cycles asked for, and its 2 ms ran about 6.
 //! - `MODE=toggle`: PA12 toggles as fast as `TOGGLE_HZ` full periods a second, by a busy loop, so
 //!   twice that many edges reach the Pro.
 #![no_std]
@@ -13,7 +15,7 @@ use defmt::info;
 use defmt_rtt as _;
 use embassy_executor::Spawner;
 use embassy_mspm0::gpio::{Level, Output};
-use embassy_time::Timer;
+use embassy_time::{Duration, Ticker, block_for};
 use panic_probe as _;
 
 /// MCLK out of reset, from SYSOSC.
@@ -72,12 +74,13 @@ async fn main(_spawner: Spawner) {
         }
     }
     info!("marking 2 ms of every 10 on PA12, with LED2 red");
+    let mut ticker = Ticker::every(Duration::from_millis(10));
     loop {
         marker.set_high();
         led.set_high();
-        cortex_m::asm::delay(2 * MCLK_HZ / 1000);
+        block_for(Duration::from_millis(2));
         led.set_low();
         marker.set_low();
-        Timer::after_millis(8).await;
+        ticker.next().await;
     }
 }
