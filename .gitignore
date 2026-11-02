@@ -4,3 +4,4 @@ page/data.json
 tools/i2c-eeprom/target/
 tools/dio-marker/target/
 tools/dio-marker/target-toggle/
+tools/dio-marker/target-burst/

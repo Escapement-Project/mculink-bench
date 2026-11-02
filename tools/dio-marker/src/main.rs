@@ -2,7 +2,7 @@
 //! to the Pro's DIO3.
 //!
 //! - `MODE=marker` (the default): every 10 ms PA12 rises with LED2's red (PA26, J12 fitted), the
-//!   CPU spins for 2 ms, and both fall; the rest of the period it sleeps. The current step and the
+//!   CPU spins for `BUSY_US` (2 ms by default), and both fall; the rest of the period it sleeps. The current step and the
 //!   marker's edges come from the same moments, so a recording shows how well they line up. The
 //!   time driver times both phases, to its 30.5 us tick: `asm::delay` only promises at least the
 //!   cycles asked for, and its 2 ms ran about 6.
@@ -38,6 +38,8 @@ const fn parse(digits: Option<&str>, default: u32) -> u32 {
 }
 
 const TOGGLE_HZ: u32 = parse(option_env!("TOGGLE_HZ"), 47_500);
+/// How long the marker's CPU spins each period, to the time driver's tick.
+const BUSY_US: u32 = parse(option_env!("BUSY_US"), 2_000);
 const fn same(a: &str, b: &str) -> bool {
     let (a, b) = (a.as_bytes(), b.as_bytes());
     if a.len() != b.len() {
@@ -73,12 +75,12 @@ async fn main(_spawner: Spawner) {
             cortex_m::asm::delay(half);
         }
     }
-    info!("marking 2 ms of every 10 on PA12, with LED2 red");
+    info!("marking {} us of every 10 ms on PA12, with LED2 red", BUSY_US);
     let mut ticker = Ticker::every(Duration::from_millis(10));
     loop {
         marker.set_high();
         led.set_high();
-        block_for(Duration::from_millis(2));
+        block_for(Duration::from_micros(u64::from(BUSY_US)));
         led.set_low();
         marker.set_low();
         ticker.next().await;
