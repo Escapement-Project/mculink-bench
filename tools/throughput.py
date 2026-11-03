@@ -81,6 +81,8 @@ DAP_TRANSFER_CONFIGURE = 0x04
 DAP_SWD_CONFIGURE = 0x13
 DAP_VENDOR_IDENTIFY = 0x82
 DAP_VENDOR_STAGE = 0x8C
+# The probe's VID and PID; `run --usb-id` sets them for firmware that enumerates as another device.
+USB_ID = (0x1FC9, 0x0143)
 
 le = dap.le
 
@@ -113,7 +115,7 @@ def reply_words(command: str, reply: bytes, words: int) -> list[int]:
 
 def open_probe(serial: str) -> dap.Probe:
     for _ in range(50):
-        found = dap.find(serial)
+        found = dap.find(serial, *USB_ID)
         if found:
             found[0].drain()
             return found[0]
@@ -324,7 +326,8 @@ def probe_rs(serial: str, chip: str, quick: bool, console: Console) -> dict:
     csv_path = os.path.join(SWD_THROUGHPUT, "target", "last-sweep.csv")
     binary = os.path.join(SWD_THROUGHPUT, "target", "release", "swd-throughput")
     sweep = ["--speeds", "10000", "--sizes", "64,1024", "--repeats", "3"] if quick else []
-    run = subprocess.run([binary, "--probe", f"1fc9:0143:{serial}", "--chip", chip, "--csv", csv_path, *sweep],
+    run = subprocess.run([binary, "--probe", f"{USB_ID[0]:04x}:{USB_ID[1]:04x}:{serial}", "--chip", chip,
+                          "--csv", csv_path, *sweep],
                          stdout=subprocess.PIPE, text=True)
     console.print(run.stdout, markup=False, highlight=False)
     rows = []
@@ -379,15 +382,18 @@ def flash(verge: str, elf: str, serial: str) -> None:
 
 
 def cmd_run(args) -> int:
+    global USB_ID
+    vid, _, pid = args.usb_id.partition(":")
+    USB_ID = (int(vid, 16), int(pid, 16))
     path = args.out or os.path.join(RESULTS, f"{datetime.date.today().isoformat()}-{args.label}.json")
     if os.path.exists(path) and not args.force:
         raise SystemExit(f"{path} exists; pass --force to replace it")
     if args.elf:
-        before = {p.serial for p in dap.find()} - {args.serial}
+        before = {p.serial for p in dap.find(None, *USB_ID)} - {args.serial}
         flash(args.verge, args.elf, args.serial)
         time.sleep(2)
         # Stock and ours give the same unit different serials: follow it when it is the only new one.
-        appeared = [p.serial for p in dap.find() if p.serial not in before]
+        appeared = [p.serial for p in dap.find(None, *USB_ID) if p.serial not in before]
         if args.serial not in appeared and len(appeared) == 1:
             args.serial = appeared[0]
     probe = open_probe(args.serial)
@@ -402,7 +408,7 @@ def cmd_run(args) -> int:
     record = {
         "matrix": f"{MATRIX}-quick" if args.quick else MATRIX, "label": args.label, "note": args.note,
         "taken": datetime.datetime.now().astimezone().isoformat(timespec="seconds"),
-        "serial": args.serial, "chip": args.chip, "firmware": firmware, "provenance": provenance(args.elf, args.verge),
+        "serial": args.serial, "usb_id": args.usb_id, "chip": args.chip, "firmware": firmware, "provenance": provenance(args.elf, args.verge),
         "settings": {"clocks_mhz": CLOCKS_MHZ, "depths": DEPTHS, "repeats": REPEATS, "run_seconds": RUN_SECONDS,
                      "stage": args.stage},
     }
@@ -477,6 +483,8 @@ def main() -> int:
                      help="flash this image first, ours or an S-record of NXP's firmware; leave out to measure what runs")
     run.add_argument("--verge", default="verge", help="the verge binary that flashes --image")
     run.add_argument("--serial", required=True, help="the probe to measure, as it is before --image flashes it")
+    run.add_argument("--usb-id", default="1fc9:0143",
+                     help="VID:PID in hex, for a probe that does not enumerate as an MCU-Link")
     run.add_argument("--chip", default="MSPM0L1306")
     run.add_argument("--note", default="", help="free text kept with the result, such as the name of NXP's image")
     run.add_argument("--out", help="result path; default results/throughput/<date>-<label>.json")

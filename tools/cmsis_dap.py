@@ -244,6 +244,7 @@ def queued_blocks(probe: Probe, payload: bytes, blocks: int, depth: int, words: 
     import usb1
 
     serial = probe.serial
+    usb_id = (probe.device.idVendor, probe.device.idProduct)
     number = probe.interface.bInterfaceNumber
     out_address = probe.out_ep.bEndpointAddress
     in_address = probe.in_ep.bEndpointAddress
@@ -253,7 +254,7 @@ def queued_blocks(probe: Probe, payload: bytes, blocks: int, depth: int, words: 
     with usb1.USBContext() as context:
         handle = None
         for device in context.getDeviceIterator(skip_on_error=True):
-            if (device.getVendorID(), device.getProductID()) != (0x1FC9, 0x0143):
+            if (device.getVendorID(), device.getProductID()) != usb_id:
                 continue
             candidate = device.open()
             if candidate.getSerialNumber() == serial:
