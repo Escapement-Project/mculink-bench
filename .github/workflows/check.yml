@@ -26,8 +26,11 @@ jobs:
           uv run tools/throughput.py --help > /dev/null
           uv run tools/wireclock.py --help > /dev/null
 
-      - name: The results make the page's data
-        run: uv run --no-project python -I page/extract.py "$RUNNER_TEMP/data.json" 2026-10-20 2026-10-21
+      # The dates are page/README.md's.
+      - name: The committed page is the one the results make
+        run: |
+          uv run --no-project python -I page/build.py 2026-10-20 2026-10-21 2026-10-24 2026-10-25
+          git diff --exit-code page/index.html
 
   swd-throughput:
     runs-on: ubuntu-latest
