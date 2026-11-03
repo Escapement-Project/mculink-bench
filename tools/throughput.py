@@ -138,14 +138,14 @@ def identify(probe: dap.Probe) -> dict:
             info[name] = int.from_bytes(raw, "little") if raw else None
         else:
             info[name] = raw.hex()
+    # Vendor IDs are each firmware's own: on C DAPLink, 0x82 is UART_SetConfiguration. Ask only a
+    # probe whose USB product names Verge, as ours does. The VID:PID is no test:
+    # stock MCU-Link shares it.
     ours = None
-    try:
-        reply = probe.command(bytes([DAP_VENDOR_IDENTIFY]))
-        body = reply[1:]
+    if "Verge" in probe.product:
+        body = probe.command(bytes([DAP_VENDOR_IDENTIFY]))[1:]
         if body[:5] == b"CJTAG":
             ours = {"format": body[5], "flags": body[6], "build": body[8 : 8 + body[7]].decode(errors="replace")}
-    except RuntimeError:  # stock echoes a bare 0x82; ID_DAP_Invalid is out of step to command()
-        pass
     return {"dap_info": info, "ours": ours}
 
 
