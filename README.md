@@ -34,12 +34,13 @@ beside its result files, which says what was measured and under what conditions:
 | 2026-10-25 | throughput, GCC and Clang against stock V3.174 (latest) | `results/throughput/2026-10-25-RETAKE.md` |
 | 2026-10-24 | throughput, against stock V3.172; replaced by 2026-10-25 | `results/throughput/2026-10-24-RETAKE.md` |
 | 2026-10-21 | throughput with reads at 50 MHz, a timer path removed the same day | `results/throughput/2026-10-21.md` |
+| 2026-10-21 | throughput with CPU 0 staging commands, on and off in one image | `results/throughput/2026-10-21-staging.md` |
+| 2026-10-21 | throughput and the wire, the Pro against the plain MCU-Link | `results/throughput/2026-10-21-boards.md` |
 | 2026-10-21 | the wire: the clock asked for against the clock delivered | `results/wireclock/2026-10-21.md` |
 | 2026-10-20 | throughput, GCC and Clang against stock V3.172 | `results/throughput/2026-10-20.md` |
 
-The page keeps the 2026-10-24 set for comparison. The 2026-10-21 files labelled `gcc-stage-on`,
-`gcc-stage-off`, `plain-gcc` and `pro-gcc` have no note yet. The older sets keep their original
-firmware versions and test conditions.
+The page keeps the 2026-10-24 set for comparison. The older sets keep their original firmware
+versions and test conditions.
 
 ## Retaking
 
