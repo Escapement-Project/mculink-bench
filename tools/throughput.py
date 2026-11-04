@@ -3,26 +3,32 @@
 # requires-python = ">=3.11"
 # dependencies = ["libusb1", "pyusb", "rich"]
 # ///
-"""SWD throughput of the attached probe, the same cases every time, kept in results/throughput/.
+"""Throughput of the attached probe, the same cases every time, kept in results/throughput/.
 
     uv run tools/throughput.py run --label gcc --serial <serial> --image ../mculink-verge/build/mculink_cjtag.elf
     uv run tools/throughput.py run --label stock --serial <serial> \
         --image <LinkServer>/MCU-LINK/probe_firmware/MCU-LINK_CMSIS-DAP_V3_172.s19
     uv run tools/throughput.py run --label now --serial <serial>    # whatever the probe runs
+    uv run tools/throughput.py run --label gcc-oscan5 --serial <serial> --protocol cjtag --formats oscan5
     uv run tools/throughput.py compare results/throughput/2026-10-20-*.json --clock 50
 
-Two hosts measure each probe. tools/cmsis_dap.py sends one command over and over and times it: the
-commands the emulator models (DAP_TransferBlock and DAP_Transfer on the AP's DRW, reads and writes,
-one word to a full packet), the same on DP registers, which no target slows, at depths 1, 2 and 8
-and at five clocks. tools/swd-throughput times probe-rs's memory reads and writes end to end.
+Over SWD, two hosts measure each probe. tools/cmsis_dap.py sends one command over and over and
+times it: the commands the emulator models (DAP_TransferBlock and DAP_Transfer on the AP's DRW,
+reads and writes, one word to a full packet), the same on DP registers, which no target slows, at
+depths 1, 2 and 8 and at five clocks. tools/swd-throughput times probe-rs's memory reads and writes
+end to end. Over JTAG and cJTAG only probe-rs measures.
 
-MATRIX names the case set. A change to the cases changes the name, and compare refuses to set
-results from two matrices side by side.
+MATRICES names each protocol's case set. A change to the cases changes the name, and compare
+refuses to set results from two matrices side by side.
 
-The target is an MSPM0L1306, held out of deep sleep and halted. The AP cases read and write the
-first 1 KiB of its SRAM, which the AHB-AP's address wraps within, and the page is put back.
+The SWD target is an MSPM0L1306, held out of deep sleep and halted. The AP cases read and write the
+first 1 KiB of its SRAM, which the AHB-AP's address wraps within, and the page is put back. The
+JTAG and cJTAG target is a CC1312R1, and probe-rs works on SRAM from 0x2000_8000, clear of the
+trace source's control block at its start (mculink-verge tools/swo_target).
 
 `--image` flashes the probe through verge (`--verge` names its binary) and records verge's version.
+`--formats` holds our firmware to those cJTAG formats for the run and offers every format again
+afterwards.
 """
 
 import argparse
@@ -49,7 +55,10 @@ REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RESULTS = os.path.join(REPO, "results", "throughput")
 SWD_THROUGHPUT = os.path.join(REPO, "tools", "swd-throughput")
 
-MATRIX = "swd-1"
+MATRICES = {"swd": "swd-1", "jtag": "jtag-1", "cjtag": "cjtag-1"}
+# Where probe-rs reads and writes, by protocol: the start of the MSPM0L1306's SRAM, and the
+# CC1312R1's past the trace source's control block and data.
+PROBE_RS_BASE = {"swd": 0x2000_0000, "jtag": 0x2000_8000, "cjtag": 0x2000_8000}
 CLOCKS_MHZ = (1, 5, 10, 20, 50)
 DEPTHS = (1, 2, 8)
 REPEATS = 3
@@ -318,7 +327,7 @@ def custom_host(probe: dap.Probe, serial: str, ours: bool, quick: bool, progress
     return results, target
 
 
-def probe_rs(serial: str, chip: str, quick: bool, console: Console) -> dict:
+def probe_rs(serial: str, chip: str, protocol: str, quick: bool, console: Console) -> dict:
     build = subprocess.run(["cargo", "build", "--release", "--quiet", "--manifest-path",
                             os.path.join(SWD_THROUGHPUT, "Cargo.toml")])
     if build.returncode != 0:
@@ -327,6 +336,7 @@ def probe_rs(serial: str, chip: str, quick: bool, console: Console) -> dict:
     binary = os.path.join(SWD_THROUGHPUT, "target", "release", "swd-throughput")
     sweep = ["--speeds", "10000", "--sizes", "64,1024", "--repeats", "3"] if quick else []
     run = subprocess.run([binary, "--probe", f"{USB_ID[0]:04x}:{USB_ID[1]:04x}:{serial}", "--chip", chip,
+                          "--protocol", protocol, "--base", f"0x{PROBE_RS_BASE[protocol]:08x}",
                           "--csv", csv_path, *sweep],
                          stdout=subprocess.PIPE, text=True)
     console.print(run.stdout, markup=False, highlight=False)
@@ -381,6 +391,13 @@ def flash(verge: str, elf: str, serial: str) -> None:
         raise SystemExit(f"verge did not bring the image up:\n{flashed.stdout}{flashed.stderr}")
 
 
+def limit(verge: str, serial: str, offer: list[str]) -> None:
+    """Set the cJTAG formats our firmware offers a host, through verge."""
+    done = subprocess.run([verge, "cjtag", "--serial", serial, *offer], capture_output=True, text=True)
+    if done.returncode != 0:
+        raise SystemExit(f"verge cjtag {' '.join(offer)} failed:\n{done.stdout}{done.stderr}")
+
+
 def cmd_run(args) -> int:
     global USB_ID
     vid, _, pid = args.usb_id.partition(":")
@@ -404,19 +421,33 @@ def cmd_run(args) -> int:
         reply = probe.command(bytes([DAP_VENDOR_STAGE, args.stage]))
         if reply[1] != 0 or reply[2] != args.stage:
             raise SystemExit(f"vendor 0x8C answered {reply[:3].hex()}; this build may not stage commands")
+    if args.formats is not None and firmware["ours"] is None:
+        raise SystemExit("--formats needs our firmware")
+    chip = args.chip or ("MSPM0L1306" if args.protocol == "swd" else "CC1312R")
+    matrix = MATRICES[args.protocol]
     console = Console(stderr=True)
     record = {
-        "matrix": f"{MATRIX}-quick" if args.quick else MATRIX, "label": args.label, "note": args.note,
+        "matrix": f"{matrix}-quick" if args.quick else matrix, "label": args.label, "note": args.note,
         "taken": datetime.datetime.now().astimezone().isoformat(timespec="seconds"),
-        "serial": args.serial, "usb_id": args.usb_id, "chip": args.chip, "firmware": firmware, "provenance": provenance(args.elf, args.verge),
-        "settings": {"clocks_mhz": CLOCKS_MHZ, "depths": DEPTHS, "repeats": REPEATS, "run_seconds": RUN_SECONDS,
-                     "stage": args.stage},
+        "serial": args.serial, "usb_id": args.usb_id, "chip": chip, "firmware": firmware, "provenance": provenance(args.elf, args.verge),
+        "settings": {"protocol": args.protocol, "formats": args.formats, "clocks_mhz": CLOCKS_MHZ, "depths": DEPTHS,
+                     "repeats": REPEATS, "run_seconds": RUN_SECONDS, "stage": args.stage},
     }
-    with Progress(TextColumn("{task.description}"), BarColumn(), MofNCompleteColumn(), TimeElapsedColumn(),
-                  console=console) as progress:
-        record["custom_host"], record["target"] = custom_host(probe, args.serial, firmware["ours"] is not None,
-                                                              args.quick, progress, console)
-    record["probe_rs"] = None if args.no_probe_rs else probe_rs(args.serial, args.chip, args.quick, console)
+    if args.protocol == "swd":
+        with Progress(TextColumn("{task.description}"), BarColumn(), MofNCompleteColumn(), TimeElapsedColumn(),
+                      console=console) as progress:
+            record["custom_host"], record["target"] = custom_host(probe, args.serial, firmware["ours"] is not None,
+                                                                  args.quick, progress, console)
+    else:
+        probe.release()
+        record["custom_host"], record["target"] = [], None
+    if args.formats is not None:
+        limit(args.verge, args.serial, ["--formats", args.formats])
+    try:
+        record["probe_rs"] = None if args.no_probe_rs else probe_rs(args.serial, chip, args.protocol, args.quick, console)
+    finally:
+        if args.formats is not None:
+            limit(args.verge, args.serial, ["--all"])
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w") as f:
         json.dump(record, f, indent=1)
@@ -485,7 +516,9 @@ def main() -> int:
     run.add_argument("--serial", required=True, help="the probe to measure, as it is before --image flashes it")
     run.add_argument("--usb-id", default="1fc9:0143",
                      help="VID:PID in hex, for a probe that does not enumerate as an MCU-Link")
-    run.add_argument("--chip", default="MSPM0L1306")
+    run.add_argument("--protocol", choices=tuple(MATRICES), default="swd")
+    run.add_argument("--chip", help="probe-rs's name for the target; MSPM0L1306 over SWD, CC1312R otherwise")
+    run.add_argument("--formats", help="ours, cJTAG: the formats to offer, as verge cjtag --formats takes them")
     run.add_argument("--note", default="", help="free text kept with the result, such as the name of NXP's image")
     run.add_argument("--out", help="result path; default results/throughput/<date>-<label>.json")
     run.add_argument("--force", action="store_true", help="replace an existing result file")

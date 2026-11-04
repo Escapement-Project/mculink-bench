@@ -366,6 +366,10 @@ fn attach(cli: &Cli, speed_khz: u32) -> anyhow::Result<(Session, u32)> {
     };
 
     let mut probe = lister.open(selector)?;
+    if cli.protocol == Protocol::Cjtag {
+        // probe-rs frames cJTAG over CMSIS-DAP only through a probe's own vendor commands.
+        verge_probe::install_cjtag_support(&mut probe)?;
+    }
     probe.select_protocol(cli.protocol.wire_protocol())?;
     let actual = probe.set_speed(speed_khz)?;
     let session = probe.attach(

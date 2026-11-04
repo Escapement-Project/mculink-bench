@@ -11,6 +11,9 @@ Select `--protocol swd`, `jtag` or `cjtag`. The default is SWD. Use separate res
 protocol. The report only shows the ideal wire ceiling for SWD because its clock model is specific
 to SWD transactions.
 
+cJTAG needs a probe running Verge. probe-rs frames cJTAG over CMSIS-DAP only through a probe's own
+vendor commands, and verge-probe supplies Verge's.
+
 `tools/throughput.py` runs it as one half of a firmware comparison and keeps the result in
 `results/throughput/`. probe-rs is pinned to a revision of the fork that carries mculink-verge's
 CMSIS-DAP changes. Record pin changes when comparing results; host changes can affect throughput.
