@@ -251,6 +251,18 @@ def custom_host(probe: dap.Probe, serial: str, ours: bool, quick: bool, run_seco
     results = []
     clock = None
     clock_errors = {}
+    page_dirty = False
+
+    def reattach(probe: dap.Probe) -> dap.Probe:
+        """A fresh attach at the current clock. A clock that no longer attaches fails its other cases."""
+        probe.release()
+        probe = open_probe(serial)
+        try:
+            attach(probe, clock * 1_000_000, ours)
+        except RuntimeError as error:
+            clock_errors[clock] = f"could not attach again at {clock} MHz: {error}"
+        return probe
+
     try:
         for case in todo:
             if case["clock_mhz"] in clock_errors:
@@ -261,6 +273,10 @@ def custom_host(probe: dap.Probe, serial: str, ours: bool, quick: bool, run_seco
                 clock = case["clock_mhz"]
                 try:
                     attach(probe, clock * 1_000_000, ours)
+                    if page_dirty:
+                        # A clock that failed its restore left the page changed; put it back here.
+                        page_io(probe, page)
+                        page_dirty = False
                 except RuntimeError as error:
                     # One unsupported clock must not discard the completed lower-clock cases.
                     message = f"could not attach at {clock} MHz: {error}"
@@ -294,22 +310,22 @@ def custom_host(probe: dap.Probe, serial: str, ours: bool, quick: bool, run_seco
                             raise RuntimeError(run.error)
                 except Exception as error:  # the case fails; the matrix goes on from a fresh attach
                     entry["error"] = str(error)
-                    probe.release()
-                    probe = open_probe(serial)
-                    attach(probe, clock * 1_000_000, ours)
+                    probe = reattach(probe)
                 if case["access"] == "ap-write":
                     # The reads that follow check against the page as it was. A probe that misreads
                     # acknowledges at this clock can fail the restore too: retry it from a fresh
                     # attach, and if it still fails, the read cases record the mismatch.
+                    page_dirty = True
                     for _ in range(3):
+                        if clock in clock_errors:
+                            break
                         try:
                             page_io(probe, page)
+                            page_dirty = False
                             break
                         except Exception as error:
                             console.print(f"{label}: [red]restoring the test page: {error}[/red]")
-                            probe.release()
-                            probe = open_probe(serial)
-                            attach(probe, clock * 1_000_000, ours)
+                            probe = reattach(probe)
             if entry["runs"] and entry["error"] is None:
                 rates = [r["done"] / r["seconds"] for r in entry["runs"]]
                 entry["commands_per_s"] = statistics.median(rates)
