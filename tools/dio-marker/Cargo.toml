@@ -10,10 +10,18 @@ cortex-m = { version = "0.7.10", features = ["inline-asm", "critical-section-sin
 cortex-m-rt = "0.7.7"
 defmt = "1.2.0"
 defmt-rtt = "1.3.1"
-embassy-executor = { git = "https://github.com/CordlessCoder/embassy", rev = "71f54dfee9b170613936fcde2ee26f16f83295c0", version = "0.10.0", features = ["platform-cortex-m", "executor-thread", "defmt"] }
+embassy-executor = { git = "https://github.com/CordlessCoder/embassy", rev = "71f54dfee9b170613936fcde2ee26f16f83295c0", version = "0.10.0", features = ["defmt"] }
 embassy-mspm0 = { git = "https://github.com/CordlessCoder/embassy", rev = "71f54dfee9b170613936fcde2ee26f16f83295c0", version = "0.1.0", features = ["mspm0l1306rhb", "defmt", "rt", "time-driver-any"] }
 embassy-time = { git = "https://github.com/CordlessCoder/embassy", rev = "71f54dfee9b170613936fcde2ee26f16f83295c0", version = "0.5.1", features = ["defmt"] }
 panic-probe = { version = "1.0.0", features = ["print-defmt"] }
+
+[features]
+default = ["shallow-sleep"]
+# embassy-executor's executor, which idles on WFE: between bursts the L1306 draws about a milliamp.
+shallow-sleep = ["embassy-executor/platform-cortex-m", "embassy-executor/executor-thread"]
+# embassy-mspm0's executor, which idles in deep sleep. The two executors both define the pender, so
+# build this one with --no-default-features.
+low-power = ["embassy-mspm0/executor-thread", "embassy-mspm0/low-power"]
 
 [workspace]
 

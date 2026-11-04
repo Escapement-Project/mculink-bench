@@ -297,6 +297,7 @@ dependencies = [
  "critical-section",
  "defmt",
  "embassy-embedded-hal",
+ "embassy-executor",
  "embassy-futures",
  "embassy-hal-internal",
  "embassy-sync",

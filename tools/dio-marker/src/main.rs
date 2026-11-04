@@ -62,8 +62,12 @@ const TOGGLE: bool = match option_env!("MODE") {
     Some(_) => panic!("MODE is marker or toggle"),
 };
 
-#[embassy_executor::main]
-async fn main(_spawner: Spawner) {
+#[cfg_attr(
+    feature = "low-power",
+    embassy_executor::main(executor = "embassy_mspm0::executor::Executor", entry = "cortex_m_rt::entry")
+)]
+#[cfg_attr(not(feature = "low-power"), embassy_executor::main)]
+async fn main(_spawner: Spawner) -> ! {
     let p = embassy_mspm0::init(Default::default());
     let mut marker = Output::new(p.PA12, Level::Low);
     let mut led = Output::new(p.PA26, Level::Low);
