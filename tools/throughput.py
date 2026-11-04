@@ -238,7 +238,7 @@ def timed(probe: dap.Probe, serial: str, case: dict, request: bytes, commands: i
     return dap.pipelined_blocks(probe, request, commands, case["depth"], case["words"]), probe
 
 
-def custom_host(probe: dap.Probe, serial: str, ours: bool, quick: bool, progress: Progress,
+def custom_host(probe: dap.Probe, serial: str, ours: bool, quick: bool, run_seconds: float, progress: Progress,
                 console: Console) -> tuple[list, dict]:
     todo = cases(quick)
     overall = progress.add_task("cmsis_dap.py cases", total=len(todo))
@@ -284,7 +284,7 @@ def custom_host(probe: dap.Probe, serial: str, ours: bool, quick: bool, progress
                     if calibration.error:
                         raise RuntimeError(calibration.error)
                     per = calibration.seconds / calibration.done
-                    commands = max(RUN_COMMANDS[0], min(RUN_COMMANDS[1], int(RUN_SECONDS / per)))
+                    commands = max(RUN_COMMANDS[0], min(RUN_COMMANDS[1], int(run_seconds / per)))
                     entry["commands_per_run"] = commands
                     for _ in range(REPEATS):
                         run, probe = timed(probe, serial, case, request, commands)
@@ -431,13 +431,13 @@ def cmd_run(args) -> int:
         "taken": datetime.datetime.now().astimezone().isoformat(timespec="seconds"),
         "serial": args.serial, "usb_id": args.usb_id, "chip": chip, "firmware": firmware, "provenance": provenance(args.elf, args.verge),
         "settings": {"protocol": args.protocol, "formats": args.formats, "clocks_mhz": CLOCKS_MHZ, "depths": DEPTHS,
-                     "repeats": REPEATS, "run_seconds": RUN_SECONDS, "stage": args.stage},
+                     "repeats": REPEATS, "run_seconds": args.run_seconds, "stage": args.stage},
     }
     if args.protocol == "swd":
         with Progress(TextColumn("{task.description}"), BarColumn(), MofNCompleteColumn(), TimeElapsedColumn(),
                       console=console) as progress:
             record["custom_host"], record["target"] = custom_host(probe, args.serial, firmware["ours"] is not None,
-                                                                  args.quick, progress, console)
+                                                                  args.quick, args.run_seconds, progress, console)
     else:
         probe.release()
         record["custom_host"], record["target"] = [], None
@@ -523,6 +523,8 @@ def main() -> int:
     run.add_argument("--out", help="result path; default results/throughput/<date>-<label>.json")
     run.add_argument("--force", action="store_true", help="replace an existing result file")
     run.add_argument("--quick", action="store_true", help="a few cases, to try the script; not comparable")
+    run.add_argument("--run-seconds", type=float, default=RUN_SECONDS,
+                     help="each timed run's length; shorter for a wire recording of every case, not comparable")
     run.add_argument("--no-probe-rs", action="store_true", help="leave out the probe-rs half")
     run.add_argument("--stage", type=int, choices=(0, 1),
                      help="ours: whether CPU 0 stages commands for CPU 1 (vendor 0x8C); left as it is if absent")
