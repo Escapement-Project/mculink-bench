@@ -6,3 +6,4 @@ tools/dio-marker/target/
 tools/dio-marker/target-toggle/
 tools/dio-marker/target-burst/
 tools/dio-marker/target-low-power/
+tools/flash-timing/target/
