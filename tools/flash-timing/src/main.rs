@@ -43,7 +43,9 @@ impl Protocol {
 }
 
 #[derive(clap::Parser)]
-#[command(about = "Time erase, program and verify of an image through probe-rs, one fresh attach per run")]
+#[command(
+    about = "Time erase, program and verify of an image through probe-rs, one fresh attach per run"
+)]
 struct Cli {
     /// probe-rs's name for the target.
     #[arg(long, default_value = "CC1312R")]
@@ -154,7 +156,9 @@ impl Phases {
                     self.started[slot] = Some(Instant::now());
                 }
             }
-            ProgressEvent::Progress { operation, size, .. } => {
+            ProgressEvent::Progress {
+                operation, size, ..
+            } => {
                 bar.pb_inc(size);
                 if matches!(operation, ProgressOperation::Program) {
                     self.programmed += size;
@@ -206,7 +210,9 @@ fn main() -> anyhow::Result<()> {
     let mut runs = Vec::new();
     for image in &cli.images {
         for &speed_khz in &cli.speeds {
-            let name = image.file_name().map_or_else(String::new, |n| n.to_string_lossy().into_owned());
+            let name = image
+                .file_name()
+                .map_or_else(String::new, |n| n.to_string_lossy().into_owned());
             Span::current().pb_set_message(&format!("{name} {speed_khz} kHz"));
             for repeat in 0..cli.repeats {
                 let mut run = Run {
@@ -216,7 +222,9 @@ fn main() -> anyhow::Result<()> {
                     ..Run::default()
                 };
                 let bar = info_span!(parent: &Span::current(), "run");
-                bar.pb_set_style(&ProgressStyle::with_template("  {msg} {wide_bar} {bytes}/{total_bytes}")?);
+                bar.pb_set_style(&ProgressStyle::with_template(
+                    "  {msg} {wide_bar} {bytes}/{total_bytes}",
+                )?);
                 bar.pb_start();
                 let outcome = run_once(&cli, &selector, image, speed_khz, &mut run, &bar);
                 drop(bar);
@@ -226,7 +234,10 @@ fn main() -> anyhow::Result<()> {
                     warn!("{name} {speed_khz} kHz run {repeat}: {error:#}");
                     run.error = Some(format!("{error:#}"));
                 } else {
-                    debug!("{name} {speed_khz} kHz run {repeat}: {:.3} s", run.total_s.unwrap_or(0.0));
+                    debug!(
+                        "{name} {speed_khz} kHz run {repeat}: {:.3} s",
+                        run.total_s.unwrap_or(0.0)
+                    );
                 }
                 runs.push(run);
                 // A clock that fails once is a result about that clock. The rest of its runs would
@@ -279,7 +290,10 @@ fn run_once(
 
     let attach = Instant::now();
     let mut session = probe
-        .attach(TargetSelector::Unspecified(cli.chip.clone()), Permissions::default())
+        .attach(
+            TargetSelector::Unspecified(cli.chip.clone()),
+            Permissions::default(),
+        )
         .context("attach")?;
     run.attach_s = Some(attach.elapsed().as_secs_f64());
 
@@ -320,7 +334,9 @@ fn summarise(cli: &Cli, runs: &[Run]) {
         cli.label
     );
     for image in &cli.images {
-        let name = image.file_name().map_or_else(String::new, |n| n.to_string_lossy().into_owned());
+        let name = image
+            .file_name()
+            .map_or_else(String::new, |n| n.to_string_lossy().into_owned());
         for &speed_khz in &cli.speeds {
             let here: Vec<&Run> = runs
                 .iter()
