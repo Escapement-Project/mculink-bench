@@ -1,0 +1,1925 @@
+{
+ "matrix": "flash-1",
+ "label": "flasher-standalone-readback",
+ "note": "Times are the Flasher's own; host_s is quantised to 0.2 s by the serial read timeout.",
+ "taken": "2026-11-05T12:26:21+00:00",
+ "probe": {
+  "kind": "SEGGER Flasher ARM",
+  "serial": "100000001",
+  "usb_id": "1366:0105",
+  "hardware": "V5.00",
+  "firmware": "J-Link / Flasher ARM V5 compiled Oct 28 2026 15:35:43",
+  "licences": [
+   "JFlash",
+   "GDB"
+  ]
+ },
+ "host": "Flasher stand-alone (flasher/standalone_sweep.py)",
+ "chip": "CC1312R1F3 (probe-rs: CC1312R)",
+ "settings": {
+  "interface": "jtag+cjtag",
+  "cjtag_format": "cjtag: most likely OScan1 (see flasher-jflash-crc)",
+  "clocks_mhz": [
+   1,
+   4,
+   10,
+   20,
+   30,
+   50
+  ],
+  "repeats": 5,
+  "verify": "read back over the wire (J-Flash 'Complete data', VerifyType 2)",
+  "erase": "sectors the image covers (EraseType 1), blank check before erase, blank data skipped",
+  "after_a_failure": "the rest of that clock's runs are skipped"
+ },
+ "images": {
+  "itm_counter.hex": {
+   "sha256": "ce8ed870fcf503cde05c64bd11682f8e93ca423f629e1fe1223e26d87dd61393",
+   "bytes": 1220,
+   "range": "0x0-0x4c3",
+   "from": "mculink-verge tools/swo_target build/itm_counter.elf (sha256 97b8275db4408f8b1927bd8a6e0efa5112a43a821844b4e6cbcc6c7bbdd260d7), objcopy -O ihex"
+  },
+  "itm_counter_fill344k.hex": {
+   "sha256": "ac6238fb7f16e38125dc7fe91bc3519e8a90901927c53d4fc756eff80ca24aed",
+   "bytes": 345284,
+   "range": "0x0-0x4c3, 0x2000-0x55fff",
+   "from": "make_images.py: itm_counter.hex plus random.Random(70) bytes 0x2000-0x56000"
+  }
+ },
+ "target": {
+  "wiring": "Flasher 20-pin -> SEGGER Target Supply Adapter (its supply unused) -> SEGGER J-Link Cortex-M 10-pin adapter -> the LaunchPad's 10-pin cable to the CC1312R1",
+  "power": "the LaunchPad's USB, XDS110 JTAG jumpers removed (VTref 3.286-3.289 V); the probe's own target supply off",
+  "analyser": "none attached"
+ },
+ "provenance": {
+  "repo": "bf7e23d at the time, tools/flash-timing uncommitted; the sources are as committed in 8b25382",
+  "sources": {
+   "tools/flash-timing/Cargo.toml": "452fa62cbacfa170c44272e28b65dc9bcd92e40cd667b86f9442a9b971e582e3",
+   "tools/flash-timing/Cargo.lock": "e097835eaf5f15f1d2aac869587bc351ed01b28374ec918b7bca8a28f30a5741",
+   "tools/flash-timing/src/main.rs": "f80defaa959f7246bdf40a2ce5ee6d11005132e945d77c9b50f15b19ad316e8b",
+   "tools/flash-timing/ours_sweep.sh": "74d735de829e80be4847ce85e54607f707a2283c9f1cbd5f93a5eac04194b3fb",
+   "tools/flash-timing/make_images.py": "41fcc0bf17b2acab47f60edc6729930d4b68891491a6b1a9f147ba01c4ddd744",
+   "tools/flash-timing/flasher/jflash_sweep.py": "8d0182a108586055a826226052e7d6cdcc857045e0f815b794415b1f1c68f8b0",
+   "tools/flash-timing/flasher/standalone_sweep.py": "2298084ec3b9af3f1bbe0202e816c4355f3c9da08411853c3956e3ae4af77a70",
+   "tools/flash-timing/flasher/jflash/cc1312-jtag.jflash": "773a3c3ecd27fae9875a610208a5505be8cd4aaeb07119e32a28454b03fabd3e",
+   "tools/flash-timing/flasher/jflash/cc1312-cjtag.jflash": "f1d92120f5f04300c8b264012cb191cdd7039d4661ef06b33af0e96988638ee6",
+   "tools/flash-timing/flasher/jflash/cc1312-jtag-readback.jflash": "c247479799650ef0831a43a9edebd313bb334768d7228bec4eaa2e778d4c0ae1",
+   "tools/flash-timing/flasher/jflash/cc1312-cjtag-readback.jflash": "ded609acf0295e0f464ac24190808dda613197e13141b0ddae75b7ca9211bded"
+  },
+  "probe_rs": [
+   "https://github.com/CordlessCoder/probe-rs",
+   "17beb8e80"
+  ],
+  "segger": "J-Link Software and Documentation Pack V9.92 (JLinkExe, JFlashExe)",
+  "host": {
+   "platform": "Linux-7.3.1-1-cachyos-x86_64-with-glibc2.44",
+   "python": "3.12.14"
+  }
+ },
+ "result": {
+  "host": "Flasher ARM stand-alone, #AUTO over VCOM, J-Flash V9.92 -download",
+  "probe": "Flasher ARM 100000001",
+  "runs": [
+   {
+    "interface": "cjtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 1000,
+    "repeat": 0,
+    "host_s": 0.6007,
+    "flasher": {
+     "total": 0.447,
+     "erase": 0.029,
+     "prog": 0.046,
+     "verify": 0.055
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 0.447s, Erase 0.029s, Prog 0.046s, Verify 0.055s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 1000,
+    "repeat": 1,
+    "host_s": 0.6009,
+    "flasher": {
+     "total": 0.447,
+     "erase": 0.028,
+     "prog": 0.046,
+     "verify": 0.055
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 0.447s, Erase 0.028s, Prog 0.046s, Verify 0.055s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 1000,
+    "repeat": 2,
+    "host_s": 0.6007,
+    "flasher": {
+     "total": 0.447,
+     "erase": 0.029,
+     "prog": 0.046,
+     "verify": 0.055
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 0.447s, Erase 0.029s, Prog 0.046s, Verify 0.055s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 1000,
+    "repeat": 3,
+    "host_s": 0.6007,
+    "flasher": {
+     "total": 0.445,
+     "erase": 0.026,
+     "prog": 0.046,
+     "verify": 0.055
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 0.445s, Erase 0.026s, Prog 0.046s, Verify 0.055s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 1000,
+    "repeat": 4,
+    "host_s": 0.6007,
+    "flasher": {
+     "total": 0.446,
+     "erase": 0.027,
+     "prog": 0.046,
+     "verify": 0.055
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 0.446s, Erase 0.027s, Prog 0.046s, Verify 0.055s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 4000,
+    "repeat": 0,
+    "host_s": 0.4006,
+    "flasher": {
+     "total": 0.224,
+     "erase": 0.021,
+     "prog": 0.012,
+     "verify": 0.019
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 0.224s, Erase 0.021s, Prog 0.012s, Verify 0.019s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 4000,
+    "repeat": 1,
+    "host_s": 0.4004,
+    "flasher": {
+     "total": 0.225,
+     "erase": 0.02,
+     "prog": 0.012,
+     "verify": 0.02
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 0.225s, Erase 0.020s, Prog 0.012s, Verify 0.020s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 4000,
+    "repeat": 2,
+    "host_s": 0.4004,
+    "flasher": {
+     "total": 0.224,
+     "erase": 0.021,
+     "prog": 0.012,
+     "verify": 0.019
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 0.224s, Erase 0.021s, Prog 0.012s, Verify 0.019s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 4000,
+    "repeat": 3,
+    "host_s": 0.4004,
+    "flasher": {
+     "total": 0.225,
+     "erase": 0.02,
+     "prog": 0.012,
+     "verify": 0.02
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 0.225s, Erase 0.020s, Prog 0.012s, Verify 0.020s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 4000,
+    "repeat": 4,
+    "host_s": 0.4004,
+    "flasher": {
+     "total": 0.224,
+     "erase": 0.021,
+     "prog": 0.012,
+     "verify": 0.019
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 0.224s, Erase 0.021s, Prog 0.012s, Verify 0.019s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 10000,
+    "repeat": 0,
+    "host_s": 0.4004,
+    "flasher": {
+     "total": 0.194,
+     "erase": 0.021,
+     "prog": 0.006,
+     "verify": 0.012
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 0.194s, Erase 0.021s, Prog 0.006s, Verify 0.012s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 10000,
+    "repeat": 1,
+    "host_s": 0.4004,
+    "flasher": {
+     "total": 0.195,
+     "erase": 0.021,
+     "prog": 0.006,
+     "verify": 0.012
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 0.195s, Erase 0.021s, Prog 0.006s, Verify 0.012s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 10000,
+    "repeat": 2,
+    "host_s": 0.4004,
+    "flasher": {
+     "total": 0.193,
+     "erase": 0.02,
+     "prog": 0.005,
+     "verify": 0.012
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 0.193s, Erase 0.020s, Prog 0.005s, Verify 0.012s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 10000,
+    "repeat": 3,
+    "host_s": 0.4004,
+    "flasher": {
+     "total": 0.193,
+     "erase": 0.02,
+     "prog": 0.005,
+     "verify": 0.012
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 0.193s, Erase 0.020s, Prog 0.005s, Verify 0.012s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 10000,
+    "repeat": 4,
+    "host_s": 0.4009,
+    "flasher": {
+     "total": 0.193,
+     "erase": 0.02,
+     "prog": 0.005,
+     "verify": 0.012
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 0.193s, Erase 0.020s, Prog 0.005s, Verify 0.012s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 20000,
+    "repeat": 0,
+    "host_s": 0.4004,
+    "flasher": {},
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#ERR255:Error while flashing"
+    ],
+    "error": "#ERR255:Error while flashing"
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 30000,
+    "repeat": 0,
+    "host_s": 0.6015,
+    "flasher": {},
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#ERR255:Error while flashing"
+    ],
+    "error": "#ERR255:Error while flashing"
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 50000,
+    "repeat": 0,
+    "host_s": 0.6016,
+    "flasher": {},
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#ERR255:Error while flashing"
+    ],
+    "error": "#ERR255:Error while flashing"
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 1000,
+    "repeat": 0,
+    "host_s": 26.8659,
+    "flasher": {
+     "total": 26.641,
+     "erase": 0.949,
+     "prog": 12.617,
+     "verify": 12.757
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 26.641s, Erase 0.949s, Prog 12.617s, Verify 12.757s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 1000,
+    "repeat": 1,
+    "host_s": 26.8574,
+    "flasher": {
+     "total": 26.626,
+     "erase": 0.934,
+     "prog": 12.617,
+     "verify": 12.757
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 26.626s, Erase 0.934s, Prog 12.617s, Verify 12.757s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 1000,
+    "repeat": 2,
+    "host_s": 26.8451,
+    "flasher": {
+     "total": 26.632,
+     "erase": 0.939,
+     "prog": 12.617,
+     "verify": 12.757
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 26.632s, Erase 0.939s, Prog 12.617s, Verify 12.757s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 1000,
+    "repeat": 3,
+    "host_s": 26.8428,
+    "flasher": {
+     "total": 26.636,
+     "erase": 0.943,
+     "prog": 12.618,
+     "verify": 12.757
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 26.636s, Erase 0.943s, Prog 12.618s, Verify 12.757s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 1000,
+    "repeat": 4,
+    "host_s": 26.8451,
+    "flasher": {
+     "total": 26.628,
+     "erase": 0.935,
+     "prog": 12.617,
+     "verify": 12.757
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 26.628s, Erase 0.935s, Prog 12.617s, Verify 12.757s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 4000,
+    "repeat": 0,
+    "host_s": 7.6173,
+    "flasher": {
+     "total": 7.541,
+     "erase": 0.671,
+     "prog": 3.313,
+     "verify": 3.383
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 7.541s, Erase 0.671s, Prog 3.313s, Verify 3.383s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 4000,
+    "repeat": 1,
+    "host_s": 7.6146,
+    "flasher": {
+     "total": 7.549,
+     "erase": 0.679,
+     "prog": 3.313,
+     "verify": 3.383
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 7.549s, Erase 0.679s, Prog 3.313s, Verify 3.383s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 4000,
+    "repeat": 2,
+    "host_s": 7.6147,
+    "flasher": {
+     "total": 7.542,
+     "erase": 0.672,
+     "prog": 3.313,
+     "verify": 3.383
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 7.542s, Erase 0.672s, Prog 3.313s, Verify 3.383s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 4000,
+    "repeat": 3,
+    "host_s": 7.6123,
+    "flasher": {
+     "total": 7.536,
+     "erase": 0.666,
+     "prog": 3.313,
+     "verify": 3.383
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 7.536s, Erase 0.666s, Prog 3.313s, Verify 3.383s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 4000,
+    "repeat": 4,
+    "host_s": 7.6159,
+    "flasher": {
+     "total": 7.539,
+     "erase": 0.669,
+     "prog": 3.313,
+     "verify": 3.383
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 7.539s, Erase 0.669s, Prog 3.313s, Verify 3.383s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 10000,
+    "repeat": 0,
+    "host_s": 4.2101,
+    "flasher": {
+     "total": 4.152,
+     "erase": 0.624,
+     "prog": 1.862,
+     "verify": 1.51
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 4.152s, Erase 0.624s, Prog 1.862s, Verify 1.510s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 10000,
+    "repeat": 1,
+    "host_s": 4.2071,
+    "flasher": {
+     "total": 4.14,
+     "erase": 0.612,
+     "prog": 1.862,
+     "verify": 1.511
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 4.140s, Erase 0.612s, Prog 1.862s, Verify 1.511s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 10000,
+    "repeat": 2,
+    "host_s": 4.2077,
+    "flasher": {
+     "total": 4.155,
+     "erase": 0.627,
+     "prog": 1.862,
+     "verify": 1.51
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 4.155s, Erase 0.627s, Prog 1.862s, Verify 1.510s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 10000,
+    "repeat": 3,
+    "host_s": 4.207,
+    "flasher": {
+     "total": 4.15,
+     "erase": 0.622,
+     "prog": 1.862,
+     "verify": 1.51
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 4.150s, Erase 0.622s, Prog 1.862s, Verify 1.510s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 10000,
+    "repeat": 4,
+    "host_s": 4.4082,
+    "flasher": {
+     "total": 4.142,
+     "erase": 0.614,
+     "prog": 1.862,
+     "verify": 1.511
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 4.142s, Erase 0.614s, Prog 1.862s, Verify 1.511s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 20000,
+    "repeat": 0,
+    "host_s": 0.6015,
+    "flasher": {},
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#ERR255:Error while flashing"
+    ],
+    "error": "#ERR255:Error while flashing"
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 30000,
+    "repeat": 0,
+    "host_s": 0.6014,
+    "flasher": {},
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#ERR255:Error while flashing"
+    ],
+    "error": "#ERR255:Error while flashing"
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 50000,
+    "repeat": 0,
+    "host_s": 0.6009,
+    "flasher": {},
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#ERR255:Error while flashing"
+    ],
+    "error": "#ERR255:Error while flashing"
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 1000,
+    "repeat": 0,
+    "host_s": 0.4008,
+    "flasher": {
+     "total": 0.329,
+     "erase": 0.023,
+     "prog": 0.016,
+     "verify": 0.022
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 0.329s, Erase 0.023s, Prog 0.016s, Verify 0.022s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 1000,
+    "repeat": 1,
+    "host_s": 0.4008,
+    "flasher": {
+     "total": 0.329,
+     "erase": 0.023,
+     "prog": 0.016,
+     "verify": 0.022
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 0.329s, Erase 0.023s, Prog 0.016s, Verify 0.022s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 1000,
+    "repeat": 2,
+    "host_s": 0.4009,
+    "flasher": {
+     "total": 0.327,
+     "erase": 0.022,
+     "prog": 0.015,
+     "verify": 0.022
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 0.327s, Erase 0.022s, Prog 0.015s, Verify 0.022s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 1000,
+    "repeat": 3,
+    "host_s": 0.401,
+    "flasher": {
+     "total": 0.327,
+     "erase": 0.021,
+     "prog": 0.016,
+     "verify": 0.022
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 0.327s, Erase 0.021s, Prog 0.016s, Verify 0.022s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 1000,
+    "repeat": 4,
+    "host_s": 0.4007,
+    "flasher": {
+     "total": 0.329,
+     "erase": 0.023,
+     "prog": 0.016,
+     "verify": 0.022
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 0.329s, Erase 0.023s, Prog 0.016s, Verify 0.022s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 4000,
+    "repeat": 0,
+    "host_s": 0.4006,
+    "flasher": {
+     "total": 0.252,
+     "erase": 0.019,
+     "prog": 0.004,
+     "verify": 0.01
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 0.252s, Erase 0.019s, Prog 0.004s, Verify 0.010s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 4000,
+    "repeat": 1,
+    "host_s": 0.4011,
+    "flasher": {
+     "total": 0.252,
+     "erase": 0.019,
+     "prog": 0.004,
+     "verify": 0.01
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 0.252s, Erase 0.019s, Prog 0.004s, Verify 0.010s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 4000,
+    "repeat": 2,
+    "host_s": 0.4007,
+    "flasher": {
+     "total": 0.252,
+     "erase": 0.019,
+     "prog": 0.004,
+     "verify": 0.01
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 0.252s, Erase 0.019s, Prog 0.004s, Verify 0.010s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 4000,
+    "repeat": 3,
+    "host_s": 0.4007,
+    "flasher": {
+     "total": 0.254,
+     "erase": 0.021,
+     "prog": 0.004,
+     "verify": 0.01
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 0.254s, Erase 0.021s, Prog 0.004s, Verify 0.010s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 4000,
+    "repeat": 4,
+    "host_s": 0.4007,
+    "flasher": {
+     "total": 0.254,
+     "erase": 0.021,
+     "prog": 0.004,
+     "verify": 0.01
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 0.254s, Erase 0.021s, Prog 0.004s, Verify 0.010s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 10000,
+    "repeat": 0,
+    "host_s": 0.4009,
+    "flasher": {
+     "total": 0.24,
+     "erase": 0.021,
+     "prog": 0.001,
+     "verify": 0.009
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 0.240s, Erase 0.021s, Prog 0.001s, Verify 0.009s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 10000,
+    "repeat": 1,
+    "host_s": 0.4006,
+    "flasher": {
+     "total": 0.238,
+     "erase": 0.019,
+     "prog": 0.001,
+     "verify": 0.009
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 0.238s, Erase 0.019s, Prog 0.001s, Verify 0.009s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 10000,
+    "repeat": 2,
+    "host_s": 0.4008,
+    "flasher": {
+     "total": 0.24,
+     "erase": 0.021,
+     "prog": 0.001,
+     "verify": 0.009
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 0.240s, Erase 0.021s, Prog 0.001s, Verify 0.009s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 10000,
+    "repeat": 3,
+    "host_s": 0.4006,
+    "flasher": {
+     "total": 0.241,
+     "erase": 0.021,
+     "prog": 0.001,
+     "verify": 0.009
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 0.241s, Erase 0.021s, Prog 0.001s, Verify 0.009s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 10000,
+    "repeat": 4,
+    "host_s": 0.4016,
+    "flasher": {
+     "total": 0.24,
+     "erase": 0.021,
+     "prog": 0.001,
+     "verify": 0.009
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 0.240s, Erase 0.021s, Prog 0.001s, Verify 0.009s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 20000,
+    "repeat": 0,
+    "host_s": 0.4006,
+    "flasher": {
+     "total": 0.237,
+     "erase": 0.018,
+     "prog": 0.002,
+     "verify": 0.008
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 0.237s, Erase 0.018s, Prog 0.002s, Verify 0.008s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 20000,
+    "repeat": 1,
+    "host_s": 0.4006,
+    "flasher": {
+     "total": 0.237,
+     "erase": 0.018,
+     "prog": 0.002,
+     "verify": 0.009
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 0.237s, Erase 0.018s, Prog 0.002s, Verify 0.009s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 20000,
+    "repeat": 2,
+    "host_s": 0.4007,
+    "flasher": {
+     "total": 0.241,
+     "erase": 0.022,
+     "prog": 0.002,
+     "verify": 0.009
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 0.241s, Erase 0.022s, Prog 0.002s, Verify 0.009s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 20000,
+    "repeat": 3,
+    "host_s": 0.4007,
+    "flasher": {
+     "total": 0.237,
+     "erase": 0.018,
+     "prog": 0.002,
+     "verify": 0.008
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 0.237s, Erase 0.018s, Prog 0.002s, Verify 0.008s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 20000,
+    "repeat": 4,
+    "host_s": 0.4012,
+    "flasher": {
+     "total": 0.239,
+     "erase": 0.02,
+     "prog": 0.002,
+     "verify": 0.009
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 0.239s, Erase 0.020s, Prog 0.002s, Verify 0.009s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 30000,
+    "repeat": 0,
+    "host_s": 0.4006,
+    "flasher": {},
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#ERR255:Unexpected core ID. (Found: 0x0B0004F7, Expected: 0x4BA00477)"
+    ],
+    "error": "#ERR255:Unexpected core ID. (Found: 0x0B0004F7, Expected: 0x4BA00477)"
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 50000,
+    "repeat": 0,
+    "host_s": 0.2003,
+    "flasher": {},
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#ERR255:Cannot connect to CPU. Target interface speed too high?"
+    ],
+    "error": "#ERR255:Cannot connect to CPU. Target interface speed too high?"
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 1000,
+    "repeat": 0,
+    "host_s": 9.4209,
+    "flasher": {
+     "total": 9.366,
+     "erase": 0.699,
+     "prog": 4.162,
+     "verify": 4.237
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 9.366s, Erase 0.699s, Prog 4.162s, Verify 4.237s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 1000,
+    "repeat": 1,
+    "host_s": 9.621,
+    "flasher": {
+     "total": 9.364,
+     "erase": 0.697,
+     "prog": 4.163,
+     "verify": 4.237
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 9.364s, Erase 0.697s, Prog 4.163s, Verify 4.237s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 1000,
+    "repeat": 2,
+    "host_s": 9.6163,
+    "flasher": {
+     "total": 9.36,
+     "erase": 0.692,
+     "prog": 4.162,
+     "verify": 4.237
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 9.360s, Erase 0.692s, Prog 4.162s, Verify 4.237s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 1000,
+    "repeat": 3,
+    "host_s": 9.4139,
+    "flasher": {
+     "total": 9.375,
+     "erase": 0.708,
+     "prog": 4.162,
+     "verify": 4.237
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 9.375s, Erase 0.708s, Prog 4.162s, Verify 4.237s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 1000,
+    "repeat": 4,
+    "host_s": 9.4158,
+    "flasher": {
+     "total": 9.352,
+     "erase": 0.685,
+     "prog": 4.162,
+     "verify": 4.237
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 9.352s, Erase 0.685s, Prog 4.162s, Verify 4.237s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 4000,
+    "repeat": 0,
+    "host_s": 4.0056,
+    "flasher": {
+     "total": 3.801,
+     "erase": 0.605,
+     "prog": 1.856,
+     "verify": 1.121
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 3.801s, Erase 0.605s, Prog 1.856s, Verify 1.121s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 4000,
+    "repeat": 1,
+    "host_s": 4.0058,
+    "flasher": {
+     "total": 3.815,
+     "erase": 0.619,
+     "prog": 1.856,
+     "verify": 1.121
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 3.815s, Erase 0.619s, Prog 1.856s, Verify 1.121s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 4000,
+    "repeat": 2,
+    "host_s": 4.0066,
+    "flasher": {
+     "total": 3.813,
+     "erase": 0.617,
+     "prog": 1.855,
+     "verify": 1.122
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 3.813s, Erase 0.617s, Prog 1.855s, Verify 1.122s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 4000,
+    "repeat": 3,
+    "host_s": 4.0078,
+    "flasher": {
+     "total": 3.813,
+     "erase": 0.617,
+     "prog": 1.856,
+     "verify": 1.121
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 3.813s, Erase 0.617s, Prog 1.856s, Verify 1.121s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 4000,
+    "repeat": 4,
+    "host_s": 4.008,
+    "flasher": {
+     "total": 3.818,
+     "erase": 0.621,
+     "prog": 1.856,
+     "verify": 1.122
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 3.818s, Erase 0.621s, Prog 1.856s, Verify 1.122s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 10000,
+    "repeat": 0,
+    "host_s": 3.2051,
+    "flasher": {
+     "total": 3.153,
+     "erase": 0.594,
+     "prog": 1.852,
+     "verify": 0.499
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 3.153s, Erase 0.594s, Prog 1.852s, Verify 0.499s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 10000,
+    "repeat": 1,
+    "host_s": 3.2061,
+    "flasher": {
+     "total": 3.157,
+     "erase": 0.598,
+     "prog": 1.852,
+     "verify": 0.498
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 3.157s, Erase 0.598s, Prog 1.852s, Verify 0.498s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 10000,
+    "repeat": 2,
+    "host_s": 3.2055,
+    "flasher": {
+     "total": 3.159,
+     "erase": 0.6,
+     "prog": 1.852,
+     "verify": 0.498
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 3.159s, Erase 0.600s, Prog 1.852s, Verify 0.498s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 10000,
+    "repeat": 3,
+    "host_s": 3.2062,
+    "flasher": {
+     "total": 3.162,
+     "erase": 0.604,
+     "prog": 1.851,
+     "verify": 0.498
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 3.162s, Erase 0.604s, Prog 1.851s, Verify 0.498s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 10000,
+    "repeat": 4,
+    "host_s": 3.2068,
+    "flasher": {
+     "total": 3.155,
+     "erase": 0.596,
+     "prog": 1.852,
+     "verify": 0.498
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 3.155s, Erase 0.596s, Prog 1.852s, Verify 0.498s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 20000,
+    "repeat": 0,
+    "host_s": 3.2051,
+    "flasher": {
+     "total": 3.127,
+     "erase": 0.589,
+     "prog": 1.85,
+     "verify": 0.479
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 3.127s, Erase 0.589s, Prog 1.850s, Verify 0.479s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 20000,
+    "repeat": 1,
+    "host_s": 3.2039,
+    "flasher": {
+     "total": 3.126,
+     "erase": 0.589,
+     "prog": 1.85,
+     "verify": 0.479
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 3.126s, Erase 0.589s, Prog 1.850s, Verify 0.479s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 20000,
+    "repeat": 2,
+    "host_s": 3.2042,
+    "flasher": {
+     "total": 3.13,
+     "erase": 0.593,
+     "prog": 1.85,
+     "verify": 0.478
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 3.130s, Erase 0.593s, Prog 1.850s, Verify 0.478s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 20000,
+    "repeat": 3,
+    "host_s": 3.2054,
+    "flasher": {
+     "total": 3.133,
+     "erase": 0.595,
+     "prog": 1.85,
+     "verify": 0.479
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 3.133s, Erase 0.595s, Prog 1.850s, Verify 0.479s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 20000,
+    "repeat": 4,
+    "host_s": 3.204,
+    "flasher": {
+     "total": 3.121,
+     "erase": 0.583,
+     "prog": 1.85,
+     "verify": 0.479
+    },
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#STATUS:ERASING",
+     "#STATUS:PROGRAMMING",
+     "#STATUS:VERIFYING",
+     "#OK (Total 3.121s, Erase 0.583s, Prog 1.850s, Verify 0.479s)"
+    ],
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 30000,
+    "repeat": 0,
+    "host_s": 0.4006,
+    "flasher": {},
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#ERR255:Unexpected core ID. (Found: 0x0B0004F7, Expected: 0x4BA00477)"
+    ],
+    "error": "#ERR255:Unexpected core ID. (Found: 0x0B0004F7, Expected: 0x4BA00477)"
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 50000,
+    "repeat": 0,
+    "host_s": 0.2002,
+    "flasher": {},
+    "replies": [
+     "#ACK",
+     "#STATUS:INITIALIZING",
+     "#STATUS:CONNECTING",
+     "#INFO:App exec mode High Speed not available, fallback to Normal",
+     "#ERR255:Cannot connect to CPU. Target interface speed too high?"
+    ],
+    "error": "#ERR255:Cannot connect to CPU. Target interface speed too high?"
+   }
+  ]
+ }
+}

@@ -1,0 +1,199 @@
+{
+ "matrix": "flash-1",
+ "label": "smoke",
+ "note": "single checks before and between the sweeps",
+ "provenance": {
+  "sources": {
+   "tools/flash-timing/Cargo.toml": "452fa62cbacfa170c44272e28b65dc9bcd92e40cd667b86f9442a9b971e582e3",
+   "tools/flash-timing/Cargo.lock": "e097835eaf5f15f1d2aac869587bc351ed01b28374ec918b7bca8a28f30a5741",
+   "tools/flash-timing/src/main.rs": "f80defaa959f7246bdf40a2ce5ee6d11005132e945d77c9b50f15b19ad316e8b",
+   "tools/flash-timing/ours_sweep.sh": "74d735de829e80be4847ce85e54607f707a2283c9f1cbd5f93a5eac04194b3fb",
+   "tools/flash-timing/make_images.py": "41fcc0bf17b2acab47f60edc6729930d4b68891491a6b1a9f147ba01c4ddd744",
+   "tools/flash-timing/flasher/jflash_sweep.py": "8d0182a108586055a826226052e7d6cdcc857045e0f815b794415b1f1c68f8b0",
+   "tools/flash-timing/flasher/standalone_sweep.py": "2298084ec3b9af3f1bbe0202e816c4355f3c9da08411853c3956e3ae4af77a70",
+   "tools/flash-timing/flasher/jflash/cc1312-jtag.jflash": "773a3c3ecd27fae9875a610208a5505be8cd4aaeb07119e32a28454b03fabd3e",
+   "tools/flash-timing/flasher/jflash/cc1312-cjtag.jflash": "f1d92120f5f04300c8b264012cb191cdd7039d4661ef06b33af0e96988638ee6",
+   "tools/flash-timing/flasher/jflash/cc1312-jtag-readback.jflash": "c247479799650ef0831a43a9edebd313bb334768d7228bec4eaa2e778d4c0ae1",
+   "tools/flash-timing/flasher/jflash/cc1312-cjtag-readback.jflash": "ded609acf0295e0f464ac24190808dda613197e13141b0ddae75b7ca9211bded"
+  },
+  "probe_rs": [
+   "https://github.com/CordlessCoder/probe-rs",
+   "17beb8e80"
+  ],
+  "segger": "J-Link Software and Documentation Pack V9.92 (JLinkExe, JFlashExe)"
+ },
+ "checks": [
+  {
+   "label": "smoke-flasher-probe-rs-jtag",
+   "what": "first run of the tool, before the sweep",
+   "taken": "2026-11-05T10:14:14+00:00",
+   "result": {
+    "label": "smoke-flasher-probe-rs-jtag",
+    "chip": "CC1312R",
+    "probe": "1366:0105:000100000001",
+    "protocol": "jtag",
+    "host": "probe-rs 17beb8e80",
+    "runs": [
+     {
+      "image": "itm_counter.hex",
+      "speed_khz": 1000,
+      "actual_khz": 1000,
+      "repeat": 0,
+      "open_s": 0.014351025,
+      "attach_s": 0.029529554,
+      "erase_s": 0.337235085,
+      "program_s": 0.208459637,
+      "verify_s": 0.137239841,
+      "download_s": 0.683098319,
+      "programmed_bytes": 8192,
+      "reset_s": 0.010982821,
+      "total_s": 0.741521049,
+      "error": null
+     }
+    ]
+   }
+  },
+  {
+   "label": "smoke-ours-probe-rs-jtag",
+   "what": "first run on our probe, before its sweep",
+   "taken": "2026-11-05T11:13:29+00:00",
+   "result": {
+    "label": "smoke-ours-probe-rs-jtag",
+    "chip": "CC1312R",
+    "probe": "1fc9:0143:CJ8C2F60A3",
+    "protocol": "jtag",
+    "host": "probe-rs 17beb8e80",
+    "runs": [
+     {
+      "image": "itm_counter.hex",
+      "speed_khz": 1000,
+      "actual_khz": 1000,
+      "repeat": 0,
+      "open_s": 0.004806612,
+      "attach_s": 0.026451061,
+      "erase_s": 0.212900494,
+      "program_s": 0.131272244,
+      "verify_s": 0.088329709,
+      "download_s": 0.432629214,
+      "programmed_bytes": 8192,
+      "reset_s": 0.007625664,
+      "total_s": 0.474165503,
+      "error": null
+     }
+    ]
+   }
+  },
+  {
+   "label": "smoke-flasher-standalone-crc",
+   "what": "first stand-alone #AUTO, JTAG 1 MHz",
+   "taken": "2026-11-05T10:28:42+00:00",
+   "result": {
+    "host": "Flasher ARM stand-alone, #AUTO over VCOM, J-Flash V9.92 -download",
+    "probe": "Flasher ARM 100000001",
+    "runs": [
+     {
+      "interface": "jtag",
+      "image": "itm_counter.hex",
+      "clock_khz": 1000,
+      "repeat": 0,
+      "host_s": 0.4016,
+      "flasher": {
+       "total": 0.305,
+       "erase": 0.014,
+       "prog": 0.015,
+       "verify": 0.008
+      },
+      "replies": [
+       "#ACK",
+       "#STATUS:INITIALIZING",
+       "#STATUS:CONNECTING",
+       "#INFO:App exec mode High Speed not available, fallback to Normal",
+       "#STATUS:ERASING",
+       "#STATUS:PROGRAMMING",
+       "#STATUS:VERIFYING",
+       "#OK (Total 0.305s, Erase 0.014s, Prog 0.015s, Verify 0.008s)"
+      ],
+      "error": null
+     }
+    ]
+   }
+  },
+  {
+   "label": "smoke-flasher-standalone-cjtag-download",
+   "what": "J-Flash refused the download: a simple JTAG chain configuration is not supported by the Flasher",
+   "taken": "2026-11-05T10:27:01+00:00",
+   "result": {
+    "host": "Flasher ARM stand-alone, #AUTO over VCOM, J-Flash V9.92 -download",
+    "probe": "Flasher ARM 100000001",
+    "runs": [
+     {
+      "interface": "cjtag",
+      "image": "itm_counter.hex",
+      "clock_khz": 1000,
+      "repeat": null,
+      "error": "J-Flash -download exit 1: [' - Preparing DAT file range: 0x00000000 - 0x000004C3 (1220 bytes).', ' - ERROR: Simple configuration of JTAG scan chain is not supported by Flasher. Please use detailed configuration.', ' - J-Flash V9.92 Error: Failed to download files to probe / programmer.', 'J-Flash V9.92 Error: Simple configuration of JTAG scan chain is not supported by Flasher. Please use detailed configuration.', 'Close project', ' - Project closed']"
+     }
+    ]
+   }
+  },
+  {
+   "label": "smoke-flasher-standalone-readback",
+   "what": "readback check: verify time follows the clock (1 and 10 MHz)",
+   "taken": "2026-11-05T12:14:55+00:00",
+   "result": {
+    "host": "Flasher ARM stand-alone, #AUTO over VCOM, J-Flash V9.92 -download",
+    "probe": "Flasher ARM 100000001",
+    "runs": [
+     {
+      "interface": "jtag",
+      "image": "itm_counter_fill344k.hex",
+      "clock_khz": 1000,
+      "repeat": 0,
+      "host_s": 9.4478,
+      "flasher": {
+       "total": 9.347,
+       "erase": 0.68,
+       "prog": 4.163,
+       "verify": 4.237
+      },
+      "replies": [
+       "#ACK",
+       "#STATUS:INITIALIZING",
+       "#STATUS:CONNECTING",
+       "#INFO:App exec mode High Speed not available, fallback to Normal",
+       "#STATUS:ERASING",
+       "#STATUS:PROGRAMMING",
+       "#STATUS:VERIFYING",
+       "#OK (Total 9.347s, Erase 0.680s, Prog 4.163s, Verify 4.237s)"
+      ],
+      "error": null
+     },
+     {
+      "interface": "jtag",
+      "image": "itm_counter_fill344k.hex",
+      "clock_khz": 10000,
+      "repeat": 0,
+      "host_s": 3.2158,
+      "flasher": {
+       "total": 3.119,
+       "erase": 0.559,
+       "prog": 1.853,
+       "verify": 0.498
+      },
+      "replies": [
+       "#ACK",
+       "#STATUS:INITIALIZING",
+       "#STATUS:CONNECTING",
+       "#INFO:App exec mode High Speed not available, fallback to Normal",
+       "#STATUS:ERASING",
+       "#STATUS:PROGRAMMING",
+       "#STATUS:VERIFYING",
+       "#OK (Total 3.119s, Erase 0.559s, Prog 1.853s, Verify 0.498s)"
+      ],
+      "error": null
+     }
+    ]
+   }
+  }
+ ]
+}

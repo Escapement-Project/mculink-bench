@@ -1,0 +1,975 @@
+{
+ "matrix": "flash-1",
+ "label": "flasher-jflash-crc",
+ "note": "These runs used project copies selecting sectors 0-43; the erase type kept the CCFG sector untouched (read back identical). The script then lacked --projects; that option was added after this sweep and its default keeps the same paths.",
+ "taken": "2026-11-05T10:24:07+00:00",
+ "probe": {
+  "kind": "SEGGER Flasher ARM",
+  "serial": "100000001",
+  "usb_id": "1366:0105",
+  "hardware": "V5.00",
+  "firmware": "J-Link / Flasher ARM V5 compiled Oct 28 2026 15:35:43",
+  "licences": [
+   "JFlash",
+   "GDB"
+  ]
+ },
+ "host": "J-Flash on the PC (flasher/jflash_sweep.py)",
+ "chip": "CC1312R1F3 (probe-rs: CC1312R)",
+ "settings": {
+  "interface": "jtag+cjtag",
+  "cjtag_format": "cjtag: most likely OScan1. A JLinkExe cJTAG connect captured on 2026-10-28 sends STC1 1, STFMT 9 (OScan1), MSC 0 (decoded from the capture). Not rechecked with V9.92 on this Flasher",
+  "clocks_mhz": [
+   1,
+   4,
+   10,
+   20,
+   30,
+   50
+  ],
+  "repeats": 5,
+  "verify": "CRC computed on the target (J-Flash VerifyType 1)",
+  "erase": "sectors the image covers (EraseType 1), blank check before erase, blank data skipped",
+  "after_a_failure": "the rest of that clock's runs are skipped"
+ },
+ "images": {
+  "itm_counter.hex": {
+   "sha256": "ce8ed870fcf503cde05c64bd11682f8e93ca423f629e1fe1223e26d87dd61393",
+   "bytes": 1220,
+   "range": "0x0-0x4c3",
+   "from": "mculink-verge tools/swo_target build/itm_counter.elf (sha256 97b8275db4408f8b1927bd8a6e0efa5112a43a821844b4e6cbcc6c7bbdd260d7), objcopy -O ihex"
+  },
+  "itm_counter_fill344k.hex": {
+   "sha256": "ac6238fb7f16e38125dc7fe91bc3519e8a90901927c53d4fc756eff80ca24aed",
+   "bytes": 345284,
+   "range": "0x0-0x4c3, 0x2000-0x55fff",
+   "from": "make_images.py: itm_counter.hex plus random.Random(70) bytes 0x2000-0x56000"
+  }
+ },
+ "target": {
+  "wiring": "Flasher 20-pin -> SEGGER Target Supply Adapter (its supply unused) -> SEGGER J-Link Cortex-M 10-pin adapter -> the LaunchPad's 10-pin cable to the CC1312R1",
+  "power": "external 3.3 V supply (VTref 3.286 V); the probe's own target supply off",
+  "analyser": "none attached"
+ },
+ "provenance": {
+  "repo": "bf7e23d at the time, tools/flash-timing uncommitted; the sources are as committed in 8b25382",
+  "sources": {
+   "tools/flash-timing/Cargo.toml": "452fa62cbacfa170c44272e28b65dc9bcd92e40cd667b86f9442a9b971e582e3",
+   "tools/flash-timing/Cargo.lock": "e097835eaf5f15f1d2aac869587bc351ed01b28374ec918b7bca8a28f30a5741",
+   "tools/flash-timing/src/main.rs": "f80defaa959f7246bdf40a2ce5ee6d11005132e945d77c9b50f15b19ad316e8b",
+   "tools/flash-timing/ours_sweep.sh": "74d735de829e80be4847ce85e54607f707a2283c9f1cbd5f93a5eac04194b3fb",
+   "tools/flash-timing/make_images.py": "41fcc0bf17b2acab47f60edc6729930d4b68891491a6b1a9f147ba01c4ddd744",
+   "tools/flash-timing/flasher/jflash_sweep.py": "8d0182a108586055a826226052e7d6cdcc857045e0f815b794415b1f1c68f8b0",
+   "tools/flash-timing/flasher/standalone_sweep.py": "2298084ec3b9af3f1bbe0202e816c4355f3c9da08411853c3956e3ae4af77a70",
+   "tools/flash-timing/flasher/jflash/cc1312-jtag.jflash": "773a3c3ecd27fae9875a610208a5505be8cd4aaeb07119e32a28454b03fabd3e",
+   "tools/flash-timing/flasher/jflash/cc1312-cjtag.jflash": "f1d92120f5f04300c8b264012cb191cdd7039d4661ef06b33af0e96988638ee6",
+   "tools/flash-timing/flasher/jflash/cc1312-jtag-readback.jflash": "c247479799650ef0831a43a9edebd313bb334768d7228bec4eaa2e778d4c0ae1",
+   "tools/flash-timing/flasher/jflash/cc1312-cjtag-readback.jflash": "ded609acf0295e0f464ac24190808dda613197e13141b0ddae75b7ca9211bded"
+  },
+  "probe_rs": [
+   "https://github.com/CordlessCoder/probe-rs",
+   "17beb8e80"
+  ],
+  "segger": "J-Link Software and Documentation Pack V9.92 (JLinkExe, JFlashExe)",
+  "host": {
+   "platform": "Linux-7.3.1-1-cachyos-x86_64-with-glibc2.44",
+   "python": "3.12.14"
+  }
+ },
+ "result": {
+  "host": "J-Flash V9.92 on the PC",
+  "probe": "Flasher ARM 100000001",
+  "runs": [
+   {
+    "interface": "jtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 1000,
+    "repeat": 0,
+    "exit": 0,
+    "wall_s": 0.5756,
+    "jflash_s": 0.421,
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 1000,
+    "repeat": 1,
+    "exit": 0,
+    "wall_s": 0.5732,
+    "jflash_s": 0.415,
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 1000,
+    "repeat": 2,
+    "exit": 0,
+    "wall_s": 0.5831,
+    "jflash_s": 0.423,
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 1000,
+    "repeat": 3,
+    "exit": 0,
+    "wall_s": 0.5646,
+    "jflash_s": 0.405,
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 1000,
+    "repeat": 4,
+    "exit": 0,
+    "wall_s": 0.5759,
+    "jflash_s": 0.421,
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 4000,
+    "repeat": 0,
+    "exit": 0,
+    "wall_s": 0.5097,
+    "jflash_s": 0.354,
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 4000,
+    "repeat": 1,
+    "exit": 0,
+    "wall_s": 0.5038,
+    "jflash_s": 0.352,
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 4000,
+    "repeat": 2,
+    "exit": 0,
+    "wall_s": 0.5098,
+    "jflash_s": 0.353,
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 4000,
+    "repeat": 3,
+    "exit": 0,
+    "wall_s": 0.5133,
+    "jflash_s": 0.355,
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 4000,
+    "repeat": 4,
+    "exit": 0,
+    "wall_s": 0.5029,
+    "jflash_s": 0.347,
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 10000,
+    "repeat": 0,
+    "exit": 0,
+    "wall_s": 0.4896,
+    "jflash_s": 0.335,
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 10000,
+    "repeat": 1,
+    "exit": 0,
+    "wall_s": 0.469,
+    "jflash_s": 0.332,
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 10000,
+    "repeat": 2,
+    "exit": 0,
+    "wall_s": 0.4926,
+    "jflash_s": 0.338,
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 10000,
+    "repeat": 3,
+    "exit": 0,
+    "wall_s": 0.4931,
+    "jflash_s": 0.334,
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 10000,
+    "repeat": 4,
+    "exit": 0,
+    "wall_s": 0.4963,
+    "jflash_s": 0.338,
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 20000,
+    "repeat": 0,
+    "exit": 0,
+    "wall_s": 0.468,
+    "jflash_s": 0.323,
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 20000,
+    "repeat": 1,
+    "exit": 0,
+    "wall_s": 0.5001,
+    "jflash_s": 0.343,
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 20000,
+    "repeat": 2,
+    "exit": 0,
+    "wall_s": 0.475,
+    "jflash_s": 0.316,
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 20000,
+    "repeat": 3,
+    "exit": 0,
+    "wall_s": 0.4993,
+    "jflash_s": 0.349,
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 20000,
+    "repeat": 4,
+    "exit": 0,
+    "wall_s": 0.4852,
+    "jflash_s": 0.333,
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 30000,
+    "repeat": 0,
+    "exit": 1,
+    "wall_s": 0.4545,
+    "jflash_s": null,
+    "error": [
+     "Read: 0x60000D78 6000004F",
+     "Failed to prepare for programming.",
+     "Failed to download RAMCode!",
+     "Failed to auto program target",
+     "Disconnecting ...",
+     " - Disconnected",
+     "Close project",
+     " - Project closed"
+    ]
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 50000,
+    "repeat": 0,
+    "exit": 1,
+    "wall_s": 0.6508,
+    "jflash_s": null,
+    "error": [
+     " - Checking if selected data fits into selected flash sectors.",
+     " - ERROR: Failed to auto program target",
+     "J-Flash V9.92 Error: Bad JTAG communication: Write to IR: Expected 0x1, got 0x3 (TAP Command : 14) @ Off 0x5.",
+     "Failed to auto program target",
+     "Disconnecting ...",
+     " - Disconnected",
+     "Close project",
+     " - Project closed"
+    ]
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 1000,
+    "repeat": 0,
+    "exit": 0,
+    "wall_s": 5.2789,
+    "jflash_s": 5.111,
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 1000,
+    "repeat": 1,
+    "exit": 0,
+    "wall_s": 5.2948,
+    "jflash_s": 5.123,
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 1000,
+    "repeat": 2,
+    "exit": 0,
+    "wall_s": 5.2692,
+    "jflash_s": 5.108,
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 1000,
+    "repeat": 3,
+    "exit": 0,
+    "wall_s": 5.2927,
+    "jflash_s": 5.123,
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 1000,
+    "repeat": 4,
+    "exit": 0,
+    "wall_s": 5.2992,
+    "jflash_s": 5.129,
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 4000,
+    "repeat": 0,
+    "exit": 0,
+    "wall_s": 3.0591,
+    "jflash_s": 2.895,
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 4000,
+    "repeat": 1,
+    "exit": 0,
+    "wall_s": 3.085,
+    "jflash_s": 2.913,
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 4000,
+    "repeat": 2,
+    "exit": 0,
+    "wall_s": 3.0829,
+    "jflash_s": 2.906,
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 4000,
+    "repeat": 3,
+    "exit": 0,
+    "wall_s": 3.0858,
+    "jflash_s": 2.917,
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 4000,
+    "repeat": 4,
+    "exit": 0,
+    "wall_s": 3.0666,
+    "jflash_s": 2.897,
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 10000,
+    "repeat": 0,
+    "exit": 0,
+    "wall_s": 3.0331,
+    "jflash_s": 2.873,
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 10000,
+    "repeat": 1,
+    "exit": 0,
+    "wall_s": 3.0388,
+    "jflash_s": 2.872,
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 10000,
+    "repeat": 2,
+    "exit": 0,
+    "wall_s": 3.0529,
+    "jflash_s": 2.883,
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 10000,
+    "repeat": 3,
+    "exit": 0,
+    "wall_s": 3.0517,
+    "jflash_s": 2.88,
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 10000,
+    "repeat": 4,
+    "exit": 0,
+    "wall_s": 3.0444,
+    "jflash_s": 2.876,
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 20000,
+    "repeat": 0,
+    "exit": 0,
+    "wall_s": 3.0344,
+    "jflash_s": 2.863,
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 20000,
+    "repeat": 1,
+    "exit": 0,
+    "wall_s": 3.0421,
+    "jflash_s": 2.874,
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 20000,
+    "repeat": 2,
+    "exit": 0,
+    "wall_s": 3.0323,
+    "jflash_s": 2.87,
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 20000,
+    "repeat": 3,
+    "exit": 0,
+    "wall_s": 3.0318,
+    "jflash_s": 2.864,
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 20000,
+    "repeat": 4,
+    "exit": 0,
+    "wall_s": 3.037,
+    "jflash_s": 2.867,
+    "error": null
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 30000,
+    "repeat": 0,
+    "exit": 1,
+    "wall_s": 0.4746,
+    "jflash_s": null,
+    "error": [
+     "Read: 0x60000D78 6000004F",
+     "Failed to prepare for programming.",
+     "Failed to download RAMCode!",
+     "Failed to auto program target",
+     "Disconnecting ...",
+     " - Disconnected",
+     "Close project",
+     " - Project closed"
+    ]
+   },
+   {
+    "interface": "jtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 50000,
+    "repeat": 0,
+    "exit": 1,
+    "wall_s": 0.6871,
+    "jflash_s": null,
+    "error": [
+     " - Checking if selected data fits into selected flash sectors.",
+     " - ERROR: Failed to auto program target",
+     "J-Flash V9.92 Error: Bad JTAG communication: Write to IR: Expected 0x1, got 0x3 (TAP Command : 14) @ Off 0x5.",
+     "Failed to auto program target",
+     "Disconnecting ...",
+     " - Disconnected",
+     "Close project",
+     " - Project closed"
+    ]
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 1000,
+    "repeat": 0,
+    "exit": 0,
+    "wall_s": 0.6952,
+    "jflash_s": 0.534,
+    "error": null
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 1000,
+    "repeat": 1,
+    "exit": 0,
+    "wall_s": 0.7,
+    "jflash_s": 0.546,
+    "error": null
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 1000,
+    "repeat": 2,
+    "exit": 0,
+    "wall_s": 0.6912,
+    "jflash_s": 0.535,
+    "error": null
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 1000,
+    "repeat": 3,
+    "exit": 0,
+    "wall_s": 0.6985,
+    "jflash_s": 0.54,
+    "error": null
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 1000,
+    "repeat": 4,
+    "exit": 0,
+    "wall_s": 0.6906,
+    "jflash_s": 0.529,
+    "error": null
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 4000,
+    "repeat": 0,
+    "exit": 0,
+    "wall_s": 0.4433,
+    "jflash_s": 0.285,
+    "error": null
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 4000,
+    "repeat": 1,
+    "exit": 0,
+    "wall_s": 0.4367,
+    "jflash_s": 0.283,
+    "error": null
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 4000,
+    "repeat": 2,
+    "exit": 0,
+    "wall_s": 0.4407,
+    "jflash_s": 0.285,
+    "error": null
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 4000,
+    "repeat": 3,
+    "exit": 0,
+    "wall_s": 0.4388,
+    "jflash_s": 0.279,
+    "error": null
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 4000,
+    "repeat": 4,
+    "exit": 0,
+    "wall_s": 0.4373,
+    "jflash_s": 0.285,
+    "error": null
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 10000,
+    "repeat": 0,
+    "exit": 0,
+    "wall_s": 0.4148,
+    "jflash_s": 0.252,
+    "error": null
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 10000,
+    "repeat": 1,
+    "exit": 0,
+    "wall_s": 0.4055,
+    "jflash_s": 0.249,
+    "error": null
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 10000,
+    "repeat": 2,
+    "exit": 0,
+    "wall_s": 0.4172,
+    "jflash_s": 0.256,
+    "error": null
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 10000,
+    "repeat": 3,
+    "exit": 0,
+    "wall_s": 0.404,
+    "jflash_s": 0.248,
+    "error": null
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 10000,
+    "repeat": 4,
+    "exit": 0,
+    "wall_s": 0.4008,
+    "jflash_s": 0.252,
+    "error": null
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 20000,
+    "repeat": 0,
+    "exit": 1,
+    "wall_s": 1.0608,
+    "jflash_s": null,
+    "error": [
+     "J-Flash V9.92 Error: InitTarget(): PCode returned with error code -1",
+     "Failed to connect.",
+     "Could not establish a connection to target.",
+     "General troubleshooting guide: https://kb.segger.com/J-Link_Troubleshooting",
+     "Connect failed",
+     "Could not auto program target, not connected",
+     "Close project",
+     " - Project closed"
+    ]
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 30000,
+    "repeat": 0,
+    "exit": 1,
+    "wall_s": 1.1162,
+    "jflash_s": null,
+    "error": [
+     "J-Flash V9.92 Error: InitTarget(): PCode returned with error code -1",
+     "Failed to connect.",
+     "Could not establish a connection to target.",
+     "General troubleshooting guide: https://kb.segger.com/J-Link_Troubleshooting",
+     "Connect failed",
+     "Could not auto program target, not connected",
+     "Close project",
+     " - Project closed"
+    ]
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter.hex",
+    "clock_khz": 50000,
+    "repeat": 0,
+    "exit": 1,
+    "wall_s": 1.1801,
+    "jflash_s": null,
+    "error": [
+     "J-Flash V9.92 Error: InitTarget(): PCode returned with error code -1",
+     "Failed to connect.",
+     "Could not establish a connection to target.",
+     "General troubleshooting guide: https://kb.segger.com/J-Link_Troubleshooting",
+     "Connect failed",
+     "Could not auto program target, not connected",
+     "Close project",
+     " - Project closed"
+    ]
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 1000,
+    "repeat": 0,
+    "exit": 0,
+    "wall_s": 13.5507,
+    "jflash_s": 13.385,
+    "error": null
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 1000,
+    "repeat": 1,
+    "exit": 0,
+    "wall_s": 13.5586,
+    "jflash_s": 13.384,
+    "error": null
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 1000,
+    "repeat": 2,
+    "exit": 0,
+    "wall_s": 13.5481,
+    "jflash_s": 13.378,
+    "error": null
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 1000,
+    "repeat": 3,
+    "exit": 0,
+    "wall_s": 13.5689,
+    "jflash_s": 13.391,
+    "error": null
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 1000,
+    "repeat": 4,
+    "exit": 0,
+    "wall_s": 13.5477,
+    "jflash_s": 13.371,
+    "error": null
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 4000,
+    "repeat": 0,
+    "exit": 0,
+    "wall_s": 4.3406,
+    "jflash_s": 4.186,
+    "error": null
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 4000,
+    "repeat": 1,
+    "exit": 0,
+    "wall_s": 4.3547,
+    "jflash_s": 4.191,
+    "error": null
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 4000,
+    "repeat": 2,
+    "exit": 0,
+    "wall_s": 4.3533,
+    "jflash_s": 4.194,
+    "error": null
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 4000,
+    "repeat": 3,
+    "exit": 0,
+    "wall_s": 4.3613,
+    "jflash_s": 4.19,
+    "error": null
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 4000,
+    "repeat": 4,
+    "exit": 0,
+    "wall_s": 4.3377,
+    "jflash_s": 4.174,
+    "error": null
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 10000,
+    "repeat": 0,
+    "exit": 0,
+    "wall_s": 2.9969,
+    "jflash_s": 2.831,
+    "error": null
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 10000,
+    "repeat": 1,
+    "exit": 0,
+    "wall_s": 2.9971,
+    "jflash_s": 2.829,
+    "error": null
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 10000,
+    "repeat": 2,
+    "exit": 0,
+    "wall_s": 3.0082,
+    "jflash_s": 2.826,
+    "error": null
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 10000,
+    "repeat": 3,
+    "exit": 0,
+    "wall_s": 2.9999,
+    "jflash_s": 2.836,
+    "error": null
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 10000,
+    "repeat": 4,
+    "exit": 0,
+    "wall_s": 2.9958,
+    "jflash_s": 2.837,
+    "error": null
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 20000,
+    "repeat": 0,
+    "exit": 1,
+    "wall_s": 1.052,
+    "jflash_s": null,
+    "error": [
+     "J-Flash V9.92 Error: InitTarget(): PCode returned with error code -1",
+     "Failed to connect.",
+     "Could not establish a connection to target.",
+     "General troubleshooting guide: https://kb.segger.com/J-Link_Troubleshooting",
+     "Connect failed",
+     "Could not auto program target, not connected",
+     "Close project",
+     " - Project closed"
+    ]
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 30000,
+    "repeat": 0,
+    "exit": 1,
+    "wall_s": 1.1322,
+    "jflash_s": null,
+    "error": [
+     "J-Flash V9.92 Error: InitTarget(): PCode returned with error code -1",
+     "Failed to connect.",
+     "Could not establish a connection to target.",
+     "General troubleshooting guide: https://kb.segger.com/J-Link_Troubleshooting",
+     "Connect failed",
+     "Could not auto program target, not connected",
+     "Close project",
+     " - Project closed"
+    ]
+   },
+   {
+    "interface": "cjtag",
+    "image": "itm_counter_fill344k.hex",
+    "clock_khz": 50000,
+    "repeat": 0,
+    "exit": 1,
+    "wall_s": 1.2155,
+    "jflash_s": null,
+    "error": [
+     "J-Flash V9.92 Error: InitTarget(): PCode returned with error code -1",
+     "Failed to connect.",
+     "Could not establish a connection to target.",
+     "General troubleshooting guide: https://kb.segger.com/J-Link_Troubleshooting",
+     "Connect failed",
+     "Could not auto program target, not connected",
+     "Close project",
+     " - Project closed"
+    ]
+   }
+  ]
+ }
+}

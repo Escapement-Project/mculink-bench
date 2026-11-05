@@ -8,6 +8,8 @@ MCU-Link and target.
   `results/throughput/`.
 - `tools/wireclock.py` compares the SWD clock asked for with logic analyser recordings. Results are
   in `results/wireclock/`.
+- `tools/flash-timing/` times flash programming of a CC1312R1 through probe-rs, and through SEGGER's
+  Flasher ARM for comparison. Results are in `results/flash-timing/`.
 - `page/` builds the results page from the throughput and wire-clock results.
 - `tools/i2c-eeprom/` is firmware that makes an LP-MSPM0L1306 an I2C EEPROM, the target for
   testing a probe's I2C bridge.
@@ -31,6 +33,7 @@ beside its result files, which says what was measured and under what conditions:
 
 | date | what | note |
 | --- | --- | --- |
+| 2026-11-05 | flash programming of a CC1312R1, against SEGGER's Flasher ARM; not on the page | `results/flash-timing/2026-11-05.md` |
 | 2026-10-25 | throughput, GCC and Clang against stock V3.174 (latest) | `results/throughput/2026-10-25-RETAKE.md` |
 | 2026-10-24 | throughput, against stock V3.172; replaced by 2026-10-25 | `results/throughput/2026-10-24-RETAKE.md` |
 | 2026-10-21 | throughput with reads at 50 MHz, a timer path removed the same day | `results/throughput/2026-10-21.md` |
