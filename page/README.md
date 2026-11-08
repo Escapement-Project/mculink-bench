@@ -23,6 +23,13 @@ uv run design/build.py --check ../mculink-bench/page/tokens.css ../mculink-bench
     ../mculink-bench/page/dial.svg ../mculink-bench/page/favicon.ico
 ```
 
+The build inlines the copies, so the page carries them only once it is rebuilt. This fails while
+`out/index.html` differs from a fresh build:
+
+```sh
+uv run python -I build.py --check
+```
+
 The page follows the reader's light or dark system setting until its switch is used, and then
 keeps the choice in the browser. Verge is teal and NXP's firmware blue. A reference probe is grey,
 told apart by its marker and name. Line patterns tell builds apart (Clang solid, GCC dashed) and
