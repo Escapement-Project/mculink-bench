@@ -9,7 +9,8 @@ uv run python -I build.py
 
 The last date opens by default. Earlier dates remain available in the date selector. The build
 writes `out/index.html`. The `out/` folder holds the page and its fonts and nothing else, so it can
-be served as it is. The project's site serves it at `/measurements/`.
+be served as it is. The project's site serves it at `/measurements/`, and the page's header links
+back to the site. Opened from disk, the header links to the published site.
 
 The page's colours, type and line patterns come from the project's design tokens. `tokens.css` and
 `out/fonts/` are copies of the site repository's `static/tokens.css` and `static/fonts/`, and the
