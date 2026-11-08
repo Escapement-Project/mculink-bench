@@ -8,7 +8,22 @@ uv run python -I build.py
 ```
 
 The last date opens by default. Earlier dates remain available in the date selector. The generated
-`index.html` is ready to serve as a static page. `extract.py` can also write the embedded data as
+`index.html`, with the `fonts/` folder beside it, is ready to serve as a static page.
+
+The page's colours, type and line patterns come from the project's design tokens. `tokens.css` and
+`fonts/` are copies of the site repository's `static/tokens.css` and `static/fonts/`, and the build
+inlines `tokens.css` into the page. To check the copies are current, run this from the site
+repository (`escapement-project.github.io`):
+
+```sh
+uv run design/build.py --check ../mculink-bench/page/tokens.css ../mculink-bench/page/fonts/*
+```
+
+The page follows the reader's light or dark system setting until its switch is used, and then
+keeps the choice in the browser. Verge is teal and NXP's firmware blue. A reference probe is grey,
+told apart by its marker and name. Line patterns tell builds apart (Clang solid, GCC dashed) and
+mark wrong reads: past the fastest clock a firmware reads right at, its line is dotted and its
+points hollow. `extract.py` can also write the embedded data as
 JSON:
 
 ```sh

@@ -18,7 +18,12 @@ def main() -> None:
     template = (PAGE / "template.html").read_text()
     if template.count("__DATA__") != 1:
         raise SystemExit("template must contain exactly one __DATA__ placeholder")
-    html = template.replace("__DATA__", json.dumps(data, separators=(",", ":")))
+    if template.count("__TOKENS__") != 1:
+        raise SystemExit("template must contain exactly one __TOKENS__ placeholder")
+    # The design tokens, a copy of the site's static/tokens.css; their fonts load from fonts/ beside
+    # the page.
+    tokens = (PAGE / "tokens.css").read_text()
+    html = template.replace("__TOKENS__", tokens).replace("__DATA__", json.dumps(data, separators=(",", ":")))
     output = PAGE / "index.html"
     output.write_text(html)
     print(f"wrote {output.relative_to(ROOT)} for {', '.join(dates)}")
