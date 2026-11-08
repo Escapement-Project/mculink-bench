@@ -112,6 +112,11 @@ struct Cli {
     /// land in the measurement.
     #[arg(long)]
     no_halt: bool,
+
+    /// Print every probe this probe-rs finds, one a line, tab-separated: VID:PID:serial,
+    /// identifier, HID or bulk; then exit.
+    #[arg(long)]
+    list: bool,
 }
 
 fn parse_hex(text: &str) -> Result<u64, std::num::ParseIntError> {
@@ -137,6 +142,23 @@ impl Point {
 
 fn main() -> anyhow::Result<()> {
     let cli = <Cli as clap::Parser>::parse();
+    if cli.list {
+        for probe in Lister::new().list_all() {
+            println!(
+                "{:04x}:{:04x}:{}\t{}\t{}",
+                probe.vendor_id,
+                probe.product_id,
+                probe.serial_number.as_deref().unwrap_or(""),
+                probe.identifier,
+                if probe.is_hid_interface {
+                    "hid"
+                } else {
+                    "bulk"
+                },
+            );
+        }
+        return Ok(());
+    }
     anyhow::ensure!(cli.sizes.len() >= 2, "two sizes or more, for the fit");
     anyhow::ensure!(cli.repeats > 0, "at least one timed run");
 

@@ -343,13 +343,36 @@ def custom_host(probe: dap.Probe, serial: str, ours: bool, quick: bool, run_seco
     return results, target
 
 
-def probe_rs(serial: str, chip: str, protocol: str, quick: bool, console: Console) -> dict:
+def swd_throughput() -> str:
+    """tools/swd-throughput, built; its path."""
     build = subprocess.run(["cargo", "build", "--release", "--quiet", "--manifest-path",
                             os.path.join(SWD_THROUGHPUT, "Cargo.toml")])
     if build.returncode != 0:
         raise SystemExit("tools/swd-throughput did not build")
+    return os.path.join(SWD_THROUGHPUT, "target", "release", "swd-throughput")
+
+
+def listed(serial: str) -> dict | None:
+    """What probe-rs lists for the probe with --usb-id's VID:PID and this serial: for one
+    cmsis_dap.py cannot open, such as an XDS110 configured as CMSIS-DAP v1 over HID. None if
+    probe-rs does not see it. probe_rs() opens the same VID:PID:serial, so the probe identified is
+    the probe measured."""
+    run = subprocess.run([swd_throughput(), "--list"], capture_output=True, text=True, check=True)
+    found = []
+    for line in run.stdout.splitlines():
+        selector, rest = line.split("\t", 1)
+        identifier, transport = rest.rsplit("\t", 1)
+        vid, pid, listed_serial = selector.split(":", 2)
+        if (int(vid, 16), int(pid, 16)) == USB_ID and listed_serial == serial:
+            found.append({"selector": selector, "identifier": identifier, "transport": transport})
+    if len(found) > 1:
+        raise SystemExit(f"probe-rs lists {len(found)} probes as {found[0]['selector']}; unplug all but one")
+    return found[0] if found else None
+
+
+def probe_rs(serial: str, chip: str, protocol: str, quick: bool, console: Console) -> dict:
+    binary = swd_throughput()
     csv_path = os.path.join(SWD_THROUGHPUT, "target", "last-sweep.csv")
-    binary = os.path.join(SWD_THROUGHPUT, "target", "release", "swd-throughput")
     sweep = ["--speeds", "10000", "--sizes", "64,1024", "--repeats", "3"] if quick else []
     run = subprocess.run([binary, "--probe", f"{USB_ID[0]:04x}:{USB_ID[1]:04x}:{serial}", "--chip", chip,
                           "--protocol", protocol, "--base", f"0x{PROBE_RS_BASE[protocol]:08x}",
@@ -429,8 +452,19 @@ def cmd_run(args) -> int:
         appeared = [p.serial for p in dap.find(None, *USB_ID) if p.serial not in before]
         if args.serial not in appeared and len(appeared) == 1:
             args.serial = appeared[0]
-    probe = open_probe(args.serial)
-    firmware = identify(probe)
+    # A probe with no CMSIS-DAP v2 bulk interface runs probe-rs's half only, identified by probe-rs.
+    # An MCU-Link always has one, ours or stock, so failing to open it is a fault, not a reference.
+    seen = None
+    if not args.elf and USB_ID != (0x1FC9, 0x0143) and not dap.find(args.serial, *USB_ID):
+        seen = listed(args.serial)
+    if seen is not None:
+        if args.protocol == "swd" or args.stage is not None or args.formats is not None:
+            raise SystemExit(f"{args.serial} has no CMSIS-DAP v2 bulk interface ({seen['transport']}): the custom "
+                             "host, --stage and --formats need one; JTAG and cJTAG run through probe-rs alone")
+        probe, firmware = None, {"dap_info": None, "ours": None, "probe_rs_list": seen}
+    else:
+        probe = open_probe(args.serial)
+        firmware = identify(probe)
     if args.stage is not None:
         if firmware["ours"] is None:
             raise SystemExit("--stage needs our firmware")
@@ -455,7 +489,8 @@ def cmd_run(args) -> int:
             record["custom_host"], record["target"] = custom_host(probe, args.serial, firmware["ours"] is not None,
                                                                   args.quick, args.run_seconds, progress, console)
     else:
-        probe.release()
+        if probe is not None:
+            probe.release()
         record["custom_host"], record["target"] = [], None
     if args.formats is not None:
         limit(args.verge, args.serial, ["--formats", args.formats])
