@@ -12,13 +12,15 @@ writes `out/index.html`. The `out/` folder holds the page and its fonts and noth
 be served as it is. The project's site serves it at `/measurements/`, and the page's header links
 back to the site. Opened from disk, the header links to the published site.
 
-The page's colours, type and line patterns come from the project's design tokens. `tokens.css` and
-`out/fonts/` are copies of the site repository's `static/tokens.css` and `static/fonts/`, and the
-build inlines `tokens.css` into the page. To check the copies are current, run this from the site
+The page's colours, type, line patterns, mark and favicon come from the project's design tokens.
+`tokens.css`, `out/fonts/`, `dial.svg` and `favicon.ico` are copies of the site repository's
+`static/tokens.css`, `static/fonts/`, `design/marks/dial.svg` and `static/favicon.ico`. The build
+inlines all but the fonts into the page. To check the copies are current, run this from the site
 repository (`escapement-project.github.io`):
 
 ```sh
-uv run design/build.py --check ../mculink-bench/page/tokens.css ../mculink-bench/page/out/fonts/*
+uv run design/build.py --check ../mculink-bench/page/tokens.css ../mculink-bench/page/out/fonts/* \
+    ../mculink-bench/page/dial.svg ../mculink-bench/page/favicon.ico
 ```
 
 The page follows the reader's light or dark system setting until its switch is used, and then
