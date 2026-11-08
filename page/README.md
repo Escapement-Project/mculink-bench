@@ -1,9 +1,10 @@
 # The results page
 
-Build the standalone page from the committed throughput and wire-clock results:
+Build the standalone page from the committed throughput and wire-clock results, every set
+`sets.json` names, or the dates given:
 
 ```sh
-uv run python -I build.py 2026-10-20 2026-10-21 2026-10-24 2026-10-25
+uv run python -I build.py
 ```
 
 The last date opens by default. Earlier dates remain available in the date selector. The generated
@@ -11,23 +12,31 @@ The last date opens by default. Earlier dates remain available in the date selec
 JSON:
 
 ```sh
-uv run python -I extract.py measurements.json 2026-10-20 2026-10-21 2026-10-24 2026-10-25
+uv run python -I extract.py measurements.json 2026-10-20 2026-10-21 2026-10-24 2026-10-25 2026-11-04
 ```
 
-Every comparison on the page holds the host fixed. Verge, stock and the J-Link Ultra are compared
-through the same probe-rs revision and workload. A probe's own best host is compared only with
-another probe's best host, such as our CMSIS-DAP host against SEGGER's DLL. probe-rs on one probe
-against a vendor's own host on another says more about the hosts than the probes.
+`sets.json` says which result files make up each date's set, by their labels. A set splits into one
+view per wire: SWD, JTAG, and each cJTAG format. A view shows every probe measured on that wire:
+ours built with GCC and with Clang, stock, and any reference probe whose results the set names. A
+reference needs nothing more than a `throughput.py` result with its label in `sets.json`; a probe
+with no CMSIS-DAP bulk interface, such as an XDS110 set up for HID, is measured through probe-rs
+alone. Repeat runs of one probe merge, and the readout gives their range. Runs under energy capture
+are series of their own, off until ticked in the key. The custom host's matrix, the stock failure
+map and the wire-clock section appear on SWD, the only wire they cover.
 
-The headline shows peak 4 KiB probe-rs write throughput as a multiple of stock throughput. Its
-detail gives both rates and requested clocks. The line below uses the same compiler build to
-compare Verge with stock and J-Link Ultra at 10 MHz. Open “Test conditions and firmware details”
-for the target state, run metadata and build IDs. The chart key identifies GCC, Clang and stock.
+Every comparison on the page holds the host fixed. Verge, stock and the reference probes are
+compared through the same probe-rs revision and workload. A probe's own best host is compared only
+with another probe's best host, such as our CMSIS-DAP host against SEGGER's DLL. probe-rs on one
+probe against a vendor's own host on another says more about the hosts than the probes.
+
+The headline shows our peak 4 KiB probe-rs write throughput as a multiple of stock's peak, on the
+wire shown. On a wire stock does not run, it shows our peak instead. The line below compares the
+peak's build with stock and every reference at 10 MHz. Open “Test conditions and firmware details”
+for the target state, run metadata and build IDs.
 
 The J-Link data lives in `reference/jlink-2026-10-22.json`. Its probe-rs results use the same
-revision, 4 KiB workload, target and 10-pin connection as the MCU-Link measurements. They support
-comparison between probes; the runs were collected on different dates. Use the J-Link toggle
-above the read chart to show or hide its probe-rs series at shared rates on both 4 KiB charts. The
-J-Link section below graphs SEGGER's `TestRSpeed` and `TestWSpeed` results in their reported
-KByte/s units. Those commands use a different workload. See the reference note for calculations
-and target state.
+revision, 4 KiB workload, target and 10-pin connection as the 2026-10 MCU-Link measurements. They
+appear as the series "J-Link Ultra · 2026-10-22", off until ticked, only in SWD views measured
+through that probe-rs revision. The J-Link section below
+graphs SEGGER's `TestRSpeed` and `TestWSpeed` results in their reported KByte/s units. Those
+commands use a different workload. See the reference note for calculations and target state.

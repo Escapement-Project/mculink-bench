@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="MCU-Link SWD throughput: Verge built with GCC and Clang, NXP stock firmware, and a J-Link Ultra reference.">
-<title>MCU-Link SWD throughput</title>
+<meta name="description" content="MCU-Link debug throughput over SWD, JTAG and cJTAG: Verge built with GCC and Clang, NXP stock firmware, and reference probes.">
+<title>MCU-Link throughput</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@300;400&display=swap">
@@ -21,6 +21,9 @@
   --gcc: #c4f03c;
   --clang: #36d2ec;
   --stock: #ff8a2b;
+  --ref0: #b8a3ff;
+  --ref1: #ff6fb5;
+  --ref2: #e9d36a;
   --fault: #ff3d3d;
   --ink: #0a0b0c;
   --display: "IBM Plex Sans Condensed", "Arial Narrow", sans-serif;
@@ -29,6 +32,7 @@
   --data: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html, body { background: var(--bg); color: var(--text); }
 body {
   margin: 0;
@@ -67,6 +71,8 @@ body {
 .rail-meta span b { color: var(--text); font-weight: 700; }
 .set-picker { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-left: 1px solid var(--rule); }
 .set-picker select { color: var(--text); background: var(--surface-2); border: 1px solid var(--rule); padding: 7px 9px; font: 500 12px/1.2 var(--label); }
+.views { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; border: 1px solid var(--rule); background: var(--surface); padding: 8px 12px; }
+.views .seg-row button { min-height: 32px; }
 
 /* Headline */
 .hero { display: block; }
@@ -106,6 +112,16 @@ body {
 .chart-key .gcc { border-color: var(--gcc); }
 .chart-key .clang { border-color: var(--clang); border-top-style: dashed; }
 .chart-key .stock { border-color: var(--stock); border-top-style: dotted; }
+.chart-key label { display: inline-flex; align-items: center; gap: 0; white-space: nowrap; cursor: pointer; }
+.chart-key input { margin: 0 6px 0 0; accent-color: var(--text-2); }
+.chart-key label.off { opacity: 0.5; }
+.chart-key .ref0 { border-color: var(--ref0); border-top-style: dashed; }
+.chart-key .ref1 { border-color: var(--ref1); border-top-style: dashed; }
+.chart-key .ref2 { border-color: var(--ref2); border-top-style: dashed; }
+.chart-key .jlink { border-color: var(--ref0); }
+.chart-key .cond { border-top-width: 2px; opacity: 0.7; }
+.chart-key .cond0 { border-top-style: dashed; }
+.chart-key .cond1 { border-top-style: dotted; }
 
 /* Modules */
 .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
@@ -131,6 +147,13 @@ svg.chart { width: 100%; height: auto; display: block; overflow: visible; }
 .key.gcc { border-top: 3px solid var(--gcc); }
 .key.clang { border-top: 3px dashed var(--clang); }
 .key.stock { border-top: 3px dotted var(--stock); }
+.key.ref0 { border-top: 3px dashed var(--ref0); }
+.key.ref1 { border-top: 3px dashed var(--ref1); }
+.key.ref2 { border-top: 3px dashed var(--ref2); }
+.key.jlink { border-top: 3px solid var(--ref0); }
+.key.cond { border-top-width: 2px; opacity: 0.7; }
+.key.cond0 { border-top-style: dashed; }
+.key.cond1 { border-top-style: dotted; }
 
 /* Chart marks */
 .ax { stroke: var(--rule); stroke-width: 1; fill: none; }
@@ -144,6 +167,17 @@ svg.chart { width: 100%; height: auto; display: block; overflow: visible; }
 .mk.gcc { fill: var(--gcc); }
 .mk.clang { fill: var(--surface); stroke: var(--clang); stroke-width: 2; }
 .mk.stock { fill: none; stroke: var(--stock); stroke-width: 2.5; }
+.line.ref0 { stroke: var(--ref0); stroke-dasharray: 9 4 2 4; }
+.line.ref1 { stroke: var(--ref1); stroke-dasharray: 9 4 2 4; }
+.line.ref2 { stroke: var(--ref2); stroke-dasharray: 9 4 2 4; }
+.line.jlink { stroke: var(--ref0); }
+.mk.ref0, .mk.jlink { fill: var(--surface); stroke: var(--ref0); stroke-width: 2.5; }
+.mk.ref1 { fill: var(--surface); stroke: var(--ref1); stroke-width: 2.5; }
+.mk.ref2 { fill: var(--surface); stroke: var(--ref2); stroke-width: 2.5; }
+.line.cond { stroke-width: 1.5; opacity: 0.75; }
+.line.cond0 { stroke-dasharray: 6 3; }
+.line.cond1 { stroke-dasharray: 1.5 3; stroke-linecap: round; }
+.mk.cond { opacity: 0.75; }
 .fail-mark { stroke: var(--fault); stroke-width: 2.5; fill: none; }
 .fail-text { fill: var(--fault); font: 700 10px var(--label); letter-spacing: 0.08em; }
 .sel-rule { stroke: var(--text); stroke-width: 1; stroke-dasharray: 3 3; fill: none; }
@@ -233,9 +267,11 @@ footer code { font: 400 12px/1.4 var(--data); color: var(--text); overflow-wrap:
 <div class="page">
   <header class="rail">
     <div class="rail-id">MCULINK-BENCH</div>
-    <h1>MCU-Link SWD throughput</h1>
+    <h1 id="title">MCU-Link throughput</h1>
     <label class="set-picker micro" id="sets" hidden>Measurement set <select id="set-select"></select></label>
   </header>
+
+  <nav class="views" id="views" aria-label="Wire protocol" hidden></nav>
 
   <section class="hero">
     <div class="reading">
@@ -257,11 +293,9 @@ footer code { font: 400 12px/1.4 var(--data); color: var(--text); overflow-wrap:
   </details>
 
   <section class="grid">
-    <div class="chart-key micro" aria-label="Firmware legend">
-      <span><i class="gcc"></i>GCC</span><span><i class="clang"></i>Clang</span><span><i class="stock"></i>Stock</span>
-    </div>
+    <div class="chart-key micro" id="chart-key" aria-label="Probes shown"></div>
     <article class="module">
-      <div class="mhead"><h2>probe-rs, 4 KiB reads</h2><label class="chart-reference-toggle"><input id="jlink-overlay" type="checkbox">J-Link Ultra · shared rates</label><span class="micro">KiB/s · median of 7 · attach excluded</span></div>
+      <div class="mhead"><h2>probe-rs, 4 KiB reads</h2><span class="micro">KiB/s · median of 7 · attach excluded</span></div>
       <div class="mbody"><div id="c-read"></div></div>
     </article>
     <article class="module">
@@ -269,7 +303,7 @@ footer code { font: 400 12px/1.4 var(--data); color: var(--text); overflow-wrap:
       <div class="mbody"><div id="c-write"></div></div>
     </article>
 
-    <article class="module wide">
+    <article class="module wide" id="m-explore">
       <div class="mhead"><h2>Custom host, SWD command matrix</h2><span class="micro" id="x-caption"></span><span class="micro">KiB/s · median of 3 · ~250 ms</span></div>
       <div class="mbody">
         <div class="controls" id="controls"></div>
@@ -278,11 +312,11 @@ footer code { font: 400 12px/1.4 var(--data); color: var(--text); overflow-wrap:
       </div>
     </article>
 
-    <article class="module">
+    <article class="module" id="m-cliff">
       <div class="mhead"><h2>One-word commands, 8 queued</h2><span class="micro">AP read through DAP_Transfer · commands/s</span></div>
       <div class="mbody"><div id="c-cliff"></div><p id="cliff-text"></p></div>
     </article>
-    <article class="module">
+    <article class="module" id="m-rt">
       <div class="mhead"><h2>Single-word read round trip</h2><span class="micro">probe-rs · <span class="keep">µs</span> · median</span></div>
       <div class="mbody"><div id="c-rt"></div><p id="rt-text"></p></div>
     </article>
@@ -304,12 +338,12 @@ footer code { font: 400 12px/1.4 var(--data); color: var(--text); overflow-wrap:
     </div>
   </section>
 
-  <section class="jlink-head" aria-labelledby="jlink-title">
+  <section class="jlink-head" id="jlink-head" aria-labelledby="jlink-title">
     <div class="micro">SEGGER workload</div>
     <h2 id="jlink-title">J-Link Ultra</h2>
     <p id="jlink-description"></p>
   </section>
-  <section class="jlink-grid" aria-label="J-Link measurements">
+  <section class="jlink-grid" id="jlink-grid" aria-label="J-Link measurements">
     <article class="module">
       <div class="mhead"><h3>JLinkExe · TestRSpeed / TestWSpeed</h3><span class="micro">KByte/s · as reported by SEGGER</span></div>
       <div class="mbody"><div id="jlink-chart"></div><p class="jlink-note" id="jlink-tool-note"></p></div>
@@ -367,7 +401,7 @@ footer code { font: 400 12px/1.4 var(--data); color: var(--text); overflow-wrap:
 
   <footer>
     <div><span class="micro">Results</span><code id="results-path"></code></div>
-    <div><span class="micro">Tools</span><code>throughput.py · swd-throughput · wireclock.py</code></div>
+    <div><span class="micro">Tools</span><code>throughput.py · swd-throughput · wireclock.py · dap.py</code></div>
   </footer>
 </div>
 
@@ -376,8 +410,12 @@ footer code { font: 400 12px/1.4 var(--data); color: var(--text); overflow-wrap:
 const ALL = JSON.parse(document.getElementById("data").textContent);
 let SET = ALL.order[ALL.order.length - 1];
 let D = ALL.sets[SET];
-const FW = ["gcc", "clang", "stock"];
-const NAME = { gcc: "GCC", clang: "Clang", stock: "Stock", jlink: "J-Link Ultra" };
+let VIEW = D.views[0].id;
+let WANT = VIEW;  // the wire last picked, kept through a set that lacks it
+let V = D.views[0];
+// The user's choices of which series to show, by view and series; otherwise conditions and the
+// dated J-Link reference start hidden.
+const shown = {};
 const fmt = (v, d = 0) => v == null ? "–" : v.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
 const relativePercent = (ratio) => {
   const change = Math.round((ratio - 1) * 100);
@@ -396,23 +434,52 @@ function niceStep(v) {
   for (const m of [1, 1.2, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10]) if (m * p >= v) return m * p;
   return 10 * p;
 }
-function marker(svg, fw, x, y) {
-  if (fw === "gcc") el("rect", { x: x - 4, y: y - 4, width: 8, height: 8, class: "mk gcc" }, svg);
-  else if (fw === "clang") el("rect", { x: x - 4, y: y - 4, width: 8, height: 8, class: "mk clang" }, svg);
-  else if (fw === "jlink") el("circle", { cx: x, cy: y, r: 4, class: "mk jlink" }, svg);
-  else el("path", { d: `M${x - 5} ${y}H${x + 5}M${x} ${y - 5}V${y + 5}`, class: "mk stock" }, svg);
+
+/* Series: the current view's probes, and on SWD the J-Link reference measured on 2026-10-22. */
+const JLINK = (() => {
+  const R = ALL.references.jlink;
+  return {
+    id: "jlink", name: `J-Link Ultra · ${R.date}`, role: "reference", style: "jlink", condition: null, external: true,
+    build: R.firmware, product: R.probe, serial: "", packets: null, taken: R.date, runs: 1, custom: {}, fails: [], errors: {},
+    probe_rs: R.probe_rs.flatMap((p) => [
+      { khz: p.mhz * 1000, arm: "read32", bytes: 4096, kib: p.read_kib_s, runs: 1 },
+      { khz: p.mhz * 1000, arm: "write32", bytes: 4096, kib: p.write_kib_s, runs: 1 },
+    ]),
+  };
+})();
+// The J-Link ran through one probe-rs revision; it joins only a view measured through the same one.
+const jlinkHere = () => V.protocol === "swd" && ALL.references.jlink.host_tool.includes(V.meta.probe_rs);
+const allSeries = () => jlinkHere() ? [...V.series, JLINK] : V.series;
+const isShown = (s) => shown[`${SET}|${VIEW}|${s.id}`] ?? !(s.condition || s.external);
+const visible = () => allSeries().filter(isShown);
+const oursShown = () => visible().filter((s) => s.role === "ours" && !s.condition);
+const stockSeries = () => V.series.find((s) => s.role === "stock" && !s.condition);
+const styleOf = (s) => `${s.style}${s.condition ? ` cond cond${(s.cond_index ?? 0) % 2}` : ""}`;
+const short = (s) => s.condition ? s.name : s.name.split(" · ")[0];
+
+function marker(svg, s, x, y) {
+  const cls = `mk ${styleOf(s)}`;
+  if (s.style === "gcc" || s.style === "clang") el("rect", { x: x - 4, y: y - 4, width: 8, height: 8, class: cls }, svg);
+  else if (s.style === "stock") el("path", { d: `M${x - 5} ${y}H${x + 5}M${x} ${y - 5}V${y + 5}`, class: cls }, svg);
+  else if (s.style.startsWith("jlink")) el("circle", { cx: x, cy: y, r: 4, class: "mk jlink" }, svg);
+  else el("path", { d: `M${x} ${y - 5}L${x + 5} ${y}L${x} ${y + 5}L${x - 5} ${y}Z`, class: cls }, svg);
 }
 
-/* A line chart on a log clock axis, with a selectable clock and a readout under it. With `logY` the
-   value axis is logarithmic too, and `ref` draws the clock asked as the diagonal. */
+/* A line chart on a log clock axis, with a selectable clock and a readout under it. Each entry is
+   { s: series, values, failed, rings, ranges }. With `logY` the value axis is logarithmic too, and
+   `ref` draws the clock asked as the diagonal. */
 function chart(host, { xs, series, unit, digits = 0, selected, onSelect, height = 250, width = 640, logY = false, ref = false }) {
   host.textContent = "";
+  if (!xs.length || !series.length) {
+    host.innerHTML = `<p class="micro">Nothing measured here.</p>`;
+    return { show() {} };
+  }
   const W = width, H = height, L = 60, R = 18, T = 14, B = 38;
   const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, class: "chart", role: "img" });
   host.appendChild(svg);
   const lo = Math.log(xs[0] * 0.8), hi = Math.log(xs[xs.length - 1] * 1.25);
   const X = (x) => L + (Math.log(x) - lo) / (hi - lo) * (W - L - R);
-  const vals = series.flatMap((s) => s.values.filter((v) => v != null)).concat(ref ? xs : []);
+  const vals = series.flatMap((e) => e.values.filter((v) => v != null)).concat(ref ? xs : []);
   let Y, ticks;
   if (logY) {
     const ylo = Math.log(Math.min(...vals) * 0.8), yhi = Math.log(Math.max(...vals) * 1.25);
@@ -439,41 +506,49 @@ function chart(host, { xs, series, unit, digits = 0, selected, onSelect, height 
     lastLabel = X(x);
   }
   el("text", { x: W - R, y: H - 4, "text-anchor": "end", class: "axis-name" }, svg).textContent = "REQUESTED MHZ";
-  el("text", { x: L, y: T - 2, class: "axis-name" }, svg).textContent = unit.toUpperCase().replaceAll("\u039C", "\u00B5");
+  el("text", { x: L, y: T - 2, class: "axis-name" }, svg).textContent = unit.toUpperCase().replaceAll("Μ", "µ");
   if (ref) {
     el("path", { d: xs.map((x, i) => `${i ? "L" : "M"}${X(x).toFixed(1)} ${Y(x).toFixed(1)}`).join(""), class: "ref" }, svg);
     const last = xs[xs.length - 1];
     el("text", { x: X(last) - 6, y: Y(last) - 8, "text-anchor": "end", class: "ref-text" }, svg).textContent = "REQUESTED";
   }
   const sel = el("line", { y1: T, y2: H - B, class: "sel-rule" }, svg);
-  for (const s of series) {
+  for (const e of series) {
     let d = "", pen = false;
-    s.values.forEach((v, i) => {
+    e.values.forEach((v, i) => {
       if (v == null) { pen = false; return; }
       d += `${pen ? "L" : "M"}${X(xs[i]).toFixed(1)} ${Y(v).toFixed(1)}`;
       pen = true;
     });
-    if (d) el("path", { d, class: `line ${s.className || s.fw}` }, svg);
+    if (d) el("path", { d, class: `line ${styleOf(e.s)}` }, svg);
   }
-  for (const s of series) s.values.forEach((v, i) => {
-    if (v != null) {
-      marker(svg, s.fw, X(xs[i]), Y(v));
-      if (s.rings && s.rings[i]) el("circle", { cx: X(xs[i]), cy: Y(v), r: 8, class: "ring" }, svg);
-    } else if (s.fw !== "stock" && s.failed && s.failed[i]) {
-      const x = X(xs[i]), y = H - B - 10;
-      el("path", { d: `M${x - 5} ${y - 5}L${x + 5} ${y + 5}M${x + 5} ${y - 5}L${x - 5} ${y + 5}`, class: "fail-mark" }, svg);
-      el("text", { x: x - 9, y: y + 4, "text-anchor": "end", class: "fail-text" }, svg).textContent = `${s.fw.toUpperCase()} FAILED`;
-    }
-  });
+  let failRow = 0;
+  for (const e of series) {
+    let marked = false;
+    e.values.forEach((v, i) => {
+      if (v != null) {
+        marker(svg, e.s, X(xs[i]), Y(v));
+        if (e.rings && e.rings[i]) el("circle", { cx: X(xs[i]), cy: Y(v), r: 8, class: "ring" }, svg);
+      } else if (e.s.role === "ours" && e.failed && e.failed[i]) {
+        const x = X(xs[i]), y = H - B - 10 - 14 * failRow;
+        el("path", { d: `M${x - 5} ${y - 5}L${x + 5} ${y + 5}M${x + 5} ${y - 5}L${x - 5} ${y + 5}`, class: "fail-mark" }, svg);
+        el("text", { x: x - 9, y: y + 4, "text-anchor": "end", class: "fail-text" }, svg).textContent = `${short(e.s).toUpperCase()} FAILED`;
+        marked = true;
+      }
+    });
+    if (marked) failRow++;
+  }
   const readout = document.createElement("div");
   readout.className = "readout";
   host.appendChild(readout);
   function show(i) {
     sel.setAttribute("x1", X(xs[i])); sel.setAttribute("x2", X(xs[i]));
-    readout.innerHTML = `<span class="micro">at ${xs[i]} MHz</span>` + series.map((s) => {
-      const v = s.values[i];
-      const text = v == null ? (s.failed && s.failed[i] ? "failed" : "–") : `${fmt(v, digits)} ${unit}${s.rings && s.rings[i] ? " · from SWDIO" : ""}`;
-      return `<span><i class="key ${s.keyClass || s.fw}"></i>${s.name || NAME[s.fw]} ${text}</span>`;
+    readout.innerHTML = `<span class="micro">at ${xs[i]} MHz</span>` + series.map((e) => {
+      const v = e.values[i], r = e.ranges && e.ranges[i], part = e.partial && e.partial[i];
+      const spread = r && fmt(r[0], digits) !== fmt(r[1], digits) ? ` (${fmt(r[0], digits)}–${fmt(r[1], digits)})` : "";
+      const partly = part ? `failed in ${part.of - part.runs} of ${part.of} runs (${fmt(part.kib ?? part.us, digits)} ${unit} in the ${part.runs > 1 ? "others" : "other"})` : null;
+      const text = v == null ? (partly || (e.failed && e.failed[i] ? "failed" : "–")) : `${fmt(v, digits)}${spread} ${unit}${e.rings && e.rings[i] ? " · from SWDIO" : ""}`;
+      return `<span><i class="key ${styleOf(e.s)}"></i>${e.s.name} ${text}</span>`;
     }).join("");
   }
   xs.forEach((x, i) => {
@@ -489,71 +564,110 @@ function chart(host, { xs, series, unit, digits = 0, selected, onSelect, height 
   return { show };
 }
 
-/* Data access, always into the set on show */
-const PR = (fw, arm, bytes, khz) => (D.probe_rs[fw] || []).find((p) => p.arm === arm && p.bytes === bytes && p.khz === khz);
-const PR_FAILED = (fw, khz) => (D.probe_rs[fw] || []).some((p) => p.arm === "failed" && p.khz === khz);
-const C = (fw, command, access, words, depth, mhz) => (D.custom[fw] || {})[`${command}|${access}|${words}|${depth}|${mhz}`];
-const readAt = (fw, khz) => PR(fw, "read32", 4096, khz)?.kib;
-function peakProbeWrite(firmwares = ["gcc", "clang"]) {
+/* Data access, always into the view on show */
+// A point only some runs completed is not the series' result: PR leaves it out, PART finds it.
+const PART = (s, arm, bytes, khz) => (s?.probe_rs || []).find((p) => p.arm === arm && p.bytes === bytes && p.khz === khz);
+const complete = (p) => p && p.runs === (p.of ?? p.runs);
+const PR = (s, arm, bytes, khz) => { const p = PART(s, arm, bytes, khz); return complete(p) ? p : undefined; };
+const PR_FAILED = (s, khz) => (s?.probe_rs || []).some((p) => p.khz === khz && (p.arm === "failed" || !complete(p)));
+const C = (s, command, access, words, depth, mhz) => (s?.custom || {})[`${command}|${access}|${words}|${depth}|${mhz}`];
+const readAt = (s, khz) => PR(s, "read32", 4096, khz)?.kib;
+function peakWrite(list) {
   let peak = null;
-  for (const fw of firmwares) for (const p of D.probe_rs[fw] || []) {
-    if (p.arm === "write32" && p.bytes === 4096 && (!peak || p.kib > peak.kib)) peak = { fw, khz: p.khz, kib: p.kib };
+  for (const s of list) for (const p of s.probe_rs || []) {
+    if (complete(p) && p.arm === "write32" && p.bytes === 4096 && (!peak || p.kib > peak.kib)) peak = { s, khz: p.khz, kib: p.kib };
   }
   return peak;
 }
-function writeComparisonAt(khz, fw) {
-  const ours = PR(fw, "write32", 4096, khz);
-  const stock = PR("stock", "write32", 4096, khz);
-  const jlink = ALL.references.jlink.probe_rs.find((p) => p.mhz === khz / 1000);
-  if (!ours || !stock || stock.kib <= 0 || !jlink || jlink.write_kib_s <= 0) return null;
-  return {
-    fw,
-    ours: ours.kib,
-    stock: stock.kib,
-    jlink: jlink.write_kib_s,
-    stockGain: ours.kib / stock.kib,
-    jlinkGain: ours.kib / jlink.write_kib_s,
-  };
+const prClocksOf = (list) => [...new Set(list.flatMap((s) => (s.probe_rs || []).filter((p) => (p.arm === "read32" && p.bytes === 4096) || p.arm === "failed").map((p) => p.khz)))].sort((a, b) => a - b);
+// The highest clock our first series and stock both completed, or our highest without stock.
+function comparisonClock() {
+  const first = V.series.find((s) => s.role === "ours" && !s.condition) || V.series[0];
+  const stock = stockSeries();
+  const mine = (first.probe_rs || []).filter((p) => complete(p) && p.arm === "read32" && p.bytes === 4096).map((p) => p.khz).sort((a, b) => a - b);
+  const common = stock ? mine.filter((k) => readAt(stock, k) != null) : mine;
+  return (common.length ? common : mine).at(-1);
 }
-const commonProbeClocks = () => (D.probe_rs.gcc || []).filter((p) => p.arm === "read32" && p.bytes === 4096 && readAt("stock", p.khz) != null).map((p) => p.khz).sort((a, b) => a - b);
-const comparisonClock = () => commonProbeClocks().at(-1);
+
+function renderViews() {
+  $("views").hidden = D.views.length < 2;
+  $("views").innerHTML = `<span class="micro">Wire</span><div class="seg-row">${D.views.map((v) =>
+    `<button type="button" data-view="${v.id}" aria-pressed="${v.id === VIEW}">${v.title}</button>`).join("")}</div>`;
+}
+$("views").addEventListener("click", (e) => {
+  const b = e.target.closest("button[data-view]");
+  if (!b) return;
+  VIEW = WANT = b.dataset.view;
+  mainSelectedClock = null;
+  renderAll();
+});
+
+function renderKey() {
+  $("chart-key").innerHTML = allSeries().map((s) =>
+    `<label class="${isShown(s) ? "" : "off"}"><input type="checkbox" data-series="${s.id}" ${isShown(s) ? "checked" : ""}><i class="${styleOf(s)}"></i>${s.name}</label>`).join("");
+}
+$("chart-key").addEventListener("change", (e) => {
+  const box = e.target.closest("input[data-series]");
+  if (!box) return;
+  shown[`${SET}|${VIEW}|${box.dataset.series}`] = box.checked;
+  renderAll();
+});
+
 function renderTop() {
-  const M = D.meta;
+  const M = V.meta;
+  $("title").textContent = `MCU-Link ${V.title} throughput`;
   $("meta").innerHTML = [
-    ["set", SET], ["matrix", M.matrix], ["target", M.chip], ["DPIDR", M.dpidr], ["probe-rs", M.probe_rs],
-  ].map(([k, v]) => `<span>${k} <b>${v}</b></span>`).join("");
-  $("builds").innerHTML = D.firmwares.map((f) =>
-    `<span>${NAME[f.label]} <b>${f.build}</b> · ${f.product} · serial ${f.serial} · ${f.packets[0]} × ${f.packets[1]} B</span>`).join("");
-  $("results-path").textContent = D.wire && Object.keys(D.wire).length
+    ["set", SET], ["wire", V.title], ["matrix", M.matrix], ["target", M.chip], ["DPIDR", M.dpidr], ["probe-rs", M.probe_rs],
+  ].filter(([, v]) => v).map(([k, v]) => `<span>${k} <b>${v}</b></span>`).join("");
+  $("builds").innerHTML = V.series.map((f) =>
+    `<span>${f.name}${f.build && !f.name.includes(f.build) ? ` <b>${f.build}</b>` : ""}${f.product && !f.name.includes(f.product) ? ` · ${f.product}` : ""} · serial ${f.serial}${f.packets ? ` · ${f.packets[0]} × ${f.packets[1]} B` : ""}${f.runs > 1 ? ` · ${f.runs} runs` : ""}</span>`).join("");
+  $("results-path").textContent = V.protocol === "swd" && D.wire && Object.keys(D.wire).length
     ? `results/throughput/${SET}-*.json · results/wireclock/${SET}-*.json`
     : `results/throughput/${SET}-*.json`;
   $("target-state").hidden = !D.context;
   $("target-state").textContent = D.context || "";
 
-  const peakWrite = peakProbeWrite();
-  const stockPeakWrite = peakProbeWrite(["stock"]);
-  const write10MHz = peakWrite && writeComparisonAt(10_000, peakWrite.fw);
-  const peakThroughputRatio = peakWrite && stockPeakWrite && stockPeakWrite.kib > 0
-    ? peakWrite.kib / stockPeakWrite.kib : null;
-  $("headline-value").innerHTML = peakThroughputRatio == null ? "–" : `${fmt(peakThroughputRatio, 2)}<small>×</small>`;
-  $("headline-label").textContent = peakThroughputRatio == null
-    ? "No completed 4 KiB write comparison"
-    : "stock throughput · probe-rs 4 KiB writes";
-  $("headline-detail").textContent = peakThroughputRatio == null
-    ? "A completed Verge and stock 4 KiB write result is required."
-    : `${peakWrite.fw.toUpperCase()} ${fmt(peakWrite.kib, 1)} KiB/s at ${peakWrite.khz / 1000} MHz · stock ${fmt(stockPeakWrite.kib, 1)} KiB/s at ${stockPeakWrite.khz / 1000} MHz`;
+  const ours = oursShown().length ? oursShown() : V.series.filter((s) => s.role === "ours" && !s.condition);
+  const peak = peakWrite(ours);
+  const stock = stockSeries();
+  const stockPeak = stock && peakWrite([stock]);
+  const ratio = peak && stockPeak && stockPeak.kib > 0 ? peak.kib / stockPeak.kib : null;
+  if (ratio != null) {
+    $("headline-value").innerHTML = `${fmt(ratio, 2)}<small>×</small>`;
+    $("headline-label").textContent = `stock throughput · probe-rs 4 KiB writes · ${V.title}`;
+    $("headline-detail").textContent = `${short(peak.s)} ${fmt(peak.kib, 1)} KiB/s at ${peak.khz / 1000} MHz · stock ${fmt(stockPeak.kib, 1)} KiB/s at ${stockPeak.khz / 1000} MHz`;
+  } else if (peak) {
+    $("headline-value").innerHTML = `${fmt(peak.kib)}<small> KiB/s</small>`;
+    $("headline-label").textContent = `peak probe-rs 4 KiB write · ${V.title}`;
+    $("headline-detail").textContent = `${short(peak.s)} at ${peak.khz / 1000} MHz. ${stock ? "No completed stock write to compare." : V.protocol === "cjtag" ? "Stock does not run cJTAG." : "No stock run on this wire in this set."}`;
+  } else {
+    $("headline-value").innerHTML = "–";
+    $("headline-label").textContent = "No completed 4 KiB write";
+    $("headline-detail").textContent = "";
+  }
 
-  $("same-clock").innerHTML = write10MHz
-    ? `<div class="same-clock-item"><strong>${relativePercent(write10MHz.stockGain)}</strong><span>vs stock</span></div><div class="same-clock-item"><strong>${relativePercent(write10MHz.jlinkGain)}</strong><span>vs J-Link Ultra, both through probe-rs</span></div><div class="same-clock-rates">10 MHz · 4 KiB probe-rs writes · ${write10MHz.fw.toUpperCase()} ${fmt(write10MHz.ours, 1)} · stock ${fmt(write10MHz.stock, 1)} · J-Link Ultra ${fmt(write10MHz.jlink, 1)} KiB/s</div>`
-    : `<div class="same-clock-item"><strong>–</strong><span>No matched 10 MHz write comparison</span></div>`;
+  // At 10 MHz: our peak's build against stock and every reference with a write there, shown or not.
+  const khz = 10_000;
+  const mine = peak && PR(peak.s, "write32", 4096, khz);
+  const others = allSeries().filter((s) => s.role !== "ours" && !s.condition).map((s) => ({ s, p: PR(s, "write32", 4096, khz) })).filter((o) => o.p && o.p.kib > 0);
+  $("same-clock").innerHTML = mine && others.length
+    ? others.map((o) => `<div class="same-clock-item"><strong>${relativePercent(mine.kib / o.p.kib)}</strong><span>vs ${short(o.s)}${o.s.external ? ", both through probe-rs" : ""}</span></div>`).join("")
+      + `<div class="same-clock-rates">10 MHz · 4 KiB probe-rs writes · ${short(peak.s)} ${fmt(mine.kib, 1)} · ${others.map((o) => `${short(o.s)} ${fmt(o.p.kib, 1)}`).join(" · ")} KiB/s</div>`
+    : "";
+  $("same-clock").hidden = !(mine && others.length);
 }
 
 function renderJLink() {
+  const on = V.protocol === "swd";
+  $("jlink-head").hidden = !on;
+  $("jlink-grid").hidden = !on;
+  if (!on) return;
   const R = ALL.references.jlink;
   const xs = R.jlinkexe.map((p) => p.mhz);
+  const entry = (name, style, values) => ({ s: { id: style, name, role: "reference", style, condition: null }, values });
   const series = [
-    { fw: "jlink", name: "TestRSpeed · read", className: "jlink-read", keyClass: "jlink-read", values: R.jlinkexe.map((p) => p.read_kbyte_s) },
-    { fw: "jlink", name: "TestWSpeed · write", className: "jlink-write", keyClass: "jlink-write", values: R.jlinkexe.map((p) => p.write_kbyte_s) },
+    entry("TestRSpeed · read", "jlink-read", R.jlinkexe.map((p) => p.read_kbyte_s)),
+    entry("TestWSpeed · write", "jlink-write", R.jlinkexe.map((p) => p.write_kbyte_s)),
   ];
   chart($("jlink-chart"), { xs, series, unit: "KByte/s", digits: 0, selected: xs.indexOf(10), height: 260, width: 640 });
   $("jlink-description").textContent = "JLinkExe uses a different workload from the 4 KiB probe-rs charts.";
@@ -561,42 +675,39 @@ function renderJLink() {
 }
 
 let readChart, writeChart;
-let mainSelectedClock;
+let mainSelectedClock = null;
 function renderProbeRs() {
-  const prClocks = [...new Set(FW.flatMap((fw) => (D.probe_rs[fw] || []).filter((p) => p.arm === "read32" && p.bytes === 4096).map((p) => p.khz)))].sort((a, b) => a - b);
+  const list = visible();
+  const prClocks = prClocksOf(list);
   const prXs = prClocks.map((k) => k / 1000);
-  const prSeries = (arm) => FW.map((fw) => ({
-    fw, values: prClocks.map((k) => PR(fw, arm, 4096, k)?.kib ?? null), failed: prClocks.map((k) => PR_FAILED(fw, k)),
+  const entries = (arm, field = "kib") => list.map((s) => {
+    const size = arm === "rt" ? 4 : 4096;
+    const at = prClocks.map((k) => PR(s, arm, size, k));
+    return {
+      s, values: at.map((p) => p?.[field] ?? null), failed: prClocks.map((k) => PR_FAILED(s, k)),
+      partial: prClocks.map((k) => { const p = PART(s, arm, size, k); return p && !complete(p) ? p : null; }),
+      ranges: at.map((p) => p && p.runs > 1 && p.kib_lo != null && field === "kib" ? [p.kib_lo, p.kib_hi] : null),
+    };
+  });
+  const selectedClock = (comparisonClock() ?? prClocks.at(-1)) / 1000;
+  const fallback = prXs.indexOf(selectedClock);
+  const kept = prXs.indexOf(mainSelectedClock ?? selectedClock);
+  const index = kept >= 0 ? kept : fallback;
+  mainSelectedClock = prXs[index];
+  readChart = chart($("c-read"), { xs: prXs, series: entries("read32"), unit: "KiB/s", selected: index, onSelect: (i) => { mainSelectedClock = prXs[i]; writeChart.show(i); } });
+  writeChart = chart($("c-write"), { xs: prXs, series: entries("write32"), unit: "KiB/s", selected: index, onSelect: (i) => { mainSelectedClock = prXs[i]; readChart.show(i); } });
+
+  const rtList = list.filter((s) => !s.external);
+  const rtEntries = rtList.map((s) => ({
+    s, values: prClocks.map((k) => PR(s, "rt", 4, k)?.us ?? null), failed: prClocks.map((k) => PR_FAILED(s, k)),
+    partial: prClocks.map((k) => { const p = PART(s, "rt", 4, k); return p && !complete(p) ? p : null; }),
   }));
-  const withJLink = (arm, field) => {
-    const series = prSeries(arm);
-    if (document.getElementById("jlink-overlay").checked) {
-      const values = ALL.references.jlink.probe_rs;
-      series.push({
-        fw: "jlink", name: `J-Link Ultra ${arm === "read32" ? "read" : "write"}`,
-        className: `jlink-${arm === "read32" ? "read" : "write"}`,
-        keyClass: `jlink-${arm === "read32" ? "read" : "write"}`,
-        values: prXs.map((mhz) => values.find((p) => p.mhz === mhz)?.[field] ?? null),
-      });
-    }
-    return series;
-  };
-  const selectedClock = comparisonClock() / 1000;
-  const selPr = prXs.indexOf(selectedClock);
-  const selectedIndex = prXs.indexOf(mainSelectedClock ?? selectedClock);
-  const mainSelectedIndex = selectedIndex >= 0 ? selectedIndex : prXs.indexOf(selectedClock);
-  mainSelectedClock = prXs[mainSelectedIndex];
-  readChart = chart($("c-read"), { xs: prXs, series: withJLink("read32", "read_kib_s"), unit: "KiB/s", selected: mainSelectedIndex, onSelect: (i) => { mainSelectedClock = prXs[i]; writeChart.show(i); } });
-  writeChart = chart($("c-write"), { xs: prXs, series: withJLink("write32", "write_kib_s"), unit: "KiB/s", selected: mainSelectedIndex, onSelect: (i) => { mainSelectedClock = prXs[i]; readChart.show(i); } });
-
-  const rts = FW.map((fw) => PR(fw, "rt", 4, comparisonClock())?.us).filter((v) => v != null);
-  const rtSeries = FW.map((fw) => ({ fw, values: prClocks.map((k) => PR(fw, "rt", 4, k)?.us ?? null), failed: prClocks.map((k) => PR_FAILED(fw, k)) }));
-  chart($("c-rt"), { xs: prXs, series: rtSeries, unit: "µs", selected: selPr, height: 230 });
-  $("rt-text").textContent = `${selectedClock} MHz · ${fmt(Math.min(...rts))}–${fmt(Math.max(...rts))} µs across the measured firmwares.`;
+  chart($("c-rt"), { xs: prXs, series: rtEntries, unit: "µs", selected: fallback, height: 230, width: customSeries().length ? 640 : 1200 });
+  const rts = rtList.map((s) => PR(s, "rt", 4, selectedClock * 1000)?.us).filter((v) => v != null);
+  $("rt-text").textContent = rts.length ? `${selectedClock} MHz · ${fmt(Math.min(...rts))}–${fmt(Math.max(...rts))} µs across the series shown.` : "";
 }
-$("jlink-overlay").addEventListener("change", renderProbeRs);
 
-/* Explorer over the custom host's matrix */
+/* Explorer over the custom host's matrix: SWD only */
 const WORDS = { block: { read: [1, 8, 32, 127], write: [1, 8, 32, 126] }, transfer: { read: [1, 8, 32, 127], write: [1, 8, 32, 101] } };
 const state = { command: "block", access: "ap-read", words: 3, depth: 8, metric: "kib" };
 const GROUPS = [
@@ -607,25 +718,29 @@ const GROUPS = [
   ["metric", "Unit", [["kib", "KiB/s"], ["cps", "Commands/s"]]],
 ];
 let selX = null;
+const customSeries = () => visible().filter((s) => Object.keys(s.custom || {}).length);
 function words() { return WORDS[state.command][state.access.endsWith("write") ? "write" : "read"][state.words]; }
 function drawExplorer() {
-  const xs = D.meta.clocks;
-  if (selX == null) selX = xs.length - 1;
+  const list = customSeries();
+  $("m-explore").hidden = !list.length;
+  if (!list.length) return;
+  const xs = V.meta.clocks;
+  if (selX == null || selX >= xs.length) selX = xs.length - 1;
   const w = words(), idx = state.metric === "kib" ? 1 : 0;
-  const series = FW.map((fw) => ({
-    fw,
-    values: xs.map((m) => C(fw, state.command, state.access, w, state.depth, m)?.[idx] ?? null),
-    failed: xs.map((m) => C(fw, state.command, state.access, w, state.depth, m) === null),
+  const series = list.map((s) => ({
+    s,
+    values: xs.map((m) => C(s, state.command, state.access, w, state.depth, m)?.[idx] ?? null),
+    failed: xs.map((m) => C(s, state.command, state.access, w, state.depth, m) === null),
   }));
   $("x-caption").textContent = `${state.command === "block" ? "DAP_TransferBlock" : "DAP_Transfer"} · ${state.access.replace("-", " ")} · ${w} words · depth ${state.depth}`;
-  chart($("c-explore"), { xs, series, unit: state.metric === "kib" ? "KiB/s" : "commands/s", digits: state.metric === "kib" && Math.max(...series.flatMap((s) => s.values.filter((v) => v != null))) < 100 ? 1 : 0, selected: selX, onSelect: (i) => { selX = i; }, height: 330, width: 1200 });
+  chart($("c-explore"), { xs, series, unit: state.metric === "kib" ? "KiB/s" : "commands/s", digits: state.metric === "kib" && Math.max(...series.flatMap((e) => e.values.filter((v) => v != null))) < 100 ? 1 : 0, selected: selX, onSelect: (i) => { selX = i; }, height: 330, width: 1200 });
   let peak = null;
-  for (const fw of ["gcc", "clang"]) for (const [key, value] of Object.entries(D.custom[fw] || {})) {
-    if (value && key.includes("|ap-") && (!peak || value[1] > peak.value)) peak = { fw, key, value: value[1] };
+  for (const s of list.filter((x) => x.role === "ours")) for (const [key, value] of Object.entries(s.custom || {})) {
+    if (value && key.includes("|ap-") && (!peak || value[1] > peak.value)) peak = { s, key, value: value[1] };
   }
   if (peak) {
     const [command, access, words, depth, mhz] = peak.key.split("|");
-    $("x-peak").textContent = `Peak: ${fmt(peak.value)} KiB/s · ${peak.fw.toUpperCase()} · ${words}-word ${command} ${access.replace("-", " ")} · ${mhz} MHz · depth ${depth}.`;
+    $("x-peak").textContent = `Peak: ${fmt(peak.value)} KiB/s · ${short(peak.s)} · ${words}-word ${command} ${access.replace("-", " ")} · ${mhz} MHz · depth ${depth}.`;
   } else $("x-peak").textContent = "No custom-host memory-throughput result is available.";
 }
 $("controls").innerHTML = GROUPS.map(([key, label, opts]) => `
@@ -641,39 +756,44 @@ $("controls").addEventListener("click", (e) => {
 });
 
 function renderCliffAndFault() {
-  const xs = D.meta.clocks;
-  const cliff = FW.map((fw) => ({ fw, values: xs.map((m) => C(fw, "transfer", "ap-read", 1, 8, m)?.[0] ?? null), failed: xs.map((m) => C(fw, "transfer", "ap-read", 1, 8, m) === null) }));
-  chart($("c-cliff"), { xs, series: cliff, unit: "commands/s", selected: xs.length - 1, height: 230 });
-  const g10 = C("gcc", "transfer", "ap-read", 1, 8, 10)?.[0], c10 = C("clang", "transfer", "ap-read", 1, 8, 10)?.[0];
-  $("cliff-text").textContent = `10 MHz · GCC ${fmt(g10)} · Clang ${fmt(c10)} commands/s.`;
-
-  const fails = (D.fails.stock || []).length, total = Object.keys(D.custom.stock || {}).length;
-  $("stock-errors").hidden = fails === 0;
-  $("fault-count").innerHTML = `${fails}<small> / ${total}</small>`;
-  const keys = Object.keys(D.custom.stock || {});
+  const list = customSeries();
+  $("m-cliff").hidden = !list.length;
+  $("m-rt").classList.toggle("wide", !list.length);
+  const xs = V.meta.clocks;
+  if (list.length) {
+    const cliff = list.map((s) => ({ s, values: xs.map((m) => C(s, "transfer", "ap-read", 1, 8, m)?.[0] ?? null), failed: xs.map((m) => C(s, "transfer", "ap-read", 1, 8, m) === null) }));
+    chart($("c-cliff"), { xs, series: cliff, unit: "commands/s", selected: xs.length - 1, height: 230 });
+    $("cliff-text").textContent = `10 MHz · ${list.filter((s) => s.role === "ours").map((s) => `${short(s)} ${fmt(C(s, "transfer", "ap-read", 1, 8, 10)?.[0])}`).join(" · ")} commands/s.`;
+  }
+  // The first series other than ours whose custom host failed cases: stock, as a rule.
+  const bad = V.series.find((s) => s.role !== "ours" && (s.fails || []).length);
+  $("stock-errors").hidden = !bad;
+  if (!bad) return;
+  const fails = bad.fails.length, keys = Object.keys(bad.custom);
+  $("fault-count").innerHTML = `${fails}<small> / ${keys.length}</small>`;
   $("pips").innerHTML = xs.map((m) => {
     const row = keys.filter((k) => k.endsWith(`|${m}`));
     const s = 10, g = 2, w = row.length * (s + g);
     const rects = row.map((k, i) => {
-      const reason = D.errors?.stock?.[k];
-      return `<rect x="${i * (s + g)}" y="0" width="${s}" height="${s}" class="pip${D.custom.stock[k] === null ? " bad" : ""}"><title>${k.replaceAll("|", " · ")}${reason ? ` · ${reason}` : ""}</title></rect>`;
+      const reason = bad.errors?.[k];
+      return `<rect x="${i * (s + g)}" y="0" width="${s}" height="${s}" class="pip${bad.custom[k] === null ? " bad" : ""}"><title>${k.replaceAll("|", " · ")}${reason ? ` · ${reason}` : ""}</title></rect>`;
     }).join("");
-    return `<div class="pip-row"><span class="micro">${m} MHz</span><svg viewBox="0 0 ${w} ${s}" preserveAspectRatio="xMinYMid meet" role="img" aria-label="${m} MHz: ${row.filter((k) => D.custom.stock[k] === null).length} of ${row.length} cases failed">${rects}</svg></div>`;
+    return `<div class="pip-row"><span class="micro">${m} MHz</span><svg viewBox="0 0 ${w} ${s}" preserveAspectRatio="xMinYMid meet" role="img" aria-label="${m} MHz: ${row.filter((k) => bad.custom[k] === null).length} of ${row.length} cases failed">${rects}</svg></div>`;
   }).join("");
-  const errors = Object.values(D.errors?.stock || {});
-  const attachErrors = errors.filter((e) => e.toLowerCase().includes("could not attach"));
-  if (attachErrors.length) {
-    $("fault-heading").textContent = "Stock attach failures";
-    $("fault-title").textContent = "Timed commands did not run";
-  } else {
-    $("fault-heading").textContent = "Stock measurement failures";
-    $("fault-title").textContent = "Cases without a timed result";
-  }
+  const attach = Object.values(bad.errors || {}).some((e) => e.toLowerCase().includes("could not attach"));
+  $("fault-heading").textContent = `${short(bad)} ${attach ? "attach failures" : "measurement failures"}`;
+  $("fault-title").textContent = (attach ? "Timed commands did not run" : "Cases without a timed result") + (bad.runs > 1 ? ` in at least one of ${bad.runs} runs` : "");
 }
 
+const WIRE_FW = ["gcc", "clang", "stock"];
+const WIRE_SERIES = {
+  gcc: { name: "GCC", style: "gcc", role: "ours", condition: null },
+  clang: { name: "Clang", style: "clang", role: "ours", condition: null },
+  stock: { name: "Stock", style: "stock", role: "stock", condition: null },
+};
 /* The clock on the wire */
 function renderWire() {
-  const W = D.wire, stock = W.stock;
+  const W = V.protocol === "swd" ? D.wire : {}, stock = W.stock;
   const shown = Object.values(W);
   for (const id of ["w-read", "w-write", "w-fast", "trace", "stall-pips"]) $(id).textContent = "";
   if (!shown.length) {
@@ -686,8 +806,8 @@ function renderWire() {
   const at = (fw, mhz) => W[fw]?.rows.find((r) => r.mhz === mhz);
   $("wire-meta").innerHTML = [["matrix", shown[0].matrix], ["analyser", "100 MS/s at the target"], ["taken", shown[0].taken.slice(0, 10)]]
     .map(([k, v]) => `<span>${k} <b>${v}</b></span>`).join("");
-  const series = (key) => FW.filter((fw) => W[fw]).map((fw) => ({
-    fw, values: xs.map((m) => at(fw, m)?.[key] ?? null), rings: xs.map((m) => at(fw, m)?.[`${key}_from`] === "swdio"),
+  const series = (key) => WIRE_FW.filter((fw) => W[fw]).map((fw) => ({
+    s: WIRE_SERIES[fw], values: xs.map((m) => at(fw, m)?.[key] ?? null), rings: xs.map((m) => at(fw, m)?.[`${key}_from`] === "swdio"),
   }));
   const sel = xs.indexOf(50) >= 0 ? xs.indexOf(50) : xs.length - 1;
   let rc, wc, fc;
@@ -703,7 +823,7 @@ function renderWire() {
     go.length ? `Verge exceeds the requested clock during parts of a transfer: ${go.join(", ")}.` : "No measured Verge peak is more than 0.5% above the requested clock.",
   ].filter(Boolean).join(" ");
   const delay = stock?.rows.find((r) => r.delay != null)?.delay;
-  $("w-how-caption").textContent = `${xs.length} clocks · ${FW.filter((fw) => W[fw]).join(", ")}`;
+  $("w-how-caption").textContent = `${xs.length} clocks · ${WIRE_FW.filter((fw) => W[fw]).join(", ")}`;
   $("w-how").innerHTML = [
     `At a requested 50 MHz, Verge reads at ${fmt(g50?.read, 1)} MHz and writes at ${fmt(g50?.write, 1)} MHz.`,
     "Read timing matches the emulator within a few ns, apart from one edge. GCC and Clang traces match.",
@@ -767,25 +887,32 @@ function renderWire() {
 }
 
 function renderNotes() {
-  const peakWrite = peakProbeWrite();
-  const gccAtPeak = peakWrite && PR("gcc", "write32", 4096, peakWrite.khz)?.kib;
-  const clangAtPeak = peakWrite && PR("clang", "write32", 4096, peakWrite.khz)?.kib;
-  const stockWriteClocks = (D.probe_rs.stock || []).filter((p) => p.arm === "write32" && p.bytes === 4096).map((p) => p.khz);
-  const currentWriteClocks = ["gcc", "clang"].flatMap((fw) => (D.probe_rs[fw] || []).filter((p) => p.arm === "write32" && p.bytes === 4096).map((p) => p.khz));
-  const currentReadClocks = ["gcc", "clang"].flatMap((fw) => (D.probe_rs[fw] || []).filter((p) => p.arm === "read32" && p.bytes === 4096).map((p) => p.khz));
-  const stockWriteClock = stockWriteClocks.length ? Math.max(...stockWriteClocks) : null;
-  const currentWriteClock = currentWriteClocks.length ? Math.max(...currentWriteClocks) : null;
-  const currentReadClock = currentReadClocks.length ? Math.max(...currentReadClocks) : null;
-  const g50 = D.wire.gcc?.rows.find((r) => r.mhz === 50);
-  const n = [
-    ["mark-clang", "Compiler builds", peakWrite ? `At ${peakWrite.khz / 1000} MHz, GCC writes ${fmt(gccAtPeak, 1)} KiB/s and Clang ${fmt(clangAtPeak, 1)} KiB/s. Same firmware commit.` : "No completed 4 KiB write result."],
-    ["", "Highest completed clock requests", `4 KiB writes: Verge ${currentWriteClock == null ? "–" : `${currentWriteClock / 1000} MHz`}, stock ${stockWriteClock == null ? "–" : `${stockWriteClock / 1000} MHz`}. Verge reads: ${currentReadClock == null ? "–" : `${currentReadClock / 1000} MHz`}.${g50 ? ` At a requested 50 MHz, measured wire rates are ${fmt(g50.read, 1)} MHz read / ${fmt(g50.write, 1)} MHz write.` : ""}`],
-  ];
-  $("notes").innerHTML = n.map(([c, h, p]) => `<div class="note ${c}"><h3>${h}</h3><p>${p}</p></div>`).join("");
+  const ours = V.series.filter((s) => s.role === "ours" && !s.condition);
+  const peak = peakWrite(ours);
+  const notes = [];
+  const gcc = ours.find((s) => s.style === "gcc"), clang = ours.find((s) => s.style === "clang");
+  if (peak && gcc && clang) {
+    const same = gcc.build === clang.build ? "Same firmware commit." : `Builds ${gcc.build} and ${clang.build}.`;
+    notes.push(["mark-clang", "Compiler builds", `At ${peak.khz / 1000} MHz, GCC writes ${fmt(PR(gcc, "write32", 4096, peak.khz)?.kib, 1)} KiB/s and Clang ${fmt(PR(clang, "write32", 4096, peak.khz)?.kib, 1)} KiB/s. ${same}`]);
+  }
+  const top = (list, arm) => {
+    const k = list.flatMap((s) => (s.probe_rs || []).filter((p) => complete(p) && p.arm === arm && p.bytes === 4096).map((p) => p.khz));
+    return k.length ? `${Math.max(...k) / 1000} MHz` : "–";
+  };
+  const stock = stockSeries();
+  const g50 = V.protocol === "swd" ? D.wire.gcc?.rows.find((r) => r.mhz === 50) : null;
+  notes.push(["", "Highest completed clock requests", `4 KiB writes: Verge ${top(ours, "write32")}${stock ? `, stock ${top([stock], "write32")}` : ""}. Verge reads: ${top(ours, "read32")}.${g50 ? ` At a requested 50 MHz, measured wire rates are ${fmt(g50.read, 1)} MHz read / ${fmt(g50.write, 1)} MHz write.` : ""}`]);
+  const conds = V.series.filter((s) => s.condition);
+  if (conds.length) notes.push(["", "Under energy capture", `${conds.map((s) => s.name).join("; ")}: tick them in the key to compare with the runs without capture.`]);
+  $("notes").innerHTML = notes.map(([c, h, p]) => `<div class="note ${c}"><h3>${h}</h3><p>${p}</p></div>`).join("");
 }
 
 function renderAll() {
   D = ALL.sets[SET];
+  V = D.views.find((v) => v.id === WANT) || D.views[0];
+  VIEW = V.id;
+  renderViews();
+  renderKey();
   renderTop();
   renderJLink();
   renderProbeRs();

@@ -26,10 +26,10 @@ jobs:
           uv run tools/throughput.py --help > /dev/null
           uv run tools/wireclock.py --help > /dev/null
 
-      # The dates are page/README.md's.
+      # Every set page/sets.json names.
       - name: The committed page is the one the results make
         run: |
-          uv run --no-project python -I page/build.py 2026-10-20 2026-10-21 2026-10-24 2026-10-25
+          uv run --no-project python -I page/build.py
           git diff --exit-code page/index.html
 
   swd-throughput:
