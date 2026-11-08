@@ -178,6 +178,7 @@ fn main() -> anyhow::Result<()> {
             Ok(session) => session,
             Err(error) => {
                 warn!("{speed_khz} kHz: no attach ({error:#})");
+                failed.insert(speed_khz, format!("no attach: {error:#}"));
                 Span::current().pb_inc(per_speed);
                 continue;
             }
@@ -235,8 +236,10 @@ fn main() -> anyhow::Result<()> {
                 4.0 / per_access.as_secs_f64(),
             )?;
         }
+        // A clock that never attached has no probe clock: 0.
         for speed_khz in failed.keys() {
-            writeln!(csv, "{},{},failed,0,0,0", speed_khz, achieved[speed_khz])?;
+            let probe_khz = achieved.get(speed_khz).copied().unwrap_or(0);
+            writeln!(csv, "{speed_khz},{probe_khz},failed,0,0,0")?;
         }
         std::fs::write(path, csv)?;
         eprintln!("wrote {path}");
