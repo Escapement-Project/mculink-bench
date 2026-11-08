@@ -7,16 +7,17 @@ Build the standalone page from the committed throughput and wire-clock results, 
 uv run python -I build.py
 ```
 
-The last date opens by default. Earlier dates remain available in the date selector. The generated
-`index.html`, with the `fonts/` folder beside it, is ready to serve as a static page.
+The last date opens by default. Earlier dates remain available in the date selector. The build
+writes `out/index.html`. The `out/` folder holds the page and its fonts and nothing else, so it can
+be served as it is. The project's site serves it at `/measurements/`.
 
 The page's colours, type and line patterns come from the project's design tokens. `tokens.css` and
-`fonts/` are copies of the site repository's `static/tokens.css` and `static/fonts/`, and the build
-inlines `tokens.css` into the page. To check the copies are current, run this from the site
+`out/fonts/` are copies of the site repository's `static/tokens.css` and `static/fonts/`, and the
+build inlines `tokens.css` into the page. To check the copies are current, run this from the site
 repository (`escapement-project.github.io`):
 
 ```sh
-uv run design/build.py --check ../mculink-bench/page/tokens.css ../mculink-bench/page/fonts/*
+uv run design/build.py --check ../mculink-bench/page/tokens.css ../mculink-bench/page/out/fonts/*
 ```
 
 The page follows the reader's light or dark system setting until its switch is used, and then

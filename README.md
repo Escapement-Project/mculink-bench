@@ -27,9 +27,9 @@ firmware repository, including `tools/dap.py`, `tools/coverage.py` and `tools/fl
 
 ## Results
 
-The [measurements page](page/index.html) compares Verge build `2edfec6` with GCC and Clang against
-stock V3.174, NXP's current release, and includes a J-Link Ultra reference. Each set has a note
-beside its result files, which says what was measured and under what conditions:
+The [measurements page](page/out/index.html) compares Verge build `2edfec6` with GCC and Clang
+against stock V3.174, NXP's current release, and includes a J-Link Ultra reference. Each set has a
+note beside its result files, which says what was measured and under what conditions:
 
 | date | what | note |
 | --- | --- | --- |

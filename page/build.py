@@ -21,10 +21,10 @@ def main() -> None:
     if template.count("__TOKENS__") != 1:
         raise SystemExit("template must contain exactly one __TOKENS__ placeholder")
     # The design tokens, a copy of the site's static/tokens.css; their fonts load from fonts/ beside
-    # the page.
+    # the page. out/ is the published page and nothing else: the site serves the folder as it is.
     tokens = (PAGE / "tokens.css").read_text()
     html = template.replace("__TOKENS__", tokens).replace("__DATA__", json.dumps(data, separators=(",", ":")))
-    output = PAGE / "index.html"
+    output = PAGE / "out" / "index.html"
     output.write_text(html)
     print(f"wrote {output.relative_to(ROOT)} for {', '.join(dates)}")
 
