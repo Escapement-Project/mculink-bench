@@ -18,6 +18,13 @@ reads and writes, one word to a full packet), the same on DP registers, which no
 depths 1, 2 and 8 and at five clocks. tools/swd-throughput times probe-rs's memory reads and writes
 end to end. Over JTAG and cJTAG only probe-rs measures.
 
+A figure counts only if the data is right, and probe-rs does not check what it reads. At every clock
+it measured, tools/swd-throughput also writes a pattern to the RAM under test and reads it back 16
+times, ten rounds, and reads the target's first 64 KiB of flash ten times against a reference read
+twice at the slowest clock. The flash check runs only on flash with varied content; erased flash
+reads the same whatever word a misread returns. A result records how many rounds of each came back
+right, and why a check did not run.
+
 MATRICES names each protocol's case set. A change to the cases changes the name, and compare
 refuses to set results from two matrices side by side.
 
@@ -371,19 +378,35 @@ def listed(serial: str) -> dict | None:
 
 
 def probe_rs(serial: str, chip: str, protocol: str, quick: bool, console: Console) -> dict:
+    """probe-rs's timed sweep, and at every clock it measured, the rounds of each check that came
+    back right. `checks` is None when the sweep failed or did not check; `checks_skipped` says why
+    a check never ran."""
     binary = swd_throughput()
     csv_path = os.path.join(SWD_THROUGHPUT, "target", "last-sweep.csv")
-    sweep = ["--speeds", "10000", "--sizes", "64,1024", "--repeats", "3"] if quick else []
+    checks_path = os.path.join(SWD_THROUGHPUT, "target", "last-checks.csv")
+    for stale in (csv_path, checks_path):
+        if os.path.exists(stale):
+            os.remove(stale)
+    sweep = ["--speeds", "1000,10000", "--sizes", "64,1024", "--repeats", "3", "--checks", "2",
+             "--check-bytes", "4096"] if quick else []
     run = subprocess.run([binary, "--probe", f"{USB_ID[0]:04x}:{USB_ID[1]:04x}:{serial}", "--chip", chip,
                           "--protocol", protocol, "--base", f"0x{PROBE_RS_BASE[protocol]:08x}",
-                          "--csv", csv_path, *sweep],
+                          "--csv", csv_path, "--checks-csv", checks_path, *sweep],
                          stdout=subprocess.PIPE, text=True)
     console.print(run.stdout, markup=False, highlight=False)
-    rows = []
+    rows, checks, skipped = [], None, {}
     if run.returncode == 0:
         for row in csv.DictReader(io.StringIO(open(csv_path).read())):
             rows.append({k: (v if k == "arm" else float(v)) for k, v in row.items()})
-    return {"exit": run.returncode, "report": run.stdout, "points": rows}
+        if os.path.exists(checks_path):
+            checks = []
+            for row in csv.DictReader(io.StringIO(open(checks_path).read())):
+                row = {k: (v if k in ("check", "error") else int(v)) for k, v in row.items()}
+                if row["speed_khz"]:
+                    checks.append(row)
+                else:
+                    skipped[row["check"]] = row["error"]
+    return {"exit": run.returncode, "report": run.stdout, "points": rows, "checks": checks, "checks_skipped": skipped}
 
 
 def provenance(elf: str | None, verge: str) -> dict:
