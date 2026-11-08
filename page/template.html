@@ -572,14 +572,35 @@ const PR = (s, arm, bytes, khz) => { const p = PART(s, arm, bytes, khz); return 
 const PR_FAILED = (s, khz) => (s?.probe_rs || []).some((p) => p.khz === khz && (p.arm === "failed" || !complete(p)));
 const C = (s, command, access, words, depth, mhz) => (s?.custom || {})[`${command}|${access}|${words}|${depth}|${mhz}`];
 const readAt = (s, khz) => PR(s, "read32", 4096, khz)?.kib;
+// The fastest 4 KiB write at a clock the series reads right at, where that is known.
 function peakWrite(list) {
   let peak = null;
-  for (const s of list) for (const p of s.probe_rs || []) {
-    if (complete(p) && p.arm === "write32" && p.bytes === 4096 && (!peak || p.kib > peak.kib)) peak = { s, khz: p.khz, kib: p.kib };
+  for (const s of list) {
+    const upTo = rightUpTo(s);
+    for (const p of s.probe_rs || []) {
+      if (upTo !== undefined && (upTo === null || p.khz > upTo)) continue;
+      if (complete(p) && p.arm === "write32" && p.bytes === 4096 && (!peak || p.kib > peak.kib)) peak = { s, khz: p.khz, kib: p.kib };
+    }
   }
   return peak;
 }
 const prClocksOf = (list) => [...new Set(list.flatMap((s) => (s.probe_rs || []).filter((p) => (p.arm === "read32" && p.bytes === 4096) || p.arm === "failed").map((p) => p.khz)))].sort((a, b) => a - b);
+// The clock up to which a series read right: its checked clocks, walked up from the slowest to the
+// last before one where any round of any run came back wrong; null if the slowest did. A clock some
+// run did not check failed to measure there, and has no figure to count or verdict to give. A
+// series without checks has what the set records for stock, or undefined: not known.
+function rightUpTo(s) {
+  if (!s.checks?.length) return s.role === "stock" ? D.stock_reads_right?.[V.protocol]?.up_to_khz : undefined;
+  const kinds = [...new Set(s.checks.map((c) => c.check))];
+  let upTo = null;
+  for (const khz of [...new Set(s.checks.map((c) => c.khz))].sort((a, b) => a - b)) {
+    const rows = kinds.map((kind) => s.checks.find((c) => c.khz === khz && c.check === kind));
+    if (rows.some((c) => !c || c.runs !== c.of)) continue;
+    if (rows.some((c) => c.right !== c.rounds)) break;
+    upTo = khz;
+  }
+  return upTo;
+}
 // The highest clock our first series and stock both completed, or our highest without stock.
 function comparisonClock() {
   const first = V.series.find((s) => s.role === "ours" && !s.condition) || V.series[0];
@@ -621,25 +642,36 @@ function renderTop() {
   ].filter(([, v]) => v).map(([k, v]) => `<span>${k} <b>${v}</b></span>`).join("");
   $("builds").innerHTML = V.series.map((f) =>
     `<span>${f.name}${f.build && !f.name.includes(f.build) ? ` <b>${f.build}</b>` : ""}${f.product && !f.name.includes(f.product) ? ` · ${f.product}` : ""} · serial ${f.serial}${f.packets ? ` · ${f.packets[0]} × ${f.packets[1]} B` : ""}${f.runs > 1 ? ` · ${f.runs} runs` : ""}</span>`).join("");
-  $("results-path").textContent = V.protocol === "swd" && D.wire && Object.keys(D.wire).length
+  const stock = stockSeries();
+  const evidence = stock && !stock.checks && D.stock_reads_right?.[V.protocol]?.evidence;
+  $("results-path").textContent = (V.protocol === "swd" && D.wire && Object.keys(D.wire).length
     ? `results/throughput/${SET}-*.json · results/wireclock/${SET}-*.json`
-    : `results/throughput/${SET}-*.json`;
+    : `results/throughput/${SET}-*.json`) + (evidence ? ` · stock's reads: ${evidence}` : "");
   $("target-state").hidden = !D.context;
   $("target-state").textContent = D.context || "";
 
   const ours = oursShown().length ? oursShown() : V.series.filter((s) => s.role === "ours" && !s.condition);
   const peak = peakWrite(ours);
-  const stock = stockSeries();
-  const stockPeak = stock && peakWrite([stock]);
+  // Stock at the fastest clock it reads right at: its fastest figure can come from wrong data.
+  const stockUpTo = stock && rightUpTo(stock);
+  const stockPeak = stockUpTo != null && peakWrite([stock]);
   const ratio = peak && stockPeak && stockPeak.kib > 0 ? peak.kib / stockPeak.kib : null;
   if (ratio != null) {
     $("headline-value").innerHTML = `${fmt(ratio, 2)}<small>×</small>`;
     $("headline-label").textContent = `stock throughput · probe-rs 4 KiB writes · ${V.title}`;
-    $("headline-detail").textContent = `${short(peak.s)} ${fmt(peak.kib, 1)} KiB/s at ${peak.khz / 1000} MHz · stock ${fmt(stockPeak.kib, 1)} KiB/s at ${stockPeak.khz / 1000} MHz`;
+    const there = PR(stock, "write32", 4096, stockUpTo) ? "it wrote slower"
+      : PR_FAILED(stock, stockUpTo) ? "its write did not complete" : "this set did not measure it";
+    const where = stockPeak.khz === stockUpTo ? ", the fastest clock it reads right at"
+      : `. Stock reads right up to ${stockUpTo / 1000} MHz, where ${there}.`;
+    $("headline-detail").textContent = `${short(peak.s)} ${fmt(peak.kib, 1)} KiB/s at ${peak.khz / 1000} MHz · stock ${fmt(stockPeak.kib, 1)} KiB/s at ${stockPeak.khz / 1000} MHz${where}`;
   } else if (peak) {
     $("headline-value").innerHTML = `${fmt(peak.kib)}<small> KiB/s</small>`;
     $("headline-label").textContent = `peak probe-rs 4 KiB write · ${V.title}`;
-    $("headline-detail").textContent = `${short(peak.s)} at ${peak.khz / 1000} MHz. ${stock ? "No completed stock write to compare." : V.protocol === "cjtag" ? "Stock does not run cJTAG." : "No stock run on this wire in this set."}`;
+    const why = !stock ? (V.protocol === "cjtag" ? "Stock does not run cJTAG." : "No stock run on this wire in this set.")
+      : stockUpTo === undefined ? "No record of the clocks stock reads right at."
+      : stockUpTo === null ? "Stock read wrong at every clock."
+      : `No completed stock write at a clock it reads right at (up to ${stockUpTo / 1000} MHz).`;
+    $("headline-detail").textContent = `${short(peak.s)} at ${peak.khz / 1000} MHz. ${why}`;
   } else {
     $("headline-value").innerHTML = "–";
     $("headline-label").textContent = "No completed 4 KiB write";

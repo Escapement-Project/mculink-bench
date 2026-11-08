@@ -1,16 +1,28 @@
 {
-  "2026-10-20": {"labels": ["gcc", "clang", "stock"]},
-  "2026-10-21": {"labels": ["gcc", "clang", "stock"]},
+  "2026-10-20": {
+    "labels": ["gcc", "clang", "stock"],
+    "stock_reads_right": {"swd": {"up_to_khz": 20000, "evidence": "results/wireclock/2026-10-21.md"}}
+  },
+  "2026-10-21": {
+    "labels": ["gcc", "clang", "stock"],
+    "stock_reads_right": {"swd": {"up_to_khz": 20000, "evidence": "results/wireclock/2026-10-21.md"}}
+  },
   "2026-10-24": {
     "labels": ["gcc", "clang", "stock"],
-    "context": "All measurements were taken on an erased and halted MSPM0L1306."
+    "context": "All measurements were taken on an erased and halted MSPM0L1306.",
+    "stock_reads_right": {"swd": {"up_to_khz": 10000, "evidence": "results/throughput/2026-10-24-RETAKE.md"}}
   },
   "2026-10-25": {
     "labels": ["gcc", "clang", "stock"],
-    "context": "All measurements were taken on an erased and halted MSPM0L1306."
+    "context": "All measurements were taken on an erased and halted MSPM0L1306.",
+    "stock_reads_right": {"swd": {"up_to_khz": 10000, "evidence": "results/throughput/2026-10-25-RETAKE.md"}}
   },
   "2026-11-04": {
     "labels": ["gcc-a0e17c8-*", "clang-a0e17c8-*", "stock-v3174-*"],
-    "context": "SWD on an MSPM0L1306 LaunchPad, JTAG and cJTAG on a CC1312R1 LaunchPad, each on the MCU-Link Pro with nothing else on the lines. Each image ran twice; a point is the median of the runs."
+    "context": "SWD on an MSPM0L1306 LaunchPad, JTAG and cJTAG on a CC1312R1 LaunchPad, each on the MCU-Link Pro with nothing else on the lines. Each image ran twice; a point is the median of the runs.",
+    "stock_reads_right": {
+      "swd": {"up_to_khz": 20000, "evidence": "results/throughput/2026-11-04.md"},
+      "jtag": {"up_to_khz": 10000, "evidence": "results/throughput/2026-11-04.md"}
+    }
   }
 }

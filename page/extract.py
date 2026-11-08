@@ -9,6 +9,11 @@ built with a compiler, stock, or a reference probe. Repeat runs (`-r1`, `-r2`) o
 each point the median of its runs with their range kept. Runs under energy capture (`-capture<rate>`)
 are series of their own. `results/wireclock/<date>-<label>.json` adds the SWD wire for gcc, clang
 and stock. The page opens on the last date given.
+
+A result from a sweep that checked its data carries, at each clock, how many rounds of a flash read
+and a RAM pattern read back came out right. For sets taken before that, `stock_reads_right` in
+`sets.json` records the fastest clock stock read right at, per wire, and the published note that
+shows it.
 """
 import fnmatch
 import json
@@ -85,6 +90,23 @@ def merge_probe_rs(records: list[dict]) -> list[dict]:
     return out
 
 
+def merge_checks(records: list[dict]) -> list[dict] | None:
+    """Each check's rounds right at each clock, summed over the runs; None unless every run
+    checked. `runs` of `of` says how many runs checked that clock: a clock that failed to measure
+    in a run has no checks there."""
+    if any(not (r.get("probe_rs") or {}).get("checks") for r in records):
+        return None
+    merged = {}
+    for r in records:
+        for c in r["probe_rs"]["checks"]:
+            m = merged.setdefault((c["check"], c["speed_khz"]), {"check": c["check"], "khz": c["speed_khz"],
+                                                                  "right": 0, "rounds": 0, "runs": 0})
+            m["right"] += c["right"]
+            m["rounds"] += c["rounds"]
+            m["runs"] += 1
+    return [m | {"of": len(records)} for _, m in sorted(merged.items(), key=lambda kv: (kv[0][1], kv[0][0]))]
+
+
 def merge_custom(records: list[dict]) -> tuple[dict, list, dict]:
     """Each case's median over the runs; a case any run failed has no result."""
     runs, errors = {}, {}
@@ -146,6 +168,7 @@ def throughput(date: str, patterns: list[str]) -> dict | None:
             "packets": [dap_info["max packet count"], dap_info["max packet size"]] if dap_info else None,
             "taken": first["taken"], "runs": len(g["records"]),
             "probe_rs": merge_probe_rs(g["records"]),
+            "checks": merge_checks(g["records"]),
             "custom": custom, "fails": fails, "errors": errors,
         })
     # References get their own colours in the order they appear, and runs under a condition their
@@ -244,6 +267,10 @@ def build_data(dates: list[str]) -> dict:
             raise ValueError(f"no throughput results for {date}")
         t["wire"] = wire(date) or {}
         t["context"] = manifest[date].get("context")
+        t["stock_reads_right"] = manifest[date].get("stock_reads_right") or {}
+        for protocol, entry in t["stock_reads_right"].items():
+            if not os.path.exists(f"{REPO}/{entry['evidence']}"):
+                raise ValueError(f"{date} {protocol}: no {entry['evidence']}, the evidence for stock's reads")
         sets[date] = t
     with open(f"{PAGE}/reference/jlink-2026-10-22.json") as f:
         reference = json.load(f)

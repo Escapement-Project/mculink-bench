@@ -29,8 +29,13 @@ compared through the same probe-rs revision and workload. A probe's own best hos
 with another probe's best host, such as our CMSIS-DAP host against SEGGER's DLL. probe-rs on one
 probe against a vendor's own host on another says more about the hosts than the probes.
 
-The headline shows our peak 4 KiB probe-rs write throughput as a multiple of stock's peak, on the
-wire shown. On a wire stock does not run, it shows our peak instead. The line below compares the
+The headline shows our peak 4 KiB probe-rs write throughput as a multiple of stock's, on the wire
+shown. Stock counts only up to the fastest clock it reads right at: faster, it misreads, reporting
+errors or returning wrong data. The headline names that clock. Results from `throughput.py` say at
+each clock they measured whether the data came back right, and the page applies the same limit to
+any series that has them. For sets taken before those checks, `stock_reads_right` in `sets.json` gives stock's
+fastest right clock per wire, with the published note that shows it. On a wire stock does not run,
+the headline shows our peak instead. The line below compares the
 peak's build with stock and every reference at 10 MHz. Open “Test conditions and firmware details”
 for the target state, run metadata and build IDs.
 
