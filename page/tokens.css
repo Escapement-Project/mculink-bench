@@ -9,9 +9,9 @@
   --raised: #ffffff;
   --sunken: #cbd9e0;
   --hair: #bccbd3;
-  --rule: #7b8e99;
+  --rule: #738691;
   --ink: #11171d;
-  --ink-2: #56636e;
+  --ink-2: #525f6a;
   --lume: #c4f03c;
   --on-lume: #11171d;
   --plate: #11171d;
@@ -19,9 +19,9 @@
   --ring: #eef4f6;
   --face: #dce8ed;
   --window-edge: #11171d;
-  --fault-ink: #c42b2b;
+  --fault-ink: #b81c20;
   --fault-fill: #ef4b4b;
-  --attention-ink: #b45309;
+  --attention-ink: #924a03;
   --attention-fill: #f1710d;
   --on-status: #11171d;
   --series-verge: #0f8a6c;
@@ -60,7 +60,7 @@
   --ring: #1b232b;
   --face: #11171d;
   --window-edge: transparent;
-  --fault-ink: #ef4b4b;
+  --fault-ink: #f24e4d;
   --fault-fill: #ef4b4b;
   --attention-ink: #f1710d;
   --attention-fill: #f1710d;
@@ -87,7 +87,7 @@
     --ring: #1b232b;
     --face: #11171d;
     --window-edge: transparent;
-    --fault-ink: #ef4b4b;
+    --fault-ink: #f24e4d;
     --fault-fill: #ef4b4b;
     --attention-ink: #f1710d;
     --attention-fill: #f1710d;
