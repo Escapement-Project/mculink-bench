@@ -1,0 +1,1032 @@
+{
+ "matrix": "cjtag-1",
+ "label": "clang-a0e17c8-oscan6-r1",
+ "note": "re-measurement phase 1, CC1312R1 on the Pro",
+ "taken": "2026-11-04T12:53:35+00:00",
+ "serial": "CJ8C2F60A3",
+ "usb_id": "1fc9:0143",
+ "chip": "CC1312R",
+ "firmware": {
+  "dap_info": {
+   "vendor": "Escapement Project",
+   "product": "Verge Pro CMSIS-DAP",
+   "serial": "CJ8C2F60A3",
+   "protocol version": "2.1.2",
+   "target device vendor": "",
+   "target device name": "",
+   "target board vendor": "",
+   "target board name": "",
+   "firmware version": "a0e17c8",
+   "capabilities": "3700",
+   "test domain timer": 150000000,
+   "UART rx buffer": null,
+   "UART tx buffer": null,
+   "SWO trace buffer": 7168,
+   "max packet count": 3,
+   "max packet size": 512
+  },
+  "ours": {
+   "format": 6,
+   "flags": 253,
+   "build": "a0e17c8"
+  }
+ },
+ "provenance": {
+  "repo": "f672bf6605a8",
+  "sources": {
+   "tools/throughput.py": "3c0a12253c6bc172f008de07f30ec85e9239c2f88894dff05eec6c8e3993dc03",
+   "tools/cmsis_dap.py": "a6a63f3f69f9b939e79bcc93f702b8d1ca88a0bcd7ee7a59efb3264da6b79755",
+   "tools/swd-throughput/Cargo.toml": "4374286ad56f2944b471a8633333bae972c02a22dd626706bbfa6e44fe97fbcd",
+   "tools/swd-throughput/Cargo.lock": "7e75adc51a35f812c294991a41a25f41f7ff0d1b93810a14bac0882b315a7a85",
+   "tools/swd-throughput/src/main.rs": "139dce3a221855021d09656e9b4a6ee02f62bef7c39c2958ecd9cca6569080b3"
+  },
+  "probe_rs": [
+   "https://github.com/CordlessCoder/probe-rs",
+   "17beb8e80"
+  ],
+  "host": {
+   "platform": "Linux-7.3.0-5-cachyos-x86_64-with-glibc2.44",
+   "python": "3.12.14",
+   "libusb": "1.0.30"
+  }
+ },
+ "settings": {
+  "protocol": "cjtag",
+  "formats": "oscan6",
+  "clocks_mhz": [
+   1,
+   5,
+   10,
+   20,
+   50
+  ],
+  "depths": [
+   1,
+   2,
+   8
+  ],
+  "repeats": 3,
+  "run_seconds": 0.25,
+  "stage": null
+ },
+ "custom_host": [],
+ "target": null,
+ "probe_rs": {
+  "exit": 0,
+  "report": "\nmedian throughput, KiB/s\n\n     kHz   read32 64  read32 256 read32 1024 read32 4096  write32 64 write32 256write32 1024write32 4096    read8 64   read8 256  read8 1024  read8 4096   write8 64  write8 256 write8 1024 write8 4096     rt us\n    1000        34.2        41.1        45.7        46.2        34.3        41.4        46.1        46.3        10.1        11.5        11.8        11.8        10.9        11.6        11.8        11.8     430.9\n    2000        68.8        84.0        91.0        91.6        68.1        85.1        91.3        91.8        21.0        22.8        23.4        23.4        20.8        22.9        23.4        23.4     258.6\n    5000       142.5       188.1       218.0       218.3       136.1       182.9       215.9       220.2        47.4        54.3        56.1        56.5        47.2        54.6        56.6        56.7     159.8\n   10000       222.5       322.0       406.2       415.9       227.9       326.9       406.9       411.8        80.7       101.4       106.8       107.3        81.6       102.1       106.6       107.9     130.9\n   20000       236.4       422.8       576.7       618.3       295.5       460.4       577.8       604.1       105.2       145.3       155.1       156.0       109.5       150.9       161.5       162.0     118.7\n   30000       302.4       456.8       631.8       637.5       296.1       470.4       655.4       665.9       103.4       157.3       168.6       169.5       108.8       158.4       174.8       177.5     110.9\n   50000       256.7       475.8       643.9       675.6       296.6       501.4       742.0       733.6       123.0       168.8       188.5       192.6       124.9       183.3       199.6       201.1     104.2\n\nfixed cost per transfer and the ceiling a large one approaches\n\n     kHz      arm   fixed us ceiling KiB/s\n    1000   read32      523.8         46.5\n    1000  write32      485.6         46.6\n    1000    read8      651.2         11.8\n    1000   write8      397.1         11.8\n    2000   read32      213.4         92.1\n    2000  write32      197.3         92.2\n    2000    read8      237.8         23.4\n    2000   write8      262.9         23.5\n    5000   read32      137.9        220.2\n    5000  write32      190.6        222.7\n    5000    read8      199.2         56.7\n    5000   write8      166.9         56.8\n   10000   read32      140.3        422.5\n   10000  write32      121.7        417.6\n   10000    read8      146.6        107.8\n   10000   write8      163.4        108.4\n   20000   read32      175.9        635.8\n   20000  write32      118.0        615.2\n   20000    read8      138.2        156.9\n   20000   write8      127.2        163.0\n   30000   read32      110.6        650.4\n   30000  write32      117.4        680.5\n   30000    read8      153.5        170.8\n   30000   write8      185.4        179.1\n   50000   read32      145.6        693.5\n   50000  write32      110.0        751.5\n   50000    read8      182.1        194.4\n   50000   write8      137.7        202.7\n",
+  "points": [
+   {
+    "speed_khz": 1000.0,
+    "probe_khz": 1000.0,
+    "arm": "read32",
+    "bytes": 64.0,
+    "median_us": 1827.429,
+    "bytes_per_second": 35021.9
+   },
+   {
+    "speed_khz": 1000.0,
+    "probe_khz": 1000.0,
+    "arm": "read32",
+    "bytes": 256.0,
+    "median_us": 6086.007,
+    "bytes_per_second": 42063.7
+   },
+   {
+    "speed_khz": 1000.0,
+    "probe_khz": 1000.0,
+    "arm": "read32",
+    "bytes": 1024.0,
+    "median_us": 21880.249,
+    "bytes_per_second": 46800.2
+   },
+   {
+    "speed_khz": 1000.0,
+    "probe_khz": 1000.0,
+    "arm": "read32",
+    "bytes": 4096.0,
+    "median_us": 86663.912,
+    "bytes_per_second": 47263.0
+   },
+   {
+    "speed_khz": 1000.0,
+    "probe_khz": 1000.0,
+    "arm": "write32",
+    "bytes": 64.0,
+    "median_us": 1819.565,
+    "bytes_per_second": 35173.2
+   },
+   {
+    "speed_khz": 1000.0,
+    "probe_khz": 1000.0,
+    "arm": "write32",
+    "bytes": 256.0,
+    "median_us": 6041.665,
+    "bytes_per_second": 42372.4
+   },
+   {
+    "speed_khz": 1000.0,
+    "probe_khz": 1000.0,
+    "arm": "write32",
+    "bytes": 1024.0,
+    "median_us": 21698.209,
+    "bytes_per_second": 47192.8
+   },
+   {
+    "speed_khz": 1000.0,
+    "probe_khz": 1000.0,
+    "arm": "write32",
+    "bytes": 4096.0,
+    "median_us": 86319.798,
+    "bytes_per_second": 47451.5
+   },
+   {
+    "speed_khz": 1000.0,
+    "probe_khz": 1000.0,
+    "arm": "read8",
+    "bytes": 64.0,
+    "median_us": 6212.654,
+    "bytes_per_second": 10301.6
+   },
+   {
+    "speed_khz": 1000.0,
+    "probe_khz": 1000.0,
+    "arm": "read8",
+    "bytes": 256.0,
+    "median_us": 21777.437,
+    "bytes_per_second": 11755.3
+   },
+   {
+    "speed_khz": 1000.0,
+    "probe_khz": 1000.0,
+    "arm": "read8",
+    "bytes": 1024.0,
+    "median_us": 84914.158,
+    "bytes_per_second": 12059.2
+   },
+   {
+    "speed_khz": 1000.0,
+    "probe_khz": 1000.0,
+    "arm": "read8",
+    "bytes": 4096.0,
+    "median_us": 339110.57,
+    "bytes_per_second": 12078.7
+   },
+   {
+    "speed_khz": 1000.0,
+    "probe_khz": 1000.0,
+    "arm": "write8",
+    "bytes": 64.0,
+    "median_us": 5737.104,
+    "bytes_per_second": 11155.5
+   },
+   {
+    "speed_khz": 1000.0,
+    "probe_khz": 1000.0,
+    "arm": "write8",
+    "bytes": 256.0,
+    "median_us": 21639.999,
+    "bytes_per_second": 11829.9
+   },
+   {
+    "speed_khz": 1000.0,
+    "probe_khz": 1000.0,
+    "arm": "write8",
+    "bytes": 1024.0,
+    "median_us": 84809.702,
+    "bytes_per_second": 12074.1
+   },
+   {
+    "speed_khz": 1000.0,
+    "probe_khz": 1000.0,
+    "arm": "write8",
+    "bytes": 4096.0,
+    "median_us": 338830.468,
+    "bytes_per_second": 12088.6
+   },
+   {
+    "speed_khz": 2000.0,
+    "probe_khz": 2000.0,
+    "arm": "read32",
+    "bytes": 64.0,
+    "median_us": 908.901,
+    "bytes_per_second": 70414.7
+   },
+   {
+    "speed_khz": 2000.0,
+    "probe_khz": 2000.0,
+    "arm": "read32",
+    "bytes": 256.0,
+    "median_us": 2975.748,
+    "bytes_per_second": 86028.8
+   },
+   {
+    "speed_khz": 2000.0,
+    "probe_khz": 2000.0,
+    "arm": "read32",
+    "bytes": 1024.0,
+    "median_us": 10986.216,
+    "bytes_per_second": 93207.7
+   },
+   {
+    "speed_khz": 2000.0,
+    "probe_khz": 2000.0,
+    "arm": "read32",
+    "bytes": 4096.0,
+    "median_us": 43653.458,
+    "bytes_per_second": 93829.9
+   },
+   {
+    "speed_khz": 2000.0,
+    "probe_khz": 2000.0,
+    "arm": "write32",
+    "bytes": 64.0,
+    "median_us": 917.557,
+    "bytes_per_second": 69750.4
+   },
+   {
+    "speed_khz": 2000.0,
+    "probe_khz": 2000.0,
+    "arm": "write32",
+    "bytes": 256.0,
+    "median_us": 2936.674,
+    "bytes_per_second": 87173.4
+   },
+   {
+    "speed_khz": 2000.0,
+    "probe_khz": 2000.0,
+    "arm": "write32",
+    "bytes": 1024.0,
+    "median_us": 10949.567,
+    "bytes_per_second": 93519.7
+   },
+   {
+    "speed_khz": 2000.0,
+    "probe_khz": 2000.0,
+    "arm": "write32",
+    "bytes": 4096.0,
+    "median_us": 43592.113,
+    "bytes_per_second": 93962.0
+   },
+   {
+    "speed_khz": 2000.0,
+    "probe_khz": 2000.0,
+    "arm": "read8",
+    "bytes": 64.0,
+    "median_us": 2971.901,
+    "bytes_per_second": 21535.0
+   },
+   {
+    "speed_khz": 2000.0,
+    "probe_khz": 2000.0,
+    "arm": "read8",
+    "bytes": 256.0,
+    "median_us": 10988.69,
+    "bytes_per_second": 23296.7
+   },
+   {
+    "speed_khz": 2000.0,
+    "probe_khz": 2000.0,
+    "arm": "read8",
+    "bytes": 1024.0,
+    "median_us": 42750.538,
+    "bytes_per_second": 23952.9
+   },
+   {
+    "speed_khz": 2000.0,
+    "probe_khz": 2000.0,
+    "arm": "read8",
+    "bytes": 4096.0,
+    "median_us": 171059.0,
+    "bytes_per_second": 23945.0
+   },
+   {
+    "speed_khz": 2000.0,
+    "probe_khz": 2000.0,
+    "arm": "write8",
+    "bytes": 64.0,
+    "median_us": 2999.683,
+    "bytes_per_second": 21335.6
+   },
+   {
+    "speed_khz": 2000.0,
+    "probe_khz": 2000.0,
+    "arm": "write8",
+    "bytes": 256.0,
+    "median_us": 10925.523,
+    "bytes_per_second": 23431.4
+   },
+   {
+    "speed_khz": 2000.0,
+    "probe_khz": 2000.0,
+    "arm": "write8",
+    "bytes": 1024.0,
+    "median_us": 42794.73,
+    "bytes_per_second": 23928.2
+   },
+   {
+    "speed_khz": 2000.0,
+    "probe_khz": 2000.0,
+    "arm": "write8",
+    "bytes": 4096.0,
+    "median_us": 170815.745,
+    "bytes_per_second": 23979.1
+   },
+   {
+    "speed_khz": 5000.0,
+    "probe_khz": 5000.0,
+    "arm": "read32",
+    "bytes": 64.0,
+    "median_us": 438.701,
+    "bytes_per_second": 145885.2
+   },
+   {
+    "speed_khz": 5000.0,
+    "probe_khz": 5000.0,
+    "arm": "read32",
+    "bytes": 256.0,
+    "median_us": 1329.057,
+    "bytes_per_second": 192617.8
+   },
+   {
+    "speed_khz": 5000.0,
+    "probe_khz": 5000.0,
+    "arm": "read32",
+    "bytes": 1024.0,
+    "median_us": 4587.113,
+    "bytes_per_second": 223234.1
+   },
+   {
+    "speed_khz": 5000.0,
+    "probe_khz": 5000.0,
+    "arm": "read32",
+    "bytes": 4096.0,
+    "median_us": 18321.841,
+    "bytes_per_second": 223558.3
+   },
+   {
+    "speed_khz": 5000.0,
+    "probe_khz": 5000.0,
+    "arm": "write32",
+    "bytes": 64.0,
+    "median_us": 459.169,
+    "bytes_per_second": 139382.2
+   },
+   {
+    "speed_khz": 5000.0,
+    "probe_khz": 5000.0,
+    "arm": "write32",
+    "bytes": 256.0,
+    "median_us": 1366.878,
+    "bytes_per_second": 187288.1
+   },
+   {
+    "speed_khz": 5000.0,
+    "probe_khz": 5000.0,
+    "arm": "write32",
+    "bytes": 1024.0,
+    "median_us": 4630.714,
+    "bytes_per_second": 221132.2
+   },
+   {
+    "speed_khz": 5000.0,
+    "probe_khz": 5000.0,
+    "arm": "write32",
+    "bytes": 4096.0,
+    "median_us": 18164.777,
+    "bytes_per_second": 225491.3
+   },
+   {
+    "speed_khz": 5000.0,
+    "probe_khz": 5000.0,
+    "arm": "read8",
+    "bytes": 64.0,
+    "median_us": 1318.247,
+    "bytes_per_second": 48549.3
+   },
+   {
+    "speed_khz": 5000.0,
+    "probe_khz": 5000.0,
+    "arm": "read8",
+    "bytes": 256.0,
+    "median_us": 4600.909,
+    "bytes_per_second": 55641.2
+   },
+   {
+    "speed_khz": 5000.0,
+    "probe_khz": 5000.0,
+    "arm": "read8",
+    "bytes": 1024.0,
+    "median_us": 17828.287,
+    "bytes_per_second": 57436.8
+   },
+   {
+    "speed_khz": 5000.0,
+    "probe_khz": 5000.0,
+    "arm": "read8",
+    "bytes": 4096.0,
+    "median_us": 70763.582,
+    "bytes_per_second": 57882.9
+   },
+   {
+    "speed_khz": 5000.0,
+    "probe_khz": 5000.0,
+    "arm": "write8",
+    "bytes": 64.0,
+    "median_us": 1322.765,
+    "bytes_per_second": 48383.5
+   },
+   {
+    "speed_khz": 5000.0,
+    "probe_khz": 5000.0,
+    "arm": "write8",
+    "bytes": 256.0,
+    "median_us": 4581.432,
+    "bytes_per_second": 55877.7
+   },
+   {
+    "speed_khz": 5000.0,
+    "probe_khz": 5000.0,
+    "arm": "write8",
+    "bytes": 1024.0,
+    "median_us": 17680.882,
+    "bytes_per_second": 57915.7
+   },
+   {
+    "speed_khz": 5000.0,
+    "probe_khz": 5000.0,
+    "arm": "write8",
+    "bytes": 4096.0,
+    "median_us": 70603.542,
+    "bytes_per_second": 58014.1
+   },
+   {
+    "speed_khz": 10000.0,
+    "probe_khz": 10000.0,
+    "arm": "read32",
+    "bytes": 64.0,
+    "median_us": 280.886,
+    "bytes_per_second": 227850.4
+   },
+   {
+    "speed_khz": 10000.0,
+    "probe_khz": 10000.0,
+    "arm": "read32",
+    "bytes": 256.0,
+    "median_us": 776.453,
+    "bytes_per_second": 329704.4
+   },
+   {
+    "speed_khz": 10000.0,
+    "probe_khz": 10000.0,
+    "arm": "read32",
+    "bytes": 1024.0,
+    "median_us": 2461.655,
+    "bytes_per_second": 415980.3
+   },
+   {
+    "speed_khz": 10000.0,
+    "probe_khz": 10000.0,
+    "arm": "read32",
+    "bytes": 4096.0,
+    "median_us": 9617.404,
+    "bytes_per_second": 425894.6
+   },
+   {
+    "speed_khz": 10000.0,
+    "probe_khz": 10000.0,
+    "arm": "write32",
+    "bytes": 64.0,
+    "median_us": 274.293,
+    "bytes_per_second": 233327.1
+   },
+   {
+    "speed_khz": 10000.0,
+    "probe_khz": 10000.0,
+    "arm": "write32",
+    "bytes": 256.0,
+    "median_us": 764.741,
+    "bytes_per_second": 334753.9
+   },
+   {
+    "speed_khz": 10000.0,
+    "probe_khz": 10000.0,
+    "arm": "write32",
+    "bytes": 1024.0,
+    "median_us": 2457.318,
+    "bytes_per_second": 416714.5
+   },
+   {
+    "speed_khz": 10000.0,
+    "probe_khz": 10000.0,
+    "arm": "write32",
+    "bytes": 4096.0,
+    "median_us": 9713.134,
+    "bytes_per_second": 421697.1
+   },
+   {
+    "speed_khz": 10000.0,
+    "probe_khz": 10000.0,
+    "arm": "read8",
+    "bytes": 64.0,
+    "median_us": 774.84,
+    "bytes_per_second": 82597.7
+   },
+   {
+    "speed_khz": 10000.0,
+    "probe_khz": 10000.0,
+    "arm": "read8",
+    "bytes": 256.0,
+    "median_us": 2464.871,
+    "bytes_per_second": 103859.4
+   },
+   {
+    "speed_khz": 10000.0,
+    "probe_khz": 10000.0,
+    "arm": "read8",
+    "bytes": 1024.0,
+    "median_us": 9361.946,
+    "bytes_per_second": 109379.0
+   },
+   {
+    "speed_khz": 10000.0,
+    "probe_khz": 10000.0,
+    "arm": "read8",
+    "bytes": 4096.0,
+    "median_us": 37271.807,
+    "bytes_per_second": 109895.4
+   },
+   {
+    "speed_khz": 10000.0,
+    "probe_khz": 10000.0,
+    "arm": "write8",
+    "bytes": 64.0,
+    "median_us": 765.612,
+    "bytes_per_second": 83593.3
+   },
+   {
+    "speed_khz": 10000.0,
+    "probe_khz": 10000.0,
+    "arm": "write8",
+    "bytes": 256.0,
+    "median_us": 2448.692,
+    "bytes_per_second": 104545.6
+   },
+   {
+    "speed_khz": 10000.0,
+    "probe_khz": 10000.0,
+    "arm": "write8",
+    "bytes": 1024.0,
+    "median_us": 9378.458,
+    "bytes_per_second": 109186.4
+   },
+   {
+    "speed_khz": 10000.0,
+    "probe_khz": 10000.0,
+    "arm": "write8",
+    "bytes": 4096.0,
+    "median_us": 37058.92,
+    "bytes_per_second": 110526.7
+   },
+   {
+    "speed_khz": 20000.0,
+    "probe_khz": 20000.0,
+    "arm": "read32",
+    "bytes": 64.0,
+    "median_us": 264.335,
+    "bytes_per_second": 242117.0
+   },
+   {
+    "speed_khz": 20000.0,
+    "probe_khz": 20000.0,
+    "arm": "read32",
+    "bytes": 256.0,
+    "median_us": 591.247,
+    "bytes_per_second": 432983.2
+   },
+   {
+    "speed_khz": 20000.0,
+    "probe_khz": 20000.0,
+    "arm": "read32",
+    "bytes": 1024.0,
+    "median_us": 1733.944,
+    "bytes_per_second": 590561.2
+   },
+   {
+    "speed_khz": 20000.0,
+    "probe_khz": 20000.0,
+    "arm": "read32",
+    "bytes": 4096.0,
+    "median_us": 6469.175,
+    "bytes_per_second": 633156.5
+   },
+   {
+    "speed_khz": 20000.0,
+    "probe_khz": 20000.0,
+    "arm": "write32",
+    "bytes": 64.0,
+    "median_us": 211.526,
+    "bytes_per_second": 302563.3
+   },
+   {
+    "speed_khz": 20000.0,
+    "probe_khz": 20000.0,
+    "arm": "write32",
+    "bytes": 256.0,
+    "median_us": 543.056,
+    "bytes_per_second": 471406.3
+   },
+   {
+    "speed_khz": 20000.0,
+    "probe_khz": 20000.0,
+    "arm": "write32",
+    "bytes": 1024.0,
+    "median_us": 1730.678,
+    "bytes_per_second": 591675.6
+   },
+   {
+    "speed_khz": 20000.0,
+    "probe_khz": 20000.0,
+    "arm": "write32",
+    "bytes": 4096.0,
+    "median_us": 6621.91,
+    "bytes_per_second": 618552.7
+   },
+   {
+    "speed_khz": 20000.0,
+    "probe_khz": 20000.0,
+    "arm": "read8",
+    "bytes": 64.0,
+    "median_us": 594.091,
+    "bytes_per_second": 107727.6
+   },
+   {
+    "speed_khz": 20000.0,
+    "probe_khz": 20000.0,
+    "arm": "read8",
+    "bytes": 256.0,
+    "median_us": 1721.111,
+    "bytes_per_second": 148741.1
+   },
+   {
+    "speed_khz": 20000.0,
+    "probe_khz": 20000.0,
+    "arm": "read8",
+    "bytes": 1024.0,
+    "median_us": 6448.666,
+    "bytes_per_second": 158792.5
+   },
+   {
+    "speed_khz": 20000.0,
+    "probe_khz": 20000.0,
+    "arm": "read8",
+    "bytes": 4096.0,
+    "median_us": 25646.045,
+    "bytes_per_second": 159712.7
+   },
+   {
+    "speed_khz": 20000.0,
+    "probe_khz": 20000.0,
+    "arm": "write8",
+    "bytes": 64.0,
+    "median_us": 570.538,
+    "bytes_per_second": 112174.8
+   },
+   {
+    "speed_khz": 20000.0,
+    "probe_khz": 20000.0,
+    "arm": "write8",
+    "bytes": 256.0,
+    "median_us": 1656.88,
+    "bytes_per_second": 154507.3
+   },
+   {
+    "speed_khz": 20000.0,
+    "probe_khz": 20000.0,
+    "arm": "write8",
+    "bytes": 1024.0,
+    "median_us": 6191.014,
+    "bytes_per_second": 165401.0
+   },
+   {
+    "speed_khz": 20000.0,
+    "probe_khz": 20000.0,
+    "arm": "write8",
+    "bytes": 4096.0,
+    "median_us": 24691.87,
+    "bytes_per_second": 165884.6
+   },
+   {
+    "speed_khz": 30000.0,
+    "probe_khz": 30000.0,
+    "arm": "read32",
+    "bytes": 64.0,
+    "median_us": 206.647,
+    "bytes_per_second": 309706.9
+   },
+   {
+    "speed_khz": 30000.0,
+    "probe_khz": 30000.0,
+    "arm": "read32",
+    "bytes": 256.0,
+    "median_us": 547.324,
+    "bytes_per_second": 467730.3
+   },
+   {
+    "speed_khz": 30000.0,
+    "probe_khz": 30000.0,
+    "arm": "read32",
+    "bytes": 1024.0,
+    "median_us": 1582.761,
+    "bytes_per_second": 646970.7
+   },
+   {
+    "speed_khz": 30000.0,
+    "probe_khz": 30000.0,
+    "arm": "read32",
+    "bytes": 4096.0,
+    "median_us": 6274.109,
+    "bytes_per_second": 652841.7
+   },
+   {
+    "speed_khz": 30000.0,
+    "probe_khz": 30000.0,
+    "arm": "write32",
+    "bytes": 64.0,
+    "median_us": 211.095,
+    "bytes_per_second": 303181.0
+   },
+   {
+    "speed_khz": 30000.0,
+    "probe_khz": 30000.0,
+    "arm": "write32",
+    "bytes": 256.0,
+    "median_us": 531.425,
+    "bytes_per_second": 481723.7
+   },
+   {
+    "speed_khz": 30000.0,
+    "probe_khz": 30000.0,
+    "arm": "write32",
+    "bytes": 1024.0,
+    "median_us": 1525.885,
+    "bytes_per_second": 671086.0
+   },
+   {
+    "speed_khz": 30000.0,
+    "probe_khz": 30000.0,
+    "arm": "write32",
+    "bytes": 4096.0,
+    "median_us": 6007.29,
+    "bytes_per_second": 681838.2
+   },
+   {
+    "speed_khz": 30000.0,
+    "probe_khz": 30000.0,
+    "arm": "read8",
+    "bytes": 64.0,
+    "median_us": 604.521,
+    "bytes_per_second": 105868.9
+   },
+   {
+    "speed_khz": 30000.0,
+    "probe_khz": 30000.0,
+    "arm": "read8",
+    "bytes": 256.0,
+    "median_us": 1589.664,
+    "bytes_per_second": 161040.3
+   },
+   {
+    "speed_khz": 30000.0,
+    "probe_khz": 30000.0,
+    "arm": "read8",
+    "bytes": 1024.0,
+    "median_us": 5932.591,
+    "bytes_per_second": 172605.9
+   },
+   {
+    "speed_khz": 30000.0,
+    "probe_khz": 30000.0,
+    "arm": "read8",
+    "bytes": 4096.0,
+    "median_us": 23597.061,
+    "bytes_per_second": 173580.9
+   },
+   {
+    "speed_khz": 30000.0,
+    "probe_khz": 30000.0,
+    "arm": "write8",
+    "bytes": 64.0,
+    "median_us": 574.685,
+    "bytes_per_second": 111365.4
+   },
+   {
+    "speed_khz": 30000.0,
+    "probe_khz": 30000.0,
+    "arm": "write8",
+    "bytes": 256.0,
+    "median_us": 1578.523,
+    "bytes_per_second": 162176.9
+   },
+   {
+    "speed_khz": 30000.0,
+    "probe_khz": 30000.0,
+    "arm": "write8",
+    "bytes": 1024.0,
+    "median_us": 5719.722,
+    "bytes_per_second": 179029.7
+   },
+   {
+    "speed_khz": 30000.0,
+    "probe_khz": 30000.0,
+    "arm": "write8",
+    "bytes": 4096.0,
+    "median_us": 22531.688,
+    "bytes_per_second": 181788.4
+   },
+   {
+    "speed_khz": 50000.0,
+    "probe_khz": 50000.0,
+    "arm": "read32",
+    "bytes": 64.0,
+    "median_us": 243.516,
+    "bytes_per_second": 262816.4
+   },
+   {
+    "speed_khz": 50000.0,
+    "probe_khz": 50000.0,
+    "arm": "read32",
+    "bytes": 256.0,
+    "median_us": 525.483,
+    "bytes_per_second": 487170.9
+   },
+   {
+    "speed_khz": 50000.0,
+    "probe_khz": 50000.0,
+    "arm": "read32",
+    "bytes": 1024.0,
+    "median_us": 1552.946,
+    "bytes_per_second": 659391.9
+   },
+   {
+    "speed_khz": 50000.0,
+    "probe_khz": 50000.0,
+    "arm": "read32",
+    "bytes": 4096.0,
+    "median_us": 5920.457,
+    "bytes_per_second": 691838.5
+   },
+   {
+    "speed_khz": 50000.0,
+    "probe_khz": 50000.0,
+    "arm": "write32",
+    "bytes": 64.0,
+    "median_us": 210.694,
+    "bytes_per_second": 303758.1
+   },
+   {
+    "speed_khz": 50000.0,
+    "probe_khz": 50000.0,
+    "arm": "write32",
+    "bytes": 256.0,
+    "median_us": 498.643,
+    "bytes_per_second": 513393.3
+   },
+   {
+    "speed_khz": 50000.0,
+    "probe_khz": 50000.0,
+    "arm": "write32",
+    "bytes": 1024.0,
+    "median_us": 1347.672,
+    "bytes_per_second": 759828.8
+   },
+   {
+    "speed_khz": 50000.0,
+    "probe_khz": 50000.0,
+    "arm": "write32",
+    "bytes": 4096.0,
+    "median_us": 5452.412,
+    "bytes_per_second": 751227.2
+   },
+   {
+    "speed_khz": 50000.0,
+    "probe_khz": 50000.0,
+    "arm": "read8",
+    "bytes": 64.0,
+    "median_us": 508.01,
+    "bytes_per_second": 125981.8
+   },
+   {
+    "speed_khz": 50000.0,
+    "probe_khz": 50000.0,
+    "arm": "read8",
+    "bytes": 256.0,
+    "median_us": 1480.65,
+    "bytes_per_second": 172897.0
+   },
+   {
+    "speed_khz": 50000.0,
+    "probe_khz": 50000.0,
+    "arm": "read8",
+    "bytes": 1024.0,
+    "median_us": 5305.908,
+    "bytes_per_second": 192992.4
+   },
+   {
+    "speed_khz": 50000.0,
+    "probe_khz": 50000.0,
+    "arm": "read8",
+    "bytes": 4096.0,
+    "median_us": 20766.445,
+    "bytes_per_second": 197241.3
+   },
+   {
+    "speed_khz": 50000.0,
+    "probe_khz": 50000.0,
+    "arm": "write8",
+    "bytes": 64.0,
+    "median_us": 500.406,
+    "bytes_per_second": 127896.1
+   },
+   {
+    "speed_khz": 50000.0,
+    "probe_khz": 50000.0,
+    "arm": "write8",
+    "bytes": 256.0,
+    "median_us": 1363.732,
+    "bytes_per_second": 187720.2
+   },
+   {
+    "speed_khz": 50000.0,
+    "probe_khz": 50000.0,
+    "arm": "write8",
+    "bytes": 1024.0,
+    "median_us": 5009.413,
+    "bytes_per_second": 204415.2
+   },
+   {
+    "speed_khz": 50000.0,
+    "probe_khz": 50000.0,
+    "arm": "write8",
+    "bytes": 4096.0,
+    "median_us": 19888.182,
+    "bytes_per_second": 205951.5
+   },
+   {
+    "speed_khz": 1000.0,
+    "probe_khz": 1000.0,
+    "arm": "rt",
+    "bytes": 4.0,
+    "median_us": 430.893,
+    "bytes_per_second": 9283.0
+   },
+   {
+    "speed_khz": 2000.0,
+    "probe_khz": 2000.0,
+    "arm": "rt",
+    "bytes": 4.0,
+    "median_us": 258.56,
+    "bytes_per_second": 15470.3
+   },
+   {
+    "speed_khz": 5000.0,
+    "probe_khz": 5000.0,
+    "arm": "rt",
+    "bytes": 4.0,
+    "median_us": 159.769,
+    "bytes_per_second": 25036.1
+   },
+   {
+    "speed_khz": 10000.0,
+    "probe_khz": 10000.0,
+    "arm": "rt",
+    "bytes": 4.0,
+    "median_us": 130.894,
+    "bytes_per_second": 30559.1
+   },
+   {
+    "speed_khz": 20000.0,
+    "probe_khz": 20000.0,
+    "arm": "rt",
+    "bytes": 4.0,
+    "median_us": 118.666,
+    "bytes_per_second": 33708.1
+   },
+   {
+    "speed_khz": 30000.0,
+    "probe_khz": 30000.0,
+    "arm": "rt",
+    "bytes": 4.0,
+    "median_us": 110.879,
+    "bytes_per_second": 36075.4
+   },
+   {
+    "speed_khz": 50000.0,
+    "probe_khz": 50000.0,
+    "arm": "rt",
+    "bytes": 4.0,
+    "median_us": 104.198,
+    "bytes_per_second": 38388.5
+   }
+  ]
+ }
+}
