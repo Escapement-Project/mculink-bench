@@ -66,15 +66,19 @@ h1, h2, h3 { font-family: var(--font-display); font-stretch: var(--display-stret
 .switch.ready .thumb, .switch.ready .wheel { transition: transform .26s cubic-bezier(.4, 0, .2, 1); }
 @media (prefers-reduced-motion: reduce) { .switch.ready .thumb, .switch.ready .wheel { transition: none; } }
 
-/* Headline: the multiple in a window of lume, as on the landing page's dial */
+/* Headline: our fastest write in a window of lume; the comparison with stock beside it, quieter. */
 .hero { display: block; }
-.reading { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px 24px; align-items: center; padding: 20px 22px 18px; }
+.reading { display: grid; grid-template-columns: auto minmax(0, 1fr) minmax(0, 15rem); gap: 8px 24px; align-items: center; padding: 20px 22px 18px; }
 .big {
   justify-self: start; background: var(--lume); color: var(--on-lume); box-shadow: inset 0 0 0 1px var(--window-edge); border-radius: 8px;
   padding: .14em .3em .1em; font: var(--figures-weight) clamp(46px, 8vw, 100px)/1 var(--font-figures); font-stretch: var(--figures-stretch); font-variant-numeric: tabular-nums;
 }
 .big small { font-size: .5em; margin-left: .06em; }
 .reading-stack { display: grid; gap: 6px; min-width: 0; }
+.versus { align-self: stretch; display: grid; align-content: center; gap: 4px; padding-left: 24px; border-left: 1px solid var(--hair); }
+.versus .x { font: var(--figures-weight) 34px/1.1 var(--font-figures); font-stretch: var(--figures-stretch); font-variant-numeric: tabular-nums; color: var(--ink); }
+.versus p { margin: 0; color: var(--ink-2); font-size: 14px; }
+@media (max-width: 900px) { .reading { grid-template-columns: auto minmax(0, 1fr); } .versus { grid-column: 1 / -1; padding: 12px 0 0; border-left: 0; border-top: 1px solid var(--hair); } }
 .reading-stack p { margin: 0; max-width: 46ch; color: var(--ink); }
 .same-clock { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 18px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--hair); color: var(--ink-2); }
 .same-clock-item { display: flex; align-items: baseline; gap: 8px; }
@@ -239,6 +243,7 @@ footer code { font: 500 12.5px/1.45 var(--font-code); font-stretch: var(--code-s
         <div class="micro" id="headline-label"></div>
         <p id="headline-detail"></p>
       </div>
+      <div class="versus" id="headline-versus"></div>
       <div class="same-clock" id="same-clock"></div>
     </div>
   </section>
@@ -644,26 +649,31 @@ function renderTop() {
   const stockUpTo = stock && rightUpTo(stock);
   const stockPeak = stockUpTo != null && peakWrite([stock]);
   const ratio = peak && stockPeak && stockPeak.kib > 0 ? peak.kib / stockPeak.kib : null;
-  if (ratio != null) {
-    $("headline-value").innerHTML = `${fmt(ratio, 2)}<small>×</small>`;
-    $("headline-label").textContent = `stock throughput · probe-rs 4 KiB writes · ${V.title}`;
+  // Lead with our speed; the comparison sits beside it, quieter.
+  const versus = $("headline-versus");
+  if (peak) {
+    $("headline-value").innerHTML = `${fmt(peak.kib)}<small> KiB/s</small>`;
+    // A non-breaking hyphen: the label must not wrap inside "probe-rs".
+    $("headline-label").textContent = `Fastest 4 KiB write over ${V.title}, through probe\u2011rs`;
+    $("headline-detail").textContent = `Verge built with ${short(peak.s)}, at ${peak.khz / 1000} MHz.`;
+    if (ratio != null) {
     const there = PR(stock, "write32", 4096, stockUpTo) ? "it wrote slower"
       : PR_FAILED(stock, stockUpTo) ? "its write did not complete" : "this set did not measure it";
     const where = stockPeak.khz === stockUpTo ? ", the fastest clock it reads right at"
-      : `. Stock reads right up to ${stockUpTo / 1000} MHz, where ${there}.`;
-    $("headline-detail").textContent = `${short(peak.s)} ${fmt(peak.kib, 1)} KiB/s at ${peak.khz / 1000} MHz · stock ${fmt(stockPeak.kib, 1)} KiB/s at ${stockPeak.khz / 1000} MHz${where}`;
-  } else if (peak) {
-    $("headline-value").innerHTML = `${fmt(peak.kib)}<small> KiB/s</small>`;
-    $("headline-label").textContent = `peak probe-rs 4 KiB write · ${V.title}`;
-    const why = !stock ? (V.protocol === "cjtag" ? "Stock does not run cJTAG." : "No stock run on this wire in this set.")
-      : stockUpTo === undefined ? "No record of the clocks stock reads right at."
-      : stockUpTo === null ? "Stock read wrong at every clock."
-      : `No completed stock write at a clock it reads right at (up to ${stockUpTo / 1000} MHz).`;
-    $("headline-detail").textContent = `${short(peak.s)} at ${peak.khz / 1000} MHz. ${why}`;
+      : `. Stock reads right up to ${stockUpTo / 1000} MHz, where ${there}`;
+      versus.innerHTML = `<div class="micro">Against stock</div><div class="x">${fmt(ratio, 2)}×</div><p>${short(stock)}: ${fmt(stockPeak.kib, 1)} KiB/s at ${stockPeak.khz / 1000} MHz${where}.</p>`;
+    } else {
+      const why = !stock ? (V.protocol === "cjtag" ? "Stock does not run cJTAG." : "No stock run on this wire in this set.")
+        : stockUpTo === undefined ? "No record of the clocks stock reads right at."
+        : stockUpTo === null ? "Stock read wrong at every clock."
+        : `No completed stock write at a clock it reads right at (up to ${stockUpTo / 1000} MHz).`;
+      versus.innerHTML = `<div class="micro">Against stock</div><p>${why}</p>`;
+    }
   } else {
     $("headline-value").innerHTML = "–";
     $("headline-label").textContent = "No completed 4 KiB write";
     $("headline-detail").textContent = "";
+    versus.innerHTML = "";
   }
 
   // At 10 MHz: our peak's build against stock and every reference with a write there, shown or not.
