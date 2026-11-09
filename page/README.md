@@ -59,6 +59,10 @@ JSON:
 uv run python -I extract.py measurements.json 2026-10-20 2026-10-21 2026-10-24 2026-10-25 2026-11-04
 ```
 
+`extract.py --chart DATE VIEW ARM OUT` writes one of a view's 4 KiB charts (`read32` or `write32`)
+in tickwave's chart format, with the verdicts, failures and styles the page draws. The page does not
+use it yet.
+
 `sets.json` says which result files make up each date's set, by their labels. A set splits into one
 view per wire: SWD, JTAG, and each cJTAG format. A view shows every probe measured on that wire:
 ours built with GCC and with Clang, stock, and any reference probe whose results the set names. A

@@ -1,6 +1,11 @@
 """Compact the bench's results into the data the page embeds, one set per date.
 
     uv run python -I extract.py data.json 2026-10-20 [later dates ...]
+    uv run python -I extract.py --chart DATE VIEW ARM OUT.chart.json
+
+The second form writes one of a view's probe-rs charts, `read32` or `write32`, in tickwave's
+`tickwave-chart/1` (tickwave's CHARTS.md): the page's figures for the 4 KiB reads or writes, with
+the verdicts, ranges, failures and series styles the page draws them with.
 
 `sets.json` names each date's result files by label (`fnmatch` patterns over
 `results/throughput/<date>-<label>.json`). A set splits into views, one per wire protocol and cJTAG
@@ -21,6 +26,7 @@ import os
 import re
 import statistics
 import sys
+from decimal import Decimal
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PAGE = os.path.dirname(os.path.abspath(__file__))
@@ -277,9 +283,107 @@ def build_data(dates: list[str]) -> dict:
     return {"sets": sets, "order": dates, "references": {"jlink": reference}}
 
 
+# The page's chart encoding, by series style: colour token, line pattern and marker.
+STYLE = {"gcc": ("verge", "second-build", "square"), "clang": ("verge", "solid", "circle"),
+         "stock": ("nxp", "solid", "circle"), "ref0": ("context", "reference", "triangle-up"),
+         "ref1": ("context", "reference", "triangle-down"), "ref2": ("context", "reference", "square")}
+UNKNOWN = object()
+
+
+def mhz_text(khz: float) -> str:
+    return str(Decimal(int(khz)) / 1000)
+
+
+def right_up_to(s: dict, recorded: dict | None):
+    """The template's rightUpTo: the clock up to which a series read right, None if it read wrong
+    at the slowest, UNKNOWN where nothing says."""
+    checks = s.get("checks")
+    if not checks:
+        if s["role"] != "stock" or not recorded or "up_to_khz" not in recorded:
+            return UNKNOWN
+        return recorded["up_to_khz"]
+    kinds = {c["check"] for c in checks}
+    up_to = None
+    for khz in sorted({c["khz"] for c in checks}):
+        rows = [next((c for c in checks if c["khz"] == khz and c["check"] == k), None) for k in kinds]
+        if any(c is None or c["runs"] != c["of"] for c in rows):
+            continue
+        if any(c["right"] != c["rounds"] for c in rows):
+            break
+        up_to = khz
+    return up_to
+
+
+def wrong_at(s: dict, khz: int, recorded: dict | None) -> bool:
+    """The template's wrongClocks, at one clock."""
+    checks = s.get("checks")
+    if checks:
+        return any(c["khz"] == khz and c["runs"] == c["of"] and c["right"] != c["rounds"] for c in checks)
+    up_to = right_up_to(s, recorded)
+    return up_to is None or (up_to is not UNKNOWN and khz > up_to)
+
+
+def probe_rs_chart(date: str, data: dict, vid: str, arm: str) -> dict:
+    """One of a view's 4 KiB charts as the page draws it, in tickwave's `tickwave-chart/1`."""
+    if arm not in ("read32", "write32"):
+        raise ValueError(f"{arm}: the charts are read32 and write32")
+    view = next((v for v in data["views"] if v["id"] == vid), None)
+    if view is None:
+        raise ValueError(f"{date} has no view {vid}: {[v['id'] for v in data['views']]}")
+    recorded = data["stock_reads_right"].get(view["protocol"])
+    part = lambda s, k: next((p for p in s["probe_rs"] if p["arm"] == arm and p["bytes"] == 4096 and p["khz"] == k), None)
+    complete = lambda p: p is not None and p["runs"] == p["of"]
+    clocks = sorted({p["khz"] for s in view["series"] for p in s["probe_rs"]
+                     if (p["arm"] == "read32" and p["bytes"] == 4096) or p["arm"] == "failed"})
+    series = []
+    for s in view["series"]:
+        colour, pattern, marker = STYLE[s["style"]]
+        if s["condition"] and s.get("cond_index", 0) % 2:
+            pattern = "capture-second"
+        points = []
+        for k in clocks:
+            p = part(s, k)
+            failed = any(q["khz"] == k and (q["arm"] == "failed" or not complete(q)) for q in s["probe_rs"])
+            wrong = {"verdict": "wrong"} if wrong_at(s, k, recorded) else {}
+            if complete(p):
+                spread = {"range": [f"{p['kib_lo']:.1f}", f"{p['kib_hi']:.1f}"]} if p["runs"] > 1 and p["kib_lo"] != p["kib_hi"] else {}
+                points.append({"value": f"{p['kib']:.1f}"} | spread | wrong)
+            elif p is not None:
+                points.append({"partial": {"failed": p["of"] - p["runs"], "of": p["of"], "value": f"{p['kib']:.1f}"}} | wrong)
+            elif failed:
+                points.append({"failed": True})
+            else:
+                points.append(None)
+        series.append({"id": s["id"], "name": s["name"], "short": s["name"], "colour": colour, "pattern": pattern,
+                       "marker": marker} | ({"capture": True} if s["condition"] else {})
+                      | ({"hidden": True} if s["condition"] else {}) | ({"fails": "mark"} if s["role"] == "ours" else {})
+                      | {"points": points})
+    what = {"read32": "reads", "write32": "writes"}[arm]
+    title = TITLE.get(view["protocol"], view["protocol"])
+    return {
+        "format": "tickwave-chart/1",
+        "source": f"mculink-bench results/throughput/{date}: {view['title']}, probe-rs 4 KiB {what} on the "
+                  f"{view['meta']['chip']}; each run's figure the median of {view['meta']['repeats']}, attach "
+                  "excluded, and a point the median of the runs",
+        # The page pads the axis by 0.8 below the first clock and 1.25 above the last.
+        "x": {"name": f"{title} clock asked for", "unit": "MHz", "scale": "log", "values": [mhz_text(k) for k in clocks],
+              "min": str((Decimal(mhz_text(clocks[0])) * Decimal("0.8")).normalize()),
+              "max": str((Decimal(mhz_text(clocks[-1])) * Decimal("1.25")).normalize())},
+        "y": {"name": f"4 KiB {what}", "unit": "KiB/s", "scale": "linear"},
+        "series": series,
+    }
+
+
 def main() -> None:
+    if len(sys.argv) == 6 and sys.argv[1] == "--chart":
+        _, _, date, vid, arm, out = sys.argv
+        chart = probe_rs_chart(date, build_data([date])["sets"][date], vid, arm)
+        with open(out, "w") as f:
+            f.write(json.dumps(chart, indent=1, ensure_ascii=False) + "\n")
+        print(f"wrote {out}: {len(chart['series'])} series at {len(chart['x']['values'])} clocks")
+        return
     if len(sys.argv) < 3:
-        sys.exit("usage: extract.py OUTPUT.json DATE [DATE ...]")
+        sys.exit("usage: extract.py OUTPUT.json DATE [DATE ...] | extract.py --chart DATE VIEW ARM OUT.chart.json")
     data = build_data(sys.argv[2:])
     with open(sys.argv[1], "w") as f:
         json.dump(data, f, separators=(",", ":"))
