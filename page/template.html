@@ -661,7 +661,8 @@ function renderTop() {
   // Lead with our speed; the comparison sits beside it, quieter.
   const versus = $("headline-versus");
   if (peak) {
-    $("headline-value").innerHTML = `${fmt(peak.kib)}<small> KiB/s</small>`;
+    // No thousands separator in the headline: at its size the comma widens it more than it helps.
+    $("headline-value").innerHTML = `${peak.kib.toLocaleString("en-US", { maximumFractionDigits: 0, useGrouping: false })}<small> KiB/s</small>`;
     // A non-breaking hyphen: the label must not wrap inside "probe-rs".
     $("headline-label").textContent = `Fastest 4 KiB write over ${V.title}, through probe\u2011rs`;
     $("headline-detail").textContent = `Verge built with ${short(peak.s)}, at ${peak.khz / 1000} MHz.`;
