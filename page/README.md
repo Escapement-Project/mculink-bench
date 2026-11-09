@@ -52,16 +52,19 @@ The page follows the reader's light or dark system setting until its switch is u
 keeps the choice in the browser. Verge is teal and NXP's firmware blue. A reference probe is grey,
 told apart by its marker and name. Line patterns tell builds apart (Clang solid, GCC dashed) and
 mark wrong reads: past the fastest clock a firmware reads right at, its line is dotted and its
-points hollow. `extract.py` can also write the embedded data as
-JSON:
+points hollow.
+
+tickwave's `<tickwave-chart>` draws the line charts, loaded from the version `build.py` pins.
+`extract.py` writes each chart into the page's data in tickwave's chart format: every figure a
+decimal string with the digits measured, with its verdict, failed and partial runs and range. The
+page slices the custom host's matrix into charts the same way. The key above the charts says which
+series they show. `extract.py` can also write the embedded data as JSON, or one view's chart
+(`read`, `write` or `rt`):
 
 ```sh
 uv run python -I extract.py measurements.json 2026-10-20 2026-10-21 2026-10-24 2026-10-25 2026-11-04
+uv run python -I extract.py --chart 2026-11-04 swd read read.chart.json
 ```
-
-`extract.py --chart DATE VIEW CHART OUT` writes one of a view's charts (`read`, `write` or `rt`)
-in tickwave's chart format, with the verdicts, failures and styles the page draws. The page does not
-use it yet.
 
 `sets.json` says which result files make up each date's set, by their labels. A set splits into one
 view per wire: SWD, JTAG, and each cJTAG format. A view shows every probe measured on that wire:

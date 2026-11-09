@@ -83,20 +83,16 @@ summary:focus-visible, select:focus-visible, input:focus-visible { outline: var(
 .chart-key input { margin: 0 8px 0 0; width: 16px; height: 16px; accent-color: var(--ink); }
 .chart-key label.off { color: var(--ink-2); }
 .chart-key label.off .swatch { opacity: .5; }
-.swatch { width: 26px; height: 10px; margin-right: 6px; flex: none; overflow: visible; vertical-align: middle; }
+.swatch { width: 22px; height: 10px; margin-right: 6px; flex: none; overflow: visible; vertical-align: middle; }
 
 /* A section's figures: two to a row, a wide one across both. */
 .figs { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 44px var(--gutter); align-items: start; }
 .figs > .wide { grid-column: 1 / -1; }
 .figs + .figs, .figs + .specs, .prose + .figs, .figs + .prose { margin-top: 44px; }
 .chart { padding: 14px 12px 10px; }
-/* The chart code draws its SVG with the class "chart" too: there it is the drawing, not the panel. */
+.chart tickwave-chart { display: block; }
+/* The misread trace's SVG has the class "chart" too: there it is the drawing, not the panel. */
 svg.chart { width: 100%; height: auto; display: block; overflow: visible; background: none; padding: 0; border-radius: 0; position: static; }
-.readout { display: flex; flex-wrap: wrap; gap: 4px 20px; margin-top: 8px; padding: 8px 4px 2px; border-top: 1px solid var(--hair); font-size: 14px; line-height: 1.45; font-variant-numeric: tabular-nums; }
-.readout > span { display: inline-flex; align-items: center; white-space: nowrap; }
-.readout > span:first-child { font-weight: 600; }
-.readout .micro { color: var(--ink); }
-.chart > p.micro { margin: 8px 4px; color: var(--ink-2); font-size: 15px; }
 .prose p { max-width: 36em; }
 h3 { font: 600 17px/1.4 var(--font-text); margin: 0 0 4px; }
 /* A part of a section with a heading of its own: the custom host's matrix in Throughput. */
@@ -104,47 +100,6 @@ h3 { font: 600 17px/1.4 var(--font-text); margin: 0 0 4px; }
 .part > h3 { margin-bottom: 16px; }
 .notes > div { grid-template-columns: minmax(7em, 30%) minmax(0, 1fr); }
 
-/* Chart marks. Verge is teal (Clang solid with circles, GCC dashed with squares), NXP's firmware
-   blue with circles, dotted and hollow past the fastest clock it reads right at; reference probes
-   share the context grey and the reference dash, told apart by marker and name; a run under energy
-   capture is thinner and fainter. */
-.ax { stroke: var(--rule); stroke-width: 1; fill: none; }
-.grid-line { stroke: var(--hair); stroke-width: 1; fill: none; }
-.tick { fill: var(--ink-2); font: 400 12px var(--font-text); font-variant-numeric: tabular-nums; }
-.axis-name { fill: var(--ink-2); font: 500 12px var(--font-text); }
-.line { fill: none; stroke-width: 2; stroke-linejoin: round; }
-.line.gcc, .line.clang { stroke: var(--series-verge); }
-.line.gcc { stroke-dasharray: var(--dash-second-build); }
-.line.stock { stroke: var(--series-nxp); }
-.line.ref0, .line.ref1, .line.ref2, .line.jlink { stroke: var(--series-context); stroke-dasharray: var(--dash-reference); }
-.line.misread { stroke-dasharray: var(--dash-misread); }
-.line.cond { stroke-width: var(--capture-width); opacity: var(--capture-opacity); }
-/* Two runs of one build under capture: the first keeps the build's pattern, the second a long dash. */
-.line.cond1 { stroke-dasharray: var(--dash-capture-second); }
-.mk { stroke: var(--surface); stroke-width: 2; }
-.mk.gcc, .mk.clang { fill: var(--series-verge); }
-.mk.stock { fill: var(--series-nxp); }
-.mk.ref0, .mk.ref1, .mk.ref2, .mk.jlink { fill: var(--series-context); }
-.mk.hollow { fill: var(--surface); }
-.mk.hollow.stock { stroke: var(--series-nxp); }
-.mk.hollow.gcc, .mk.hollow.clang { stroke: var(--series-verge); }
-.mk.hollow.ref0, .mk.hollow.ref1, .mk.hollow.ref2, .mk.hollow.jlink { stroke: var(--series-context); }
-.mk.cond { opacity: var(--capture-opacity); }
-/* The key sits on the page, not on a chart's surface. */
-.chart-key .mk { stroke: var(--page); }
-.chart-key .mk.hollow { fill: var(--page); }
-.fail-mark { stroke: var(--fault-ink); stroke-width: 2; fill: none; }
-.fail-text { fill: var(--fault-ink); font: 600 12px var(--font-text); }
-.sel-rule { stroke: var(--ink); stroke-opacity: .35; stroke-width: 1; fill: none; }
-.hit { fill: transparent; cursor: pointer; }
-/* A clock's column under focus: the 2 px ink ring, drawn as the column's own outline. */
-.hit:focus-visible { outline: none; stroke: var(--ink); stroke-width: var(--focus-width); }
-svg .ref { stroke: var(--ink-2); stroke-width: 1.5; stroke-dasharray: 6 5; fill: none; }
-.ref-text { fill: var(--ink-2); font: 500 12px var(--font-text); }
-.ring { fill: none; stroke: var(--ink); stroke-width: 1; }
-.line.jlink-read, .line.jlink-write { stroke: var(--series-context); }
-.line.jlink-write { stroke-dasharray: var(--dash-second-build); }
-.mk.jlink-read, .mk.jlink-write { fill: var(--series-context); }
 
 /* The misread drawn as SWCLK: red only on the misread transfer. */
 .trace { stroke: var(--ink); stroke-width: 2; fill: none; stroke-linejoin: miter; }
@@ -258,9 +213,9 @@ __HEADER__
     <div>
       <div class="chart-key" id="chart-key" aria-label="Probes shown"></div>
       <div class="figs">
-        <figure><div class="chart"><div id="c-read"></div></div><figcaption><b class="n"></b> probe-rs, 4 KiB reads. KiB/s, median of 7, attach excluded.</figcaption></figure>
-        <figure><div class="chart"><div id="c-write"></div></div><figcaption><b class="n"></b> probe-rs, 4 KiB writes. KiB/s, median of 7, attach excluded.</figcaption></figure>
-        <figure id="m-rt"><div class="chart"><div id="c-rt"></div></div><figcaption><b class="n"></b> Single-word read round trip. probe-rs, µs, median. <span id="rt-text"></span></figcaption></figure>
+        <figure><div class="chart"><tickwave-chart id="c-read" group="probe-rs" readout="below" sweep="off" height="250"></tickwave-chart></div><figcaption><b class="n"></b> probe-rs, 4 KiB reads. KiB/s, median of 7, attach excluded.</figcaption></figure>
+        <figure><div class="chart"><tickwave-chart id="c-write" group="probe-rs" readout="below" sweep="off" height="250"></tickwave-chart></div><figcaption><b class="n"></b> probe-rs, 4 KiB writes. KiB/s, median of 7, attach excluded.</figcaption></figure>
+        <figure id="m-rt"><div class="chart"><tickwave-chart id="c-rt" readout="below" sweep="off" height="230"></tickwave-chart></div><figcaption><b class="n"></b> Single-word read round trip. probe-rs, µs, median. <span id="rt-text"></span></figcaption></figure>
         <dl class="specs notes" id="notes"></dl>
       </div>
       <div class="part" id="custom-host">
@@ -268,10 +223,10 @@ __HEADER__
         <div class="figs">
           <figure class="wide" id="m-explore">
             <div class="controls" id="controls"></div>
-            <div class="chart"><div id="c-explore"></div></div>
+            <div class="chart"><tickwave-chart id="c-explore" readout="below" sweep="off" height="330"></tickwave-chart></div>
             <figcaption><b class="n"></b> <span id="x-caption"></span>. KiB/s, median of 3, ~250 ms. <span id="x-peak"></span></figcaption>
           </figure>
-          <figure class="wide" id="m-cliff"><div class="chart"><div id="c-cliff"></div></div><figcaption><b class="n"></b> One-word commands, 8 queued. AP read through DAP_Transfer, commands/s. <span id="cliff-text"></span></figcaption></figure>
+          <figure class="wide" id="m-cliff"><div class="chart"><tickwave-chart id="c-cliff" readout="below" sweep="off" height="230"></tickwave-chart></div><figcaption><b class="n"></b> One-word commands, 8 queued. AP read through DAP_Transfer, commands/s. <span id="cliff-text"></span></figcaption></figure>
           <figure class="wide" id="stock-errors">
             <div class="chart">
               <ul class="legend"><li><i class="sw" style="background: var(--hair);"></i>measured</li><li><i class="sw" style="background: var(--fault-fill);"></i>failed</li></ul>
@@ -290,7 +245,7 @@ __HEADER__
     <div class="head"><h2 id="jlink-title">J-Link Ultra</h2><p class="kicker">SEGGER workload</p></div>
     <div id="jlink-grid">
       <p id="jlink-description"></p>
-      <figure><div class="chart"><div id="jlink-chart"></div></div><figcaption><b class="n"></b> JLinkExe, TestRSpeed / TestWSpeed. KByte/s, as reported by SEGGER. <span id="jlink-tool-note"></span></figcaption></figure>
+      <figure><div class="chart"><tickwave-chart id="jlink-chart" legend="above" readout="below" sweep="off" height="300"></tickwave-chart></div><figcaption><b class="n"></b> JLinkExe, TestRSpeed / TestWSpeed. KByte/s, as reported by SEGGER. <span id="jlink-tool-note"></span></figcaption></figure>
     </div>
   </div>
 </section>
@@ -300,9 +255,9 @@ __HEADER__
     <div class="head"><h2>Measured SWD clock</h2><p class="kicker" id="wire-meta"></p></div>
     <div>
       <div class="figs">
-        <figure><div class="chart"><div id="w-read"></div></div><figcaption><b class="n"></b> Read data bits. MHz on the wire, median data bit.</figcaption></figure>
-        <figure><div class="chart"><div id="w-write"></div></div><figcaption><b class="n"></b> Write data bits. MHz on the wire, median data bit.</figcaption></figure>
-        <figure><div class="chart"><div id="w-fast"></div></div><figcaption><b class="n"></b> Peak SWD rate. MHz, shortest mean period per transfer.</figcaption></figure>
+        <figure><div class="chart"><tickwave-chart id="w-read" group="wire" legend="above" readout="below" sweep="off" height="250"></tickwave-chart></div><figcaption><b class="n"></b> Read data bits. MHz on the wire, median data bit.</figcaption></figure>
+        <figure><div class="chart"><tickwave-chart id="w-write" group="wire" legend="above" readout="below" sweep="off" height="250"></tickwave-chart></div><figcaption><b class="n"></b> Write data bits. MHz on the wire, median data bit.</figcaption></figure>
+        <figure><div class="chart"><tickwave-chart id="w-fast" group="wire" legend="above" readout="below" sweep="off" height="250"></tickwave-chart></div><figcaption><b class="n"></b> Peak SWD rate. MHz, shortest mean period per transfer.</figcaption></figure>
         <div class="prose"><h3>Capture notes</h3><p class="quiet" id="w-how-caption"></p><div id="w-how"></div><p id="w-fast-text"></p></div>
       </div>
       <div class="figs" id="wire-errors">
@@ -367,20 +322,39 @@ function el(tag, attrs = {}, parent) {
   if (parent) parent.appendChild(e);
   return e;
 }
-// The width a chart's container gives it: the chart code draws one SVG unit a pixel at this width.
-const widthOf = (id, fallback) => Math.round($(id).clientWidth) || fallback;
-function niceStep(v) {
-  const p = 10 ** Math.floor(Math.log10(v));
-  for (const m of [1, 1.2, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10]) if (m * p >= v) return m * p;
-  return 10 * p;
+// tickwave's chart element, from the version the build pins beside tickwave.js. A chart's data,
+// series and default clock go in once the element is defined: a property set before then would hide
+// the element's own. `data` only on a new set, view or slice (each set reparses it), `show` on a key
+// change. `selected` moves the pick at once, so it goes in only while the reader has not picked in
+// that chart's group: a new view's data keeps the reader's clock where it has it.
+const TICKWAVE_URL = $("on-the-wire").dataset.tickwave;
+import(`${TICKWAVE_URL}tickwave-chart.js`).catch((e) => console.warn("tickwave's charts did not load:", e));
+const chartsReady = customElements.whenDefined("tickwave-chart");
+const picked = new Set();
+const groupOf = (c) => c.getAttribute("group") || c.id;
+for (const c of document.querySelectorAll("tickwave-chart")) c.addEventListener("tickwave-pick", (e) => { if (e.detail.x != null) picked.add(groupOf(c)); });
+// What the page last gave each chart: the element's `data` reads back its parsed copy.
+const given = new Map();
+function setChart(id, { data, show, selected }) {
+  const c = $(id);
+  chartsReady.then(() => {
+    if (selected != null && !picked.has(groupOf(c))) c.setAttribute("selected", selected);
+    if (data && given.get(id) !== data) { given.set(id, data); c.data = data; }
+    if (show) c.setAttribute("show", show.join(" "));
+  });
 }
+// The setting a chart names for a clock in MHz: the shortest decimal, as extract.py writes it.
+const mhzText = (mhz) => String(Math.round(mhz * 1000) / 1000);
+// A chart series' head, as extract.py writes it, from the page's series and its look.
+const chartSeries = (s, points) => ({ id: s.id, name: s.name, short: s.name, colour: s.look.colour, pattern: s.look.pattern, marker: s.look.marker,
+  ...(s.look.capture && { capture: true }), ...((s.condition || s.external) && { hidden: true }), ...(s.role === "ours" && { fails: "mark" }), points });
 
 /* Series: the current view's probes, and on SWD the J-Link reference measured on 2026-10-22. */
 const JLINK = (() => {
   const R = ALL.references.jlink;
   return {
     id: "jlink", name: `J-Link Ultra, ${R.date}`, short: "J-Link Ultra", role: "reference", style: "jlink", condition: null, external: true,
-    build: R.firmware, product: R.probe, serial: "", packets: null, taken: R.date, runs: 1, custom: {}, fails: [], errors: {},
+    build: R.firmware, product: R.probe, serial: "", packets: null, taken: R.date, runs: 1, custom: {}, fails: [], errors: {}, look: R.look,
     probe_rs: R.probe_rs.flatMap((p) => [
       { khz: p.mhz * 1000, arm: "read32", bytes: 4096, kib: p.read_kib_s, runs: 1 },
       { khz: p.mhz * 1000, arm: "write32", bytes: 4096, kib: p.write_kib_s, runs: 1 },
@@ -394,135 +368,26 @@ const isShown = (s) => shown[`${SET}|${VIEW}|${s.id}`] ?? !(s.condition || s.ext
 const visible = () => allSeries().filter(isShown);
 const oursShown = () => visible().filter((s) => s.role === "ours" && !s.condition);
 const stockSeries = () => V.series.find((s) => s.role === "stock" && !s.condition);
-const styleOf = (s) => `${s.style}${s.condition ? ` cond cond${(s.cond_index ?? 0) % 2}` : ""}`;
 // A series' name without its date or condition, where the sentence around it gives those.
 const short = (s) => s.condition ? s.name : s.short ?? s.name;
 
-// A marker per probe: Verge's Clang build and NXP's firmware circles (their colours tell them apart),
-// GCC squares, the J-Link a diamond, other references triangles up, down, and squares. Hollow where
-// the firmware reads wrong at that clock.
-function marker(svg, s, x, y, hollow = false) {
-  const cls = `mk ${styleOf(s)}${hollow ? " hollow" : ""}`;
-  const shape = s.style === "gcc" || s.style === "ref2" ? "square" : s.style.startsWith("jlink") ? "diamond"
-    : s.style === "ref0" ? "up" : s.style === "ref1" ? "down" : "circle";
-  if (shape === "circle") el("circle", { cx: x, cy: y, r: 4.5, class: cls }, svg);
-  else if (shape === "square") el("rect", { x: x - 4, y: y - 4, width: 8, height: 8, class: cls }, svg);
-  else if (shape === "diamond") el("path", { d: `M${x} ${y - 5.5}L${x + 5.5} ${y}L${x} ${y + 5.5}L${x - 5.5} ${y}Z`, class: cls }, svg);
-  else if (shape === "up") el("path", { d: `M${x} ${y - 5.5}L${x + 5.5} ${y + 4}L${x - 5.5} ${y + 4}Z`, class: cls }, svg);
-  else el("path", { d: `M${x} ${y + 5.5}L${x + 5.5} ${y - 4}L${x - 5.5} ${y - 4}Z`, class: cls }, svg);
-}
-// A probe's swatch for the key and the readouts, drawn with its chart line's classes.
-const swatch = (s) => {
-  const svg = el("svg", { class: "swatch", viewBox: "0 0 26 10", "aria-hidden": "true" });
-  el("line", { x1: 1, x2: 25, y1: 5, y2: 5, class: `line ${styleOf(s)}` }, svg);
-  marker(svg, s, 13, 5);
-  return svg.outerHTML;
+// A probe's swatch for the key, drawn as tickwave draws it in a chart's readout: the line across the
+// middle in the series' pattern, and its marker with a ring in the colour behind it, the page's.
+// A run under capture is thinner and fainter.
+const DASH = { "second-build": "var(--dash-second-build)", reference: "var(--dash-reference)", "capture-second": "var(--dash-capture-second)" };
+const MARK = {
+  circle: '<circle cx="11" cy="5" r="4"/>',
+  square: '<rect x="7.5" y="1.5" width="7" height="7"/>',
+  diamond: '<path d="M11 0L16 5L11 10L6 5Z"/>',
+  "triangle-up": '<path d="M11 0.75L16 9.25L6 9.25Z"/>',
+  "triangle-down": '<path d="M11 9.25L16 0.75L6 0.75Z"/>',
 };
-
-/* A line chart on a log clock axis, with a selectable clock and a readout under it. Each entry is
-   { s: series, values, failed, rings, ranges }. With `logY` the value axis is logarithmic too, and
-   `ref` draws the clock asked as the diagonal. */
-function chart(host, { xs, series, unit, digits = 0, selected, onSelect, height = 250, width = 640, logY = false, ref = false }) {
-  host.textContent = "";
-  if (!xs.length || !series.length) {
-    host.innerHTML = `<p class="micro">Nothing measured here.</p>`;
-    return { show() {} };
-  }
-  const W = width, H = height, L = 60, R = 18, T = 14, B = 38;
-  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, class: "chart", role: "img" });
-  host.appendChild(svg);
-  const lo = Math.log(xs[0] * 0.8), hi = Math.log(xs[xs.length - 1] * 1.25);
-  const X = (x) => L + (Math.log(x) - lo) / (hi - lo) * (W - L - R);
-  const vals = series.flatMap((e) => e.values.filter((v) => v != null)).concat(ref ? xs : []);
-  let Y, ticks;
-  if (logY) {
-    const ylo = Math.log(Math.min(...vals) * 0.8), yhi = Math.log(Math.max(...vals) * 1.25);
-    Y = (y) => T + (1 - (Math.log(y) - ylo) / (yhi - ylo)) * (H - T - B);
-    ticks = [0.5, 1, 2, 5, 10, 20, 50, 100].filter((v) => Math.log(v) >= ylo && Math.log(v) <= yhi);
-  } else {
-    const top = vals.length ? Math.max(...vals) * 1.04 : 1;
-    const step = niceStep(top / 4), steps = Math.ceil(top / step), ymax = steps * step;
-    Y = (y) => T + (1 - y / ymax) * (H - T - B);
-    ticks = Array.from({ length: steps + 1 }, (_, i) => step * i);
-  }
-  ticks.forEach((v, i) => {
-    const y = Y(v);
-    el("line", { x1: L, x2: W - R, y1: y, y2: y, class: i || logY ? "grid-line" : "ax" }, svg);
-    el("text", { x: L - 8, y: y + 4, "text-anchor": "end", class: "tick" }, svg).textContent = fmt(v, v < 10 && v % 1 ? 1 : 0);
-  });
-  el("line", { x1: L, x2: L, y1: T, y2: H - B, class: "ax" }, svg);
-  el("line", { x1: L, x2: W - R, y1: H - B, y2: H - B, class: "ax" }, svg);
-  let lastLabel = -Infinity;
-  for (const x of xs) {
-    el("line", { x1: X(x), x2: X(x), y1: H - B, y2: H - B + 5, class: "ax" }, svg);
-    if (X(x) - lastLabel < 22) continue;
-    el("text", { x: X(x), y: H - B + 18, "text-anchor": "middle", class: "tick" }, svg).textContent = x;
-    lastLabel = X(x);
-  }
-  el("text", { x: W - R, y: H - 4, "text-anchor": "end", class: "axis-name" }, svg).textContent = "Clock asked for, MHz";
-  el("text", { x: L, y: T - 2, class: "axis-name" }, svg).textContent = unit;
-  if (ref) {
-    el("path", { d: xs.map((x, i) => `${i ? "L" : "M"}${X(x).toFixed(1)} ${Y(x).toFixed(1)}`).join(""), class: "ref" }, svg);
-    const last = xs[xs.length - 1];
-    el("text", { x: X(last) - 6, y: Y(last) - 8, "text-anchor": "end", class: "ref-text" }, svg).textContent = "as asked";
-  }
-  const sel = el("line", { y1: T, y2: H - B, class: "sel-rule" }, svg);
-  // At a clock where a series reads wrong (`wrong`, one verdict a clock), its figures come from wrong
-  // data: the line into such a point is dotted, and the point hollow.
-  const wrongAt = (e, i) => !!e.wrong?.[i];
-  for (const e of series) {
-    const d = { right: "", wrong: "" };
-    let last = null;
-    e.values.forEach((v, i) => {
-      if (v == null) { last = null; return; }
-      const p = `${X(xs[i]).toFixed(1)} ${Y(e.values[i]).toFixed(1)}`;
-      if (last != null) d[wrongAt(e, i) ? "wrong" : "right"] += `M${X(xs[last]).toFixed(1)} ${Y(e.values[last]).toFixed(1)}L${p}`;
-      last = i;
-    });
-    if (d.right) el("path", { d: d.right, class: `line ${styleOf(e.s)}` }, svg);
-    if (d.wrong) el("path", { d: d.wrong, class: `line ${styleOf(e.s)} misread` }, svg);
-  }
-  let failRow = 0;
-  for (const e of series) {
-    let marked = false;
-    e.values.forEach((v, i) => {
-      if (v != null) {
-        marker(svg, e.s, X(xs[i]), Y(v), wrongAt(e, i));
-        if (e.rings && e.rings[i]) el("circle", { cx: X(xs[i]), cy: Y(v), r: 8, class: "ring" }, svg);
-      } else if (e.s.role === "ours" && e.failed && e.failed[i]) {
-        const x = X(xs[i]), y = H - B - 10 - 14 * failRow;
-        el("path", { d: `M${x - 5} ${y - 5}L${x + 5} ${y + 5}M${x + 5} ${y - 5}L${x - 5} ${y + 5}`, class: "fail-mark" }, svg);
-        el("text", { x: x - 9, y: y + 4, "text-anchor": "end", class: "fail-text" }, svg).textContent = `${short(e.s)} failed`;
-        marked = true;
-      }
-    });
-    if (marked) failRow++;
-  }
-  const readout = document.createElement("div");
-  readout.className = "readout";
-  host.appendChild(readout);
-  function show(i) {
-    sel.setAttribute("x1", X(xs[i])); sel.setAttribute("x2", X(xs[i]));
-    readout.innerHTML = `<span class="micro">at ${xs[i]} MHz</span>` + series.map((e) => {
-      const v = e.values[i], r = e.ranges && e.ranges[i], part = e.partial && e.partial[i];
-      const spread = r && fmt(r[0], digits) !== fmt(r[1], digits) ? ` (${fmt(r[0], digits)}–${fmt(r[1], digits)})` : "";
-      const partly = part ? `failed in ${part.of - part.runs} of ${part.of} runs (${fmt(part.kib ?? part.us, digits)} ${unit} in the ${part.runs > 1 ? "others" : "other"})` : null;
-      const text = v == null ? (partly || (e.failed && e.failed[i] ? "failed" : "–")) : `${fmt(v, digits)}${spread} ${unit}${e.rings && e.rings[i] ? ", from SWDIO" : ""}`;
-      return `<span>${swatch(e.s)}${e.s.name} ${text}${wrongAt(e, i) && (v != null || partly) ? ", reads wrong" : ""}</span>`;
-    }).join("");
-  }
-  xs.forEach((x, i) => {
-    const left = i ? (X(xs[i - 1]) + X(x)) / 2 : L;
-    const right = i < xs.length - 1 ? (X(x) + X(xs[i + 1])) / 2 : W - R;
-    const hit = el("rect", { x: left, y: T, width: right - left, height: H - T - B, class: "hit", tabindex: 0, "aria-label": `${x} MHz` }, svg);
-    const pick = () => { show(i); onSelect && onSelect(i); };
-    hit.addEventListener("pointerenter", pick);
-    hit.addEventListener("click", pick);
-    hit.addEventListener("focus", pick);
-  });
-  show(Math.min(Math.max(selected, 0), xs.length - 1));
-  return { show };
-}
+const swatch = (s) => {
+  const { colour, pattern, marker, capture } = s.look, ink = `var(--series-${colour})`;
+  const line = `stroke:${ink};stroke-width:${capture ? "var(--capture-width)" : 2}${DASH[pattern] ? `;stroke-dasharray:${DASH[pattern]}` : ""}`;
+  return `<svg class="swatch" viewBox="0 0 22 10" aria-hidden="true"${capture ? ' style="opacity:var(--capture-opacity)"' : ""}><line x1="0" x2="22" y1="5" y2="5" style="${line}"/>`
+    + `<g style="fill:${ink};stroke:var(--page);stroke-width:2">${MARK[marker]}</g></svg>`;
+};
 
 /* Data access, always into the view on show */
 // A point only some runs completed is not the series' result: PR leaves it out, PART finds it.
@@ -637,7 +502,9 @@ const pickView = (id) => {
   if (id === VIEW) return;
   const was = sectionInView();
   VIEW = WANT = id;
-  mainSelectedClock = null;
+  // The new wire's own clock, as before: the reader's pick was for the wire they left.
+  picked.delete("probe-rs");
+  picked.delete("c-rt");
   renderAll();
   keepInView(was);
 };
@@ -728,46 +595,22 @@ function renderJLink() {
   $("jlink-grid").hidden = !on;
   if (!on) return;
   const R = ALL.references.jlink;
-  const xs = R.jlinkexe.map((p) => p.mhz);
-  const entry = (name, style, values) => ({ s: { id: style, name, role: "reference", style, condition: null }, values });
-  const series = [
-    entry("TestRSpeed, read", "jlink-read", R.jlinkexe.map((p) => p.read_kbyte_s)),
-    entry("TestWSpeed, write", "jlink-write", R.jlinkexe.map((p) => p.write_kbyte_s)),
-  ];
-  chart($("jlink-chart"), { xs, series, unit: "KByte/s", digits: 0, selected: xs.indexOf(10), height: 300, width: widthOf("jlink-chart", 1200) });
+  setChart("jlink-chart", { data: R.chart, selected: R.chart.x.values.includes("10") ? "10" : R.chart.x.values.at(-1) });
   $("jlink-description").textContent = "JLinkExe uses a different workload from the 4 KiB probe-rs charts.";
   $("jlink-tool-note").textContent = `${R.firmware}. ${R.target_state}.`;
 }
 
-let readChart, writeChart;
-let mainSelectedClock = null;
+// The view's probe-rs charts, written by extract.py; the key says which series show.
 function renderProbeRs() {
   const list = visible();
   const prClocks = prClocksOf(list);
-  const prXs = prClocks.map((k) => k / 1000);
-  const entries = (arm, field = "kib") => list.map((s) => {
-    const size = arm === "rt" ? 4 : 4096;
-    const at = prClocks.map((k) => PR(s, arm, size, k));
-    return {
-      s, wrong: wrongClocks(s, prClocks), values: at.map((p) => p?.[field] ?? null), failed: prClocks.map((k) => PR_FAILED(s, k)),
-      partial: prClocks.map((k) => { const p = PART(s, arm, size, k); return p && !complete(p) ? p : null; }),
-      ranges: at.map((p) => p && p.runs > 1 && p.kib_lo != null && field === "kib" ? [p.kib_lo, p.kib_hi] : null),
-    };
-  });
   const selectedClock = (comparisonClock() ?? prClocks.at(-1)) / 1000;
-  const fallback = prXs.indexOf(selectedClock);
-  const kept = prXs.indexOf(mainSelectedClock ?? selectedClock);
-  const index = kept >= 0 ? kept : fallback;
-  mainSelectedClock = prXs[index];
-  readChart = chart($("c-read"), { xs: prXs, series: entries("read32"), unit: "KiB/s", selected: index, width: widthOf("c-read", 640), onSelect: (i) => { mainSelectedClock = prXs[i]; writeChart.show(i); } });
-  writeChart = chart($("c-write"), { xs: prXs, series: entries("write32"), unit: "KiB/s", selected: index, width: widthOf("c-write", 640), onSelect: (i) => { mainSelectedClock = prXs[i]; readChart.show(i); } });
-
+  const ids = list.map((s) => s.id);
+  for (const [id, chart] of [["c-read", V.charts.read], ["c-write", V.charts.write], ["c-rt", V.charts.rt]]) {
+    const has = new Set(chart.series.map((s) => s.id));
+    setChart(id, { data: chart, show: ids.filter((i) => has.has(i)), selected: chart.x.values.includes(mhzText(selectedClock)) ? mhzText(selectedClock) : chart.x.values.at(-1) });
+  }
   const rtList = list.filter((s) => !s.external);
-  const rtEntries = rtList.map((s) => ({
-    s, wrong: wrongClocks(s, prClocks), values: prClocks.map((k) => PR(s, "rt", 4, k)?.us ?? null), failed: prClocks.map((k) => PR_FAILED(s, k)),
-    partial: prClocks.map((k) => { const p = PART(s, "rt", 4, k); return p && !complete(p) ? p : null; }),
-  }));
-  chart($("c-rt"), { xs: prXs, series: rtEntries, unit: "µs", selected: fallback, height: 230, width: widthOf("c-rt", customSeries().length ? 640 : 1200) });
   const rts = rtList.map((s) => PR(s, "rt", 4, selectedClock * 1000)?.us).filter((v) => v != null);
   $("rt-text").textContent = rts.length ? `${selectedClock} MHz: ${fmt(Math.min(...rts))}–${fmt(Math.max(...rts))} µs across the series shown.` : "";
 }
@@ -782,29 +625,28 @@ const GROUPS = [
   ["depth", "Depth", [[1, "1"], [2, "2"], [8, "8 queued"]]],
   ["metric", "Unit", [["kib", "KiB/s"], ["cps", "Commands/s"]]],
 ];
-let selX = null;
+let explorerKey = null, explorerData = null;
 const customSeries = () => visible().filter((s) => Object.keys(s.custom || {}).length);
 function words() { return WORDS[state.command][state.access.endsWith("write") ? "write" : "read"][state.words]; }
 function drawExplorer() {
   const list = customSeries();
-  // The custom host's part shows with a matrix to draw or a failure map; before any chart in it is
-  // drawn, so each takes its container's width.
+  // The custom host's part shows with a matrix to draw or a failure map.
   $("custom-host").hidden = !list.length && !V.series.some((s) => s.role !== "ours" && (s.fails || []).length);
   $("m-explore").hidden = !list.length;
   if (!list.length) return;
   const xs = V.meta.clocks;
-  if (selX == null || selX >= xs.length) selX = xs.length - 1;
   const w = words(), idx = state.metric === "kib" ? 1 : 0;
-  const series = list.map((s) => ({
-    s, wrong: wrongClocks(s, xs.map(kHz)),
-    values: xs.map((m) => C(s, state.command, state.access, w, state.depth, m)?.[idx] ?? null),
-    failed: xs.map((m) => C(s, state.command, state.access, w, state.depth, m) === null),
-  }));
-  $("x-caption").textContent = `${state.command === "block" ? "DAP_TransferBlock" : "DAP_Transfer"}, ${state.access.replace("-", " ")}, ${w} words, depth ${state.depth}`;
-  chart($("c-explore"), { xs, series, unit: state.metric === "kib" ? "KiB/s" : "commands/s", digits: state.metric === "kib" && Math.max(...series.flatMap((e) => e.values.filter((v) => v != null))) < 100 ? 1 : 0, selected: selX, onSelect: (i) => { selX = i; }, height: 330, width: widthOf("c-explore", 1200) });
+  const key = `${SET}|${VIEW}|${state.command}|${state.access}|${w}|${state.depth}|${state.metric}`;
+  if (key !== explorerKey) {
+    explorerKey = key;
+    explorerData = matrixChart(xs, (s, m) => C(s, state.command, state.access, w, state.depth, m), idx,
+      state.metric === "kib" ? "KiB/s" : "commands/s", `${state.command === "block" ? "DAP_TransferBlock" : "DAP_Transfer"}, ${state.access.replace("-", " ")}, ${w} words, depth ${state.depth}`);
+  }
+  $("x-caption").textContent = explorerData.y.name;
+  setChart("c-explore", { data: explorerData, show: list.map((s) => s.id), selected: mhzText(xs.at(-1)) });
   let peak = null;
   for (const s of list.filter((x) => x.role === "ours")) for (const [key, value] of Object.entries(s.custom || {})) {
-    if (value && key.includes("|ap-") && (!peak || value[1] > peak.value)) peak = { s, key, value: value[1] };
+    if (value && key.includes("|ap-") && (!peak || Number(value[1]) > peak.value)) peak = { s, key, value: Number(value[1]) };
   }
   if (peak) {
     const [command, access, words, depth, mhz] = peak.key.split("|");
@@ -823,14 +665,33 @@ $("controls").addEventListener("click", (e) => {
   drawExplorer();
 });
 
+let cliffFor = null, cliffData = null;
+const num = (v) => v == null ? null : Number(v);
+// A slice of the custom host's matrix as a chart: at each clock, what `at` finds for a series. A case
+// any run failed is null in the matrix, a failure here; a case never measured is missing.
+function matrixChart(xs, at, idx, unit, title) {
+  const series = V.series.filter((s) => Object.keys(s.custom || {}).length).map((s) => {
+    const wrong = wrongClocks(s, xs.map(kHz));
+    return chartSeries(s, xs.map((m, i) => {
+      const v = at(s, m);
+      return v === undefined ? null : v === null ? { failed: true } : { value: v[idx], ...(wrong[i] && { verdict: "wrong" }) };
+    }));
+  });
+  return { format: "tickwave-chart/1", source: `mculink-bench results/throughput/${SET}: the custom host's SWD command matrix, the median of the runs`,
+    x: { name: "SWD clock asked for", unit: "MHz", scale: "log", values: xs.map(mhzText), min: mhzText(xs[0] * 0.8), max: mhzText(xs.at(-1) * 1.25) },
+    y: { name: title, unit, scale: "linear" }, series };
+}
 function renderCliffAndFault() {
   const list = customSeries();
   $("m-cliff").hidden = !list.length;
   const xs = V.meta.clocks;
   if (list.length) {
-    const cliff = list.map((s) => ({ s, wrong: wrongClocks(s, xs.map(kHz)), values: xs.map((m) => C(s, "transfer", "ap-read", 1, 8, m)?.[0] ?? null), failed: xs.map((m) => C(s, "transfer", "ap-read", 1, 8, m) === null) }));
-    chart($("c-cliff"), { xs, series: cliff, unit: "commands/s", selected: xs.length - 1, height: 230, width: widthOf("c-cliff", 640) });
-    $("cliff-text").textContent = `10 MHz: ${list.filter((s) => s.role === "ours").map((s) => `${short(s)} ${fmt(C(s, "transfer", "ap-read", 1, 8, 10)?.[0])}`).join(", ")} commands/s.`;
+    if (cliffFor !== `${SET}|${VIEW}`) {
+      cliffFor = `${SET}|${VIEW}`;
+      cliffData = matrixChart(xs, (s, m) => C(s, "transfer", "ap-read", 1, 8, m), 0, "commands/s", "One-word AP reads through DAP_Transfer, 8 queued");
+    }
+    setChart("c-cliff", { data: cliffData, show: list.map((s) => s.id), selected: mhzText(xs.at(-1)) });
+    $("cliff-text").textContent = `10 MHz: ${list.filter((s) => s.role === "ours").map((s) => `${short(s)} ${fmt(num(C(s, "transfer", "ap-read", 1, 8, 10)?.[0]))}`).join(", ")} commands/s.`;
   }
   // The first series other than ours whose custom host failed cases: stock, as a rule.
   const bad = V.series.find((s) => s.role !== "ours" && (s.fails || []).length);
@@ -853,16 +714,11 @@ function renderCliffAndFault() {
 }
 
 const WIRE_FW = ["gcc", "clang", "stock"];
-const WIRE_SERIES = {
-  gcc: { name: "GCC", style: "gcc", role: "ours", condition: null },
-  clang: { name: "Clang", style: "clang", role: "ours", condition: null },
-  stock: { name: "Stock", style: "stock", role: "stock", condition: null },
-};
 /* The clock on the wire */
 function renderWire() {
   const W = V.protocol === "swd" ? D.wire : {}, stock = W.stock;
   const shown = Object.values(W);
-  for (const id of ["w-read", "w-write", "w-fast", "trace", "stall-pips"]) $(id).textContent = "";
+  for (const id of ["trace", "stall-pips"]) $(id).textContent = "";
   if (!shown.length) {
     $("wire-meta").textContent = "not measured in this set";
     $("wire-results").hidden = true;
@@ -873,14 +729,8 @@ function renderWire() {
   const at = (fw, mhz) => W[fw]?.rows.find((r) => r.mhz === mhz);
   $("wire-meta").textContent = [["Matrix", shown[0].matrix], ["analyser", "100 MS/s at the target"], ["taken", shown[0].taken.slice(0, 10)]]
     .map(([k, v]) => `${k} ${v}`).join(", ");
-  const series = (key) => WIRE_FW.filter((fw) => W[fw]).map((fw) => ({
-    s: WIRE_SERIES[fw], values: xs.map((m) => at(fw, m)?.[key] ?? null), rings: xs.map((m) => at(fw, m)?.[`${key}_from`] === "swdio"),
-  }));
-  const sel = xs.indexOf(50) >= 0 ? xs.indexOf(50) : xs.length - 1;
-  let rc, wc, fc;
-  rc = chart($("w-read"), { xs, series: series("read"), unit: "MHz", digits: 2, selected: sel, logY: true, ref: true, width: widthOf("w-read", 640), onSelect: (i) => { wc.show(i); fc.show(i); } });
-  wc = chart($("w-write"), { xs, series: series("write"), unit: "MHz", digits: 2, selected: sel, logY: true, ref: true, width: widthOf("w-write", 640), onSelect: (i) => { rc.show(i); fc.show(i); } });
-  fc = chart($("w-fast"), { xs, series: series("fastest"), unit: "MHz", digits: 2, selected: sel, logY: true, ref: true, height: 250, width: widthOf("w-fast", 640), onSelect: (i) => { rc.show(i); wc.show(i); } });
+  const sel = xs.includes(50) ? "50" : mhzText(xs.at(-1));
+  for (const [id, key] of [["w-read", "read"], ["w-write", "write"], ["w-fast", "fastest"]]) setChart(id, { data: D.wire_charts[key], selected: sel });
 
   const overList = (fw) => (W[fw]?.rows || []).filter((r) => r.fastest > r.mhz * 1.005).map((r) => `${r.mhz} MHz requested (${fmt(r.fastest, 1)} MHz measured)`);
   const g50 = at("gcc", 50) || at("clang", 50);
@@ -1009,14 +859,6 @@ function numberFigures() {
   let n = 0;
   for (const b of document.querySelectorAll("figcaption > b.n")) if (b.getClientRects().length) b.textContent = `Figure ${++n}.`;
 }
-// The charts draw at their containers' widths, so a new width draws them again.
-let drawnAt = innerWidth, redraw = 0;
-addEventListener("resize", () => {
-  if (innerWidth === drawnAt) return;
-  drawnAt = innerWidth;
-  clearTimeout(redraw);
-  redraw = setTimeout(() => { renderJLink(); renderProbeRs(); drawExplorer(); renderCliffAndFault(); renderWire(); }, 120);
-});
 
 /* With more than one dated set, the set picker shows in the header's row, beside the wire. */
 if (ALL.order.length > 1) {

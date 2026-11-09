@@ -124,9 +124,11 @@ def merge_custom(records: list[dict]) -> tuple[dict, list, dict]:
                 errors.setdefault(key, c["error"])
             else:
                 runs[key].append((c["commands_per_s"], c["kib_per_s"]))
+    # As decimal strings, commands a second whole and KiB/s to a tenth: the page charts them as they
+    # are, and a JavaScript number would drop a trailing zero.
     cases = {}
     for key, values in runs.items():
-        cases[key] = ([round(statistics.median(v[0] for v in values)), round(statistics.median(v[1] for v in values), 1)]
+        cases[key] = ([str(round(statistics.median(v[0] for v in values))), f"{statistics.median(v[1] for v in values):.1f}"]
                       if values and key not in errors else None)
     fails = [k for k, v in cases.items() if v is None]
     return cases, fails, {k: e for k, e in errors.items() if k in fails}
