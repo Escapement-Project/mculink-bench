@@ -2,6 +2,7 @@
 
     uv run python -I extract.py data.json 2026-10-20 [later dates ...]
     uv run python -I extract.py --chart DATE VIEW ARM OUT.chart.json
+    uv run python -I extract.py --landing ../../escapement-project.github.io/data/landing.json [--check]
 
 The second form writes one of a view's probe-rs charts, `read32` or `write32`, in tickwave's
 `tickwave-chart/1` (tickwave's CHARTS.md): the page's figures for the 4 KiB reads or writes, with
@@ -26,7 +27,7 @@ import os
 import re
 import statistics
 import sys
-from decimal import Decimal
+from decimal import ROUND_CEILING, Decimal
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PAGE = os.path.dirname(os.path.abspath(__file__))
@@ -470,7 +471,122 @@ def jlink_chart(reference: dict) -> dict:
             "series": series}
 
 
+# The landing page's figures (the site's data/landing.json): one set's SWD 4 KiB writes, as Table 1,
+# Figure 1 and the headline. Per series: the landing's id, the page's style, Table 1's name, the
+# chart's name and its short name.
+LANDING = {"date": "2026-11-04", "view": "swd"}
+LANDING_SERIES = [("clang", "clang", "Clang build", "Verge, Clang build", "Verge"),
+                  ("stock", "stock", "Stock V3.174", "NXP's firmware V3.174", "NXP"),
+                  ("gcc", "gcc", "GCC build", "Verge, GCC build", "GCC")]
+WORDS = {1: "one", 2: "two", 3: "three", 4: "four", 5: "five"}
+
+
+def landing_data(data: dict) -> dict:
+    date, vid = LANDING["date"], LANDING["view"]
+    st = data["sets"][date]
+    view = next(v for v in st["views"] if v["id"] == vid)
+    recorded = st["stock_reads_right"].get(view["protocol"])
+    page = {lid: next(s for s in view["series"] if s["style"] == style and not s["condition"])
+            for lid, style, *_ in LANDING_SERIES}
+    names = {lid: (table, chart, short) for lid, _, table, chart, short in LANDING_SERIES}
+    write = view["charts"]["write"]
+    clocks = [int(Decimal(m) * 1000) for m in write["x"]["values"]]
+    point = lambda s, k: next((p for p in s["probe_rs"] if p["arm"] == "write32" and p["bytes"] == 4096 and p["khz"] == k), None)
+    failed_at = lambda s, k: next((p for p in s["probe_rs"] if p["arm"] == "failed" and p["khz"] == k), None)
+    complete = lambda p: p is not None and p["runs"] == p["of"]
+
+    def peak(series: list[dict]):
+        """The page's peakWrite: the fastest complete 4 KiB write at a clock the series reads right at."""
+        best = None
+        for s in series:
+            up = right_up_to(s, recorded)
+            for p in s["probe_rs"]:
+                if up is not UNKNOWN and (up is None or p["khz"] > up):
+                    continue
+                if complete(p) and p["arm"] == "write32" and p["bytes"] == 4096 and (best is None or p["kib"] > best[1]["kib"]):
+                    best = (s, p)
+        return best
+
+    ours = peak([s for s in view["series"] if s["role"] == "ours" and not s["condition"]])
+    theirs = peak([page["stock"]])
+    ours_id = next(lid for lid, s in page.items() if s is ours[0])
+    stock_up = right_up_to(page["stock"], recorded)
+
+    # Table 1: each series' figure at each clock as the page prints it.
+    table, notes = {}, []
+    for lid, s in page.items():
+        cells = []
+        for k in clocks:
+            p = point(s, k)
+            if p is not None:
+                cells.append(f"{p['kib']:,.1f}")
+                if not complete(p):
+                    ran, failed = p["runs"], p["of"] - p["runs"]
+                    notes.append(f"{names[lid][2]}'s figure at {mhz_text(k)} MHz is from {WORDS[ran]} run{'s' if ran > 1 else ''}: "
+                                 f"the other{'s' if failed > 1 else ''} failed.")
+            else:
+                cells.append("failed" if failed_at(s, k) else "–")
+        table[lid] = cells
+    # Figure 1's caption: past the clock stock reads right up to, how its runs failed.
+    stock = page["stock"]
+    fails = []
+    for k in clocks:
+        p, f = point(stock, k), failed_at(stock, k)
+        if f is not None and p is None:
+            fails.append(f"{'both' if f['runs'] == f['of'] == 2 else 'all ' + WORDS[f['of']] if f['runs'] == f['of'] else WORDS[f['runs']] + ' of ' + WORDS[f['of']]} at {mhz_text(k)} MHz")
+        elif p is not None and not complete(p):
+            fails.append(f"{WORDS[p['of'] - p['runs']]} of {WORDS[p['of']]} at {mhz_text(k)} MHz")
+    last = max(k for k in clocks if (p := point(stock, k)) is not None and complete(p))
+    figure_note = (f"Past {mhz_text(stock_up)} MHz NXP's firmware reads wrong"
+                   + (f", and its runs failed: {', '.join(fails)}" if fails else "") + f". Its line ends at {mhz_text(last)} MHz.")
+
+    runs = page[ours_id]["runs"]
+    source = (f"mculink-bench results/throughput/{date}: {view['title']}, probe-rs 4 KiB writes on an {view['meta']['chip']}, "
+              f"the median of {WORDS[runs]} runs; stock reads right up to {mhz_text(stock_up)} MHz")
+    # Figure 1: the view's write chart, its series under the landing's names, without the ranges.
+    by_id = {s["id"]: s for s in write["series"]}
+    series = []
+    for lid, *_ in LANDING_SERIES:
+        s = by_id[page[lid]["id"]]
+        head = {k: v for k, v in s.items() if k not in ("id", "name", "short", "points")}
+        series.append({"id": lid, "name": names[lid][1], "short": names[lid][2]} | head
+                      | ({"hidden": True} if lid != ours_id and page[lid]["role"] == "ours" else {})
+                      | {"points": [None if q is None else {k: v for k, v in q.items() if k != "range"} for q in s["points"]]})
+    top = max(Decimal(q["value"]) for s in series for q in s["points"] if q and "value" in q)
+    step = Decimal(500)
+    figure1 = {"format": "tickwave-chart/1", "source": source,
+               "x": {k: v for k, v in write["x"].items() if k not in ("min", "max")},
+               "y": {"name": "4 KiB writes", "unit": "KiB/s", "scale": "linear",
+                     "max": dec((top / step).to_integral_value(rounding=ROUND_CEILING) * step), "step": dec(step)},
+               "series": series,
+               "limits": [{"x": mhz_text(stock_up), "series": "stock",
+                           "label": f"NXP's firmware reads right up to {mhz_text(stock_up)} MHz"}]}
+    rows = []
+    for lid, *_ in [LANDING_SERIES[0], LANDING_SERIES[2], LANDING_SERIES[1]]:
+        s, up = page[lid], right_up_to(page[lid], recorded)
+        rows.append({"id": lid, "name": names[lid][0], "role": s["role"], "table": table[lid]}
+                    | ({"rightUpTo": int(up) // 1000 if up is not None else 0} if up is not UNKNOWN else {}))
+    return {"source": source, "date": date, "clocks": [int(k) // 1000 if k % 1000 == 0 else k / 1000 for k in clocks],
+            "series": rows, "tableNote": " ".join(notes), "figureNote": figure_note,
+            "headline": {"ratio": f"{ours[1]['kib'] / theirs[1]['kib']:.2f}", "ours": f"{round(ours[1]['kib']):,}",
+                         "oursAt": ours[1]["khz"] // 1000, "oursName": names[ours_id][0],
+                         "stock": f"{round(theirs[1]['kib']):,}", "stockAt": theirs[1]["khz"] // 1000},
+            "figure1": figure1}
+
+
 def main() -> None:
+    if len(sys.argv) in (3, 4) and sys.argv[1] == "--landing":
+        out = sys.argv[2]
+        text = json.dumps(landing_data(build_data([LANDING["date"]])), indent=2, ensure_ascii=False) + "\n"
+        if sys.argv[3:] == ["--check"]:
+            if not os.path.exists(out) or open(out).read() != text:
+                sys.exit(f"stale: {out} differs from extract.py --landing")
+            print(f"current: {out}")
+            return
+        with open(out, "w") as f:
+            f.write(text)
+        print(f"wrote {out}")
+        return
     if len(sys.argv) == 6 and sys.argv[1] == "--chart":
         _, _, date, vid, which, out = sys.argv
         views = build_data([date])["sets"][date]["views"]
