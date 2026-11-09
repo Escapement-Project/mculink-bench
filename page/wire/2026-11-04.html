@@ -1,0 +1,82 @@
+<section class="wire-view" data-view="swd">
+  <header class="subrail">
+    <h2>On the wire</h2>
+    <div class="rail-meta micro"><span>MSPM0L1306</span><span>analyser at 1 ns on SWCLK and SWDIO</span><span>recorded 2026-11-04</span></div>
+  </header>
+  <div class="wire-text">
+    <p>These are recordings of the wire itself, every clock edge of a 64 KiB flash read at each clock asked. Hover over or tap an underlined figure to see the stretch of wire it comes from. The analyser's leads load the lines: with them on, the probe samples read data a cycle later at 50 and 37.5 MHz than it does without them.</p>
+    <p>Asked for 50 MHz, Verge sends each request at <chrono-ref for="v-verge" annotation="wire_swd/request/384679581">50 MHz</chrono-ref> and writes data at <chrono-ref for="v-verge" annotation="wire_swd/data/385111071">50 MHz</chrono-ref>. It reads data at <chrono-ref for="v-verge" annotation="wire_swd/data/384679862">37.5 MHz</chrono-ref>. Before the first bit of read data, the probe checks the acknowledge. That bit's period stretches to <chrono-ref for="v-verge" annotation="wire_swd/ack-check/384679862">about 80 ns</chrono-ref>.</p>
+    <p>Capturing energy at 100,000 pairs a second as well, Verge reads data at <chrono-ref for="v-capture" annotation="wire_swd/session/380466736">30 MHz</chrono-ref> when asked for 50 or 37.5. Its writes keep their clock, but <chrono-ref for="v-capture" annotation="wire_swd/stretch/387899133">14 of 95 writes</chrono-ref> at 50 MHz have one data period 8 ns longer.</p>
+    <p>NXP's firmware, asked for 10 MHz, reads data at <chrono-ref for="v-nxp" annotation="wire_swd/session/371629830">6.9 MHz</chrono-ref> and writes at 7.1. Asked for 25 or 50 MHz, it reads at <chrono-ref for="v-nxp" annotation="wire_swd/session/673495644">10.0 MHz</chrono-ref> and writes at 10.7. Its read clock is uneven: <chrono-ref for="v-nxp" annotation="wire_swd/stretch/605890497">93 and 100 ns periods</chrono-ref> take turns in every read. At 10 MHz, <chrono-ref for="v-nxp" annotation="wire_swd/stretch/376028193">13 of 106 writes</chrono-ref> stop for about 6 µs in the middle of the word. Asked for 20 MHz with the leads on, it <chrono-ref for="v-nxp" annotation="wire_swd/session/545452707">did not connect</chrono-ref>.</p>
+  </div>
+  <div class="recordings">
+    <chrono-view id="v-verge" data-recording="gcc-swd-reads" series="verge"></chrono-view>
+    <chrono-view id="v-capture" data-recording="gcc-swd-reads-capture100000" series="verge"></chrono-view>
+    <chrono-view id="v-nxp" data-recording="stock-swd-reads" series="nxp"></chrono-view>
+  </div>
+</section>
+<section class="wire-view" data-view="jtag">
+  <header class="subrail">
+    <h2>On the wire</h2>
+    <div class="rail-meta micro"><span>CC1312R1</span><span>analyser at 1 ns on TCK, TMS, TDI and TDO</span><span>recorded 2026-11-04</span></div>
+  </header>
+  <div class="wire-text">
+    <p>These are recordings of the wire itself, every clock edge of probe-rs's runs. Hover over or tap an underlined figure to see the stretch of wire it comes from.</p>
+    <p>Asked for 30 or 50 MHz, Verge's TCK runs at 30 MHz in its fast bursts: <chrono-ref for="v-jtag" annotation="wire_clock/clock/9969845407">85% of their periods</chrono-ref> are 33 ns. Most of the rest are 53 ns, where the generator takes a longer step. Capturing energy at 100,000 pairs a second as well, it keeps <chrono-ref for="v-jtag-capture" annotation="wire_clock/clock/10091908928">83% of them</chrono-ref> at 33 ns.</p>
+    <p>NXP's firmware runs TCK in bursts at two rates 14 ns apart, about half each. Asked for 10 MHz, its bursts run at <chrono-ref for="v-jtag-nxp" annotation="wire_clock/clock/9976898813">173 ns</chrono-ref> and <chrono-ref for="v-jtag-nxp" annotation="wire_clock/clock/9976966337">187 ns</chrono-ref>, 5.8 and 5.3 MHz. Asked for 20, 30 or 50 MHz to read 256 KiB, it drives <chrono-ref for="v-jtag-nxp-reads" annotation="wire_clock/session/4218738324">the same wire each time</chrono-ref>, and the read fails.</p>
+  </div>
+  <div class="recordings">
+    <chrono-view id="v-jtag" data-recording="gcc-jtag-probe-rs" series="verge"></chrono-view>
+    <chrono-view id="v-jtag-capture" data-recording="gcc-jtag-capture100000" series="verge"></chrono-view>
+    <chrono-view id="v-jtag-nxp" data-recording="stock-jtag-probe-rs" series="nxp"></chrono-view>
+    <chrono-view id="v-jtag-nxp-reads" data-recording="stock-reads" series="nxp"></chrono-view>
+  </div>
+</section>
+<section class="wire-view" data-view="cjtag-oscan1">
+  <header class="subrail">
+    <h2>On the wire</h2>
+    <div class="rail-meta micro"><span>CC1312R1</span><span>analyser at 1 ns on TCKC and TMSC</span><span>recorded 2026-11-04</span></div>
+  </header>
+  <div class="wire-text">
+    <p>In cJTAG every JTAG bit is a frame of packets on TMSC. In OScan1 a frame has three: inverted TDI, TMS and TDO. With packets at 50 MHz, Verge's frames take <chrono-ref for="v-oscan1" annotation="wire_cjtag/frame/28412491163">127 ns</chrono-ref> or <chrono-ref for="v-oscan1" annotation="wire_cjtag/frame/28420785090">133 ns</chrono-ref>, a JTAG clock of 7.9 or 7.5 MHz. The TDO packet is the long one: the probe waits out <chrono-ref for="v-oscan1" annotation="wire_cjtag/tdo/28412491210">the target's TDO delay</chrono-ref> before ending it.</p>
+  </div>
+  <div class="recordings">
+    <chrono-view id="v-oscan1" data-recording="gcc-oscan1-probe-rs" channels="TCKC TMSC" series="verge"></chrono-view>
+  </div>
+</section>
+<section class="wire-view" data-view="cjtag-oscan2">
+  <header class="subrail">
+    <h2>On the wire</h2>
+    <div class="rail-meta micro"><span>CC1312R1</span><span>analyser at 1 ns on TCKC and TMSC</span><span>recorded 2026-11-04</span></div>
+  </header>
+  <div class="wire-text">
+    <p>In cJTAG every JTAG bit is a frame of packets on TMSC. In OScan2, as in OScan1, most frames have three. With packets at 50 MHz, Verge's frames take <chrono-ref for="v-oscan2" annotation="wire_cjtag/frame/26344824116">127 ns</chrono-ref> or <chrono-ref for="v-oscan2" annotation="wire_cjtag/frame/26354443789">133 ns</chrono-ref>, a JTAG clock of 7.9 or 7.5 MHz. The TDO packet is the long one: the probe waits out <chrono-ref for="v-oscan2" annotation="wire_cjtag/tdo/26344824162">the target's TDO delay</chrono-ref> before ending it.</p>
+  </div>
+  <div class="recordings">
+    <chrono-view id="v-oscan2" data-recording="gcc-oscan2-probe-rs" channels="TCKC TMSC" series="verge"></chrono-view>
+  </div>
+</section>
+<section class="wire-view" data-view="cjtag-oscan5">
+  <header class="subrail">
+    <h2>On the wire</h2>
+    <div class="rail-meta micro"><span>CC1312R1</span><span>analyser at 1 ns on TCKC and TMSC</span><span>recorded 2026-11-04</span></div>
+  </header>
+  <div class="wire-text">
+    <p>In cJTAG every JTAG bit is a frame of packets on TMSC. In OScan5 a shift needs two packets a bit, TDI and TDO. Verge's two-packet frames take <chrono-ref for="v-oscan5" annotation="wire_cjtag/frame/21271888413">100 ns</chrono-ref> or <chrono-ref for="v-oscan5" annotation="wire_cjtag/frame/21278618968">107 ns</chrono-ref>, a JTAG clock of 10.0 or 9.4 MHz. The TDO packet is the long one: the probe waits out <chrono-ref for="v-oscan5" annotation="wire_cjtag/tdo/21278618995">the target's TDO delay</chrono-ref> before ending it.</p>
+  </div>
+  <div class="recordings">
+    <chrono-view id="v-oscan5" data-recording="gcc-oscan5-probe-rs" channels="TCKC TMSC" series="verge"></chrono-view>
+  </div>
+</section>
+<section class="wire-view" data-view="cjtag-oscan6">
+  <header class="subrail">
+    <h2>On the wire</h2>
+    <div class="rail-meta micro"><span>CC1312R1</span><span>analyser at 1 ns on TCKC and TMSC</span><span>recorded 2026-11-04</span></div>
+  </header>
+  <div class="wire-text">
+    <p>In cJTAG every JTAG bit is a frame of packets on TMSC. In OScan6, as in OScan5, a shift needs two packets a bit. Verge's two-packet frames take <chrono-ref for="v-oscan6" annotation="wire_cjtag/frame/19381325855">100 ns</chrono-ref> or <chrono-ref for="v-oscan6" annotation="wire_cjtag/frame/19388202838">107 ns</chrono-ref>, a JTAG clock of 10.0 or 9.4 MHz. The TDO packet is the long one: the probe waits out <chrono-ref for="v-oscan6" annotation="wire_cjtag/tdo/19388202865">the target's TDO delay</chrono-ref> before ending it.</p>
+  </div>
+  <div class="recordings">
+    <chrono-view id="v-oscan6" data-recording="gcc-oscan6-probe-rs" channels="TCKC TMSC" series="verge"></chrono-view>
+  </div>
+</section>

@@ -65,6 +65,21 @@ note that shows it. On a wire stock does not run, the comparison says so. The li
 the peak's build with stock and every reference at 10 MHz. Open “Test conditions and firmware
 details” for the target state, run metadata and build IDs.
 
+A set can have a section on the wire: prose whose figures open the analyser recordings they come
+from. Its text is `wire/<date>.html`, one `<section class="wire-view" data-view="...">` for each
+wire view it covers (`swd`, `jtag`, `cjtag-oscan1` and so on), shown with that view. A part names
+its recordings, `<chrono-view id="v" data-recording="gcc-swd-reads">`, and cites annotations in
+them, `<chrono-ref for="v" annotation="wire_swd/read/380567201">37.5 MHz</chrono-ref>`. Hovering
+or tapping a reference opens an inset of that stretch of wire; the recordings stay collapsed until
+opened. chrono draws them: the page loads its elements from chrono's site at the version
+`build.py` pins, and the recordings from the `mculink-recordings` repository's site, at
+`<date>/<name>.chrono` beside each recording's annotations.
+
+The build checks every reference against the annotations in a checkout of `mculink-recordings`,
+beside this repository by default (`--recordings DIR`), and fails on one that names an annotation
+the recording does not have, or a view outside its part. For a local preview, `--recordings-url`
+and `--chrono-url` point the page at local copies; `--check` refuses them.
+
 The J-Link data lives in `reference/jlink-2026-10-22.json`. Its probe-rs results use the same
 revision, 4 KiB workload, target and 10-pin connection as the 2026-10 MCU-Link measurements. They
 appear as the series "J-Link Ultra · 2026-10-22", off until ticked, only in SWD views measured

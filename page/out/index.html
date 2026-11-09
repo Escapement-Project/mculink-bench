@@ -138,7 +138,7 @@ body {
 .num { font-variant-numeric: tabular-nums; }
 :focus-visible { outline: var(--focus-width) solid var(--ink); outline-offset: 2px; }
 h1, h2, h3 { font-family: var(--font-display); font-stretch: var(--display-stretch); font-weight: var(--display-weight); letter-spacing: .01em; }
-.panel, .rail, .views, .reading, .conditions, .module, .fault, .jlink-head, .subrail, footer { border: 1px solid var(--hair); background: var(--surface); border-radius: 10px; }
+.panel, .rail, .views, .reading, .conditions, .module, .fault, .jlink-head, .subrail, .wire-text, footer { border: 1px solid var(--hair); background: var(--surface); border-radius: 10px; }
 
 /* Title rail */
 .rail { display: flex; flex-wrap: wrap; align-items: stretch; overflow: hidden; }
@@ -312,6 +312,14 @@ footer code { font: 500 12.5px/1.45 var(--font-code); font-stretch: var(--code-s
 .line.jlink-write { stroke-dasharray: var(--dash-second-build); }
 .mk.jlink-read, .mk.jlink-write { fill: var(--series-context); }
 
+/* On the wire: prose whose figures open the recordings they come from, then those recordings.
+   chrono's elements take the page's colours and fonts from the tokens. */
+.wire-view { display: grid; gap: 10px; }
+.wire-text { padding: 16px 20px 4px; }
+.wire-text p { margin: 0 0 12px; max-width: 72ch; line-height: 1.55; }
+.recordings { display: grid; gap: 8px; }
+chrono-ref { text-decoration: underline dotted; text-underline-offset: 3px; cursor: help; }
+
 @media (max-width: 900px) {
   .hero, .grid, .fault, .jlink-grid { grid-template-columns: minmax(0, 1fr); }
   .notes { grid-template-columns: minmax(0, 1fr); }
@@ -459,6 +467,92 @@ footer code { font: 500 12.5px/1.45 var(--font-code); font-stretch: var(--code-s
     </div>
   </section>
   </div>
+
+  <div id="on-the-wire" data-chrono="https://escapement-project.github.io/chrono/v0.1.0/"></div>
+<template id="wire-2026-11-04">
+<section class="wire-view" data-view="swd">
+  <header class="subrail">
+    <h2>On the wire</h2>
+    <div class="rail-meta micro"><span>MSPM0L1306</span><span>analyser at 1 ns on SWCLK and SWDIO</span><span>recorded 2026-11-04</span></div>
+  </header>
+  <div class="wire-text">
+    <p>These are recordings of the wire itself, every clock edge of a 64 KiB flash read at each clock asked. Hover over or tap an underlined figure to see the stretch of wire it comes from. The analyser's leads load the lines: with them on, the probe samples read data a cycle later at 50 and 37.5 MHz than it does without them.</p>
+    <p>Asked for 50 MHz, Verge sends each request at <chrono-ref for="v-verge" annotation="wire_swd/request/384679581">50 MHz</chrono-ref> and writes data at <chrono-ref for="v-verge" annotation="wire_swd/data/385111071">50 MHz</chrono-ref>. It reads data at <chrono-ref for="v-verge" annotation="wire_swd/data/384679862">37.5 MHz</chrono-ref>. Before the first bit of read data, the probe checks the acknowledge. That bit's period stretches to <chrono-ref for="v-verge" annotation="wire_swd/ack-check/384679862">about 80 ns</chrono-ref>.</p>
+    <p>Capturing energy at 100,000 pairs a second as well, Verge reads data at <chrono-ref for="v-capture" annotation="wire_swd/session/380466736">30 MHz</chrono-ref> when asked for 50 or 37.5. Its writes keep their clock, but <chrono-ref for="v-capture" annotation="wire_swd/stretch/387899133">14 of 95 writes</chrono-ref> at 50 MHz have one data period 8 ns longer.</p>
+    <p>NXP's firmware, asked for 10 MHz, reads data at <chrono-ref for="v-nxp" annotation="wire_swd/session/371629830">6.9 MHz</chrono-ref> and writes at 7.1. Asked for 25 or 50 MHz, it reads at <chrono-ref for="v-nxp" annotation="wire_swd/session/673495644">10.0 MHz</chrono-ref> and writes at 10.7. Its read clock is uneven: <chrono-ref for="v-nxp" annotation="wire_swd/stretch/605890497">93 and 100 ns periods</chrono-ref> take turns in every read. At 10 MHz, <chrono-ref for="v-nxp" annotation="wire_swd/stretch/376028193">13 of 106 writes</chrono-ref> stop for about 6 µs in the middle of the word. Asked for 20 MHz with the leads on, it <chrono-ref for="v-nxp" annotation="wire_swd/session/545452707">did not connect</chrono-ref>.</p>
+  </div>
+  <div class="recordings">
+    <chrono-view id="v-verge" src="https://escapement-project.github.io/mculink-recordings/2026-11-04/gcc-swd-reads.chrono" annotations="https://escapement-project.github.io/mculink-recordings/2026-11-04/gcc-swd-reads.annotations.toml" series="verge"></chrono-view>
+    <chrono-view id="v-capture" src="https://escapement-project.github.io/mculink-recordings/2026-11-04/gcc-swd-reads-capture100000.chrono" annotations="https://escapement-project.github.io/mculink-recordings/2026-11-04/gcc-swd-reads-capture100000.annotations.toml" series="verge"></chrono-view>
+    <chrono-view id="v-nxp" src="https://escapement-project.github.io/mculink-recordings/2026-11-04/stock-swd-reads.chrono" annotations="https://escapement-project.github.io/mculink-recordings/2026-11-04/stock-swd-reads.annotations.toml" series="nxp"></chrono-view>
+  </div>
+</section>
+<section class="wire-view" data-view="jtag">
+  <header class="subrail">
+    <h2>On the wire</h2>
+    <div class="rail-meta micro"><span>CC1312R1</span><span>analyser at 1 ns on TCK, TMS, TDI and TDO</span><span>recorded 2026-11-04</span></div>
+  </header>
+  <div class="wire-text">
+    <p>These are recordings of the wire itself, every clock edge of probe-rs's runs. Hover over or tap an underlined figure to see the stretch of wire it comes from.</p>
+    <p>Asked for 30 or 50 MHz, Verge's TCK runs at 30 MHz in its fast bursts: <chrono-ref for="v-jtag" annotation="wire_clock/clock/9969845407">85% of their periods</chrono-ref> are 33 ns. Most of the rest are 53 ns, where the generator takes a longer step. Capturing energy at 100,000 pairs a second as well, it keeps <chrono-ref for="v-jtag-capture" annotation="wire_clock/clock/10091908928">83% of them</chrono-ref> at 33 ns.</p>
+    <p>NXP's firmware runs TCK in bursts at two rates 14 ns apart, about half each. Asked for 10 MHz, its bursts run at <chrono-ref for="v-jtag-nxp" annotation="wire_clock/clock/9976898813">173 ns</chrono-ref> and <chrono-ref for="v-jtag-nxp" annotation="wire_clock/clock/9976966337">187 ns</chrono-ref>, 5.8 and 5.3 MHz. Asked for 20, 30 or 50 MHz to read 256 KiB, it drives <chrono-ref for="v-jtag-nxp-reads" annotation="wire_clock/session/4218738324">the same wire each time</chrono-ref>, and the read fails.</p>
+  </div>
+  <div class="recordings">
+    <chrono-view id="v-jtag" src="https://escapement-project.github.io/mculink-recordings/2026-11-04/gcc-jtag-probe-rs.chrono" annotations="https://escapement-project.github.io/mculink-recordings/2026-11-04/gcc-jtag-probe-rs.annotations.toml" series="verge"></chrono-view>
+    <chrono-view id="v-jtag-capture" src="https://escapement-project.github.io/mculink-recordings/2026-11-04/gcc-jtag-capture100000.chrono" annotations="https://escapement-project.github.io/mculink-recordings/2026-11-04/gcc-jtag-capture100000.annotations.toml" series="verge"></chrono-view>
+    <chrono-view id="v-jtag-nxp" src="https://escapement-project.github.io/mculink-recordings/2026-11-04/stock-jtag-probe-rs.chrono" annotations="https://escapement-project.github.io/mculink-recordings/2026-11-04/stock-jtag-probe-rs.annotations.toml" series="nxp"></chrono-view>
+    <chrono-view id="v-jtag-nxp-reads" src="https://escapement-project.github.io/mculink-recordings/2026-11-04/stock-reads.chrono" annotations="https://escapement-project.github.io/mculink-recordings/2026-11-04/stock-reads.annotations.toml" series="nxp"></chrono-view>
+  </div>
+</section>
+<section class="wire-view" data-view="cjtag-oscan1">
+  <header class="subrail">
+    <h2>On the wire</h2>
+    <div class="rail-meta micro"><span>CC1312R1</span><span>analyser at 1 ns on TCKC and TMSC</span><span>recorded 2026-11-04</span></div>
+  </header>
+  <div class="wire-text">
+    <p>In cJTAG every JTAG bit is a frame of packets on TMSC. In OScan1 a frame has three: inverted TDI, TMS and TDO. With packets at 50 MHz, Verge's frames take <chrono-ref for="v-oscan1" annotation="wire_cjtag/frame/28412491163">127 ns</chrono-ref> or <chrono-ref for="v-oscan1" annotation="wire_cjtag/frame/28420785090">133 ns</chrono-ref>, a JTAG clock of 7.9 or 7.5 MHz. The TDO packet is the long one: the probe waits out <chrono-ref for="v-oscan1" annotation="wire_cjtag/tdo/28412491210">the target's TDO delay</chrono-ref> before ending it.</p>
+  </div>
+  <div class="recordings">
+    <chrono-view id="v-oscan1" src="https://escapement-project.github.io/mculink-recordings/2026-11-04/gcc-oscan1-probe-rs.chrono" annotations="https://escapement-project.github.io/mculink-recordings/2026-11-04/gcc-oscan1-probe-rs.annotations.toml" channels="TCKC TMSC" series="verge"></chrono-view>
+  </div>
+</section>
+<section class="wire-view" data-view="cjtag-oscan2">
+  <header class="subrail">
+    <h2>On the wire</h2>
+    <div class="rail-meta micro"><span>CC1312R1</span><span>analyser at 1 ns on TCKC and TMSC</span><span>recorded 2026-11-04</span></div>
+  </header>
+  <div class="wire-text">
+    <p>In cJTAG every JTAG bit is a frame of packets on TMSC. In OScan2, as in OScan1, most frames have three. With packets at 50 MHz, Verge's frames take <chrono-ref for="v-oscan2" annotation="wire_cjtag/frame/26344824116">127 ns</chrono-ref> or <chrono-ref for="v-oscan2" annotation="wire_cjtag/frame/26354443789">133 ns</chrono-ref>, a JTAG clock of 7.9 or 7.5 MHz. The TDO packet is the long one: the probe waits out <chrono-ref for="v-oscan2" annotation="wire_cjtag/tdo/26344824162">the target's TDO delay</chrono-ref> before ending it.</p>
+  </div>
+  <div class="recordings">
+    <chrono-view id="v-oscan2" src="https://escapement-project.github.io/mculink-recordings/2026-11-04/gcc-oscan2-probe-rs.chrono" annotations="https://escapement-project.github.io/mculink-recordings/2026-11-04/gcc-oscan2-probe-rs.annotations.toml" channels="TCKC TMSC" series="verge"></chrono-view>
+  </div>
+</section>
+<section class="wire-view" data-view="cjtag-oscan5">
+  <header class="subrail">
+    <h2>On the wire</h2>
+    <div class="rail-meta micro"><span>CC1312R1</span><span>analyser at 1 ns on TCKC and TMSC</span><span>recorded 2026-11-04</span></div>
+  </header>
+  <div class="wire-text">
+    <p>In cJTAG every JTAG bit is a frame of packets on TMSC. In OScan5 a shift needs two packets a bit, TDI and TDO. Verge's two-packet frames take <chrono-ref for="v-oscan5" annotation="wire_cjtag/frame/21271888413">100 ns</chrono-ref> or <chrono-ref for="v-oscan5" annotation="wire_cjtag/frame/21278618968">107 ns</chrono-ref>, a JTAG clock of 10.0 or 9.4 MHz. The TDO packet is the long one: the probe waits out <chrono-ref for="v-oscan5" annotation="wire_cjtag/tdo/21278618995">the target's TDO delay</chrono-ref> before ending it.</p>
+  </div>
+  <div class="recordings">
+    <chrono-view id="v-oscan5" src="https://escapement-project.github.io/mculink-recordings/2026-11-04/gcc-oscan5-probe-rs.chrono" annotations="https://escapement-project.github.io/mculink-recordings/2026-11-04/gcc-oscan5-probe-rs.annotations.toml" channels="TCKC TMSC" series="verge"></chrono-view>
+  </div>
+</section>
+<section class="wire-view" data-view="cjtag-oscan6">
+  <header class="subrail">
+    <h2>On the wire</h2>
+    <div class="rail-meta micro"><span>CC1312R1</span><span>analyser at 1 ns on TCKC and TMSC</span><span>recorded 2026-11-04</span></div>
+  </header>
+  <div class="wire-text">
+    <p>In cJTAG every JTAG bit is a frame of packets on TMSC. In OScan6, as in OScan5, a shift needs two packets a bit. Verge's two-packet frames take <chrono-ref for="v-oscan6" annotation="wire_cjtag/frame/19381325855">100 ns</chrono-ref> or <chrono-ref for="v-oscan6" annotation="wire_cjtag/frame/19388202838">107 ns</chrono-ref>, a JTAG clock of 10.0 or 9.4 MHz. The TDO packet is the long one: the probe waits out <chrono-ref for="v-oscan6" annotation="wire_cjtag/tdo/19388202865">the target's TDO delay</chrono-ref> before ending it.</p>
+  </div>
+  <div class="recordings">
+    <chrono-view id="v-oscan6" src="https://escapement-project.github.io/mculink-recordings/2026-11-04/gcc-oscan6-probe-rs.chrono" annotations="https://escapement-project.github.io/mculink-recordings/2026-11-04/gcc-oscan6-probe-rs.annotations.toml" channels="TCKC TMSC" series="verge"></chrono-view>
+  </div>
+</section>
+</template>
 
   <section class="notes" id="notes"></section>
 
@@ -1037,6 +1131,17 @@ function renderNotes() {
   $("notes").innerHTML = notes.map(([c, h, p]) => `<div class="note ${c}"><h3>${h}</h3><p>${p}</p></div>`).join("");
 }
 
+/* The set's wire template holds a part for each view with recordings; chrono loads with the first
+   one shown, from its own site at the version the build pins. */
+let chronoLoad = null;
+function renderOnTheWire() {
+  const box = $("on-the-wire");
+  const part = document.getElementById(`wire-${SET}`)?.content.querySelector(`.wire-view[data-view="${VIEW}"]`);
+  box.replaceChildren(...(part ? [part.cloneNode(true)] : []));
+  box.hidden = !part;
+  if (part && !chronoLoad) chronoLoad = import(`${box.dataset.chrono}chrono.js`).catch((e) => console.warn("chrono did not load:", e));
+}
+
 function renderAll() {
   D = ALL.sets[SET];
   V = D.views.find((v) => v.id === WANT) || D.views[0];
@@ -1049,6 +1154,7 @@ function renderAll() {
   drawExplorer();
   renderCliffAndFault();
   renderWire();
+  renderOnTheWire();
   renderNotes();
 }
 
