@@ -6,7 +6,8 @@
 """SWD transfers decoded from a wire export, with each phase's clock, grouped by the clock asked for.
 
     wire_swd.py EXPORT_DIR [--clk 3_0] [--dio 3_1] [--sessions-ms 50] [--labels 50,37.5,30,10]
-    wire_swd.py EXPORT_DIR --annotate REC.tickwave [--tickwave BIN] [--labels ...] [--examples 3]
+    wire_swd.py EXPORT_DIR --annotate REC.tickwave [--tickwave BIN] [--asked 50|37.5] [--labels ...]
+                [--examples 3]
 
 With --annotate, writes tickwave's sidecar REC.wire_swd.jsonl beside the recording instead of
 printing (see annotate() for what it holds); SWCLK and SWDIO must be the recording's names.
@@ -29,6 +30,7 @@ fastest single position, the median over the group's transfers of one kind. deco
 transfers are framed."""
 
 import argparse
+import re
 from collections import Counter, defaultdict
 from pathlib import Path
 
@@ -151,6 +153,8 @@ def summarise(name: str, t: np.ndarray, found: list) -> None:
 
 
 CYCLE = 1 / 150e6
+# tickwave's decimal: a value is this, one space and a unit.
+DECIMAL = re.compile(r"-?[0-9]+(?:\.[0-9]+)?")
 ACK_KIND = {WAIT: "wait", FAULT: "fault", (1, 1, 1): "no-ack"}
 
 
@@ -170,7 +174,11 @@ def annotate(args, t: np.ndarray, b: np.ndarray) -> int:
 
     session: each burst between pauses of --sessions-ms (default 20), labelled by --labels in turn
       (whole labels separated by |, one a session, or an error), with its transfers,
-      acknowledges and data clocks.
+      acknowledges and data clocks. --asked gives each session's clock asked for in MHz, in the
+      same way; without --labels, a session's label starts "<asked> MHz asked". Its values, as
+      tickwave's ANNOTATIONS.md defines them: asked, and the request, read data and write data
+      clocks that were measured (the request's over reads and writes), each in MHz to the label's
+      tenth.
     read, write: one example transfer per (kind, typical data period in cycles, the median of
       periods 13 to 43), the group's most common request, preferring one without a pause and then
       one whose data periods are all the typical one. Examples go in time order, each followed by
@@ -197,22 +205,35 @@ def annotate(args, t: np.ndarray, b: np.ndarray) -> int:
     cut = np.flatnonzero(np.diff(t) > args.sessions_ms * 1e-3) + 1
     bounds = [(s, e) for s, e in zip(np.r_[0, cut], np.r_[cut, len(t)]) if e - s >= 100]
     labels = args.labels.split("|") if args.labels else []
-    if labels and len(labels) != len(bounds):
-        raise SystemExit(f"{len(bounds)} sessions, {len(labels)} labels")
+    asked = args.asked.split("|") if args.asked else []
+    for given, what in ((labels, "labels"), (asked, "clocks asked")):
+        if given and len(given) != len(bounds):
+            raise SystemExit(f"{len(bounds)} sessions, {len(given)} {what}")
+    if any(not DECIMAL.fullmatch(a) for a in asked):
+        raise SystemExit(f"--asked takes decimals in MHz, such as 37.5: {args.asked}")
+    if asked and not labels:
+        labels = [f"{a} MHz asked" for a in asked]
     starts = np.array([i for _, _, i, _ in found], dtype=np.int64)
     for k, (s, e) in enumerate(bounds):
         lo, hi = np.searchsorted(starts, [s, e])
         part = found[lo:hi]
         acks = Counter({OK: "OK", WAIT: "WAIT", FAULT: "FAULT"}.get(a, "no acknowledge") for _, a, _, _ in part)
         ack_text = "all OK" if set(acks) <= {"OK"} else ", ".join(f"{n:,} {a}" for a, n in acks.most_common())
-        clocks = []
+        clocks, values = [], {"asked": f"{asked[k]} MHz"} if asked else {}
+        both = np.array([i for kd, _, i, _ in part if kd in ("read", "write")], dtype=np.int64)
+        if len(both):
+            values["request"] = f"{phase_mhz(t, both, 'request'):.1f} MHz"
         for kind in ("read", "write"):
             idx = np.array([i for kd, _, i, _ in part if kd == kind], dtype=np.int64)
             if len(idx):
-                clocks.append(f"{kind} data {phase_mhz(t, idx, 'data'):.1f} MHz")
+                values[f"{kind}_data"] = f"{phase_mhz(t, idx, 'data'):.1f} MHz"
+                clocks.append(f"{kind} data {values[f'{kind}_data']}")
         head = f"{labels[k]}: " if labels else ""
-        out.append(sc.note("session", span(s, e - 1), f"{head}{len(part):,} transfers, {ack_text}"
-                           + (f"; {', '.join(clocks)}" if clocks else "")))
+        note = sc.note("session", span(s, e - 1), f"{head}{len(part):,} transfers, {ack_text}"
+                       + (f"; {', '.join(clocks)}" if clocks else ""))
+        if values:
+            note["values"] = values
+        out.append(note)
     # Example transfers, their phases and stretched data periods, in time order.
     blocks: list[list[dict]] = []
     for kind in ("read", "write"):
@@ -302,6 +323,7 @@ def main() -> int:
     parser.add_argument("--dio", default="3_1")
     parser.add_argument("--sessions-ms", type=float, default=0.0)
     parser.add_argument("--labels", default="")
+    parser.add_argument("--asked", default="")
     parser.add_argument("--annotate", type=Path)
     parser.add_argument("--tickwave", default="tickwave")
     parser.add_argument("--examples", type=int, default=3)
