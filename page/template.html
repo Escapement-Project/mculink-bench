@@ -43,6 +43,8 @@ summary:focus-visible, select:focus-visible, input:focus-visible { outline: var(
 .headline { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "window claim" ". versus" ". same"; gap: 0 24px; align-items: center; margin-bottom: 36px; }
 .window { grid-area: window; justify-self: start; background: var(--lume); color: var(--on-lume); box-shadow: inset 0 0 0 1px var(--window-edge); border-radius: 5px; padding: 7px 14px 8px; font: var(--figures-weight) 26px/1.25 var(--font-figures); font-stretch: var(--figures-stretch); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .window small { font-size: .6em; margin-left: .3em; }
+.window:empty { display: none; }
+.noscript { max-width: 40em; margin: 0 0 28px; color: var(--ink-2); }
 .headline .claim { grid-area: claim; font: 500 20px/1.5 var(--font-text); max-width: 42em; margin: 0; text-wrap: balance; }
 .headline .versus { grid-area: versus; margin: 8px 0 0; max-width: 44em; text-wrap: pretty; }
 .headline .same { grid-area: same; margin: 6px 0 0; max-width: 48em; text-wrap: pretty; }
@@ -229,6 +231,7 @@ __HEADER__
 <main id="main">
 <div class="wrap page-head">
   <h1 id="title">MCU-Link throughput</h1>
+  <noscript><p class="noscript">This page draws its charts and tables with JavaScript, which is off in this browser. The same figures are in the <code>results/</code> folder of <a href="https://github.com/Escapement-Project/mculink-bench">mculink-bench</a>.</p></noscript>
   <!-- The set picker lives in the header's row for the page, beside the wire; the script moves it there. -->
   <label class="set-picker" id="sets" hidden><span class="set-label">Measurement set</span> <select id="set-select"></select></label>
   <div class="headline">
