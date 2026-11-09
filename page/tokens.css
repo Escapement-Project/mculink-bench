@@ -35,6 +35,7 @@
   --dash-second-build: 6 3;
   --dash-misread: 2 4;
   --dash-reference: 8 3 2 3;
+  --dash-capture-second: 12 4;
   --capture-opacity: 0.6;
   --capture-width: 1.5px;
   /* Type */

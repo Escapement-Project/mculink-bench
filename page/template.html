@@ -118,7 +118,7 @@ h3 { font: 600 17px/1.4 var(--font-text); margin: 0 0 4px; }
 .line.misread { stroke-dasharray: var(--dash-misread); }
 .line.cond { stroke-width: var(--capture-width); opacity: var(--capture-opacity); }
 /* Two runs of one build under capture: the first keeps the build's pattern, the second a long dash. */
-.line.cond1 { stroke-dasharray: 12 4; }
+.line.cond1 { stroke-dasharray: var(--dash-capture-second); }
 .mk { stroke: var(--surface); stroke-width: 2; }
 .mk.gcc, .mk.clang { fill: var(--series-verge); }
 .mk.stock { fill: var(--series-nxp); }
