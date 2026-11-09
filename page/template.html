@@ -17,104 +17,90 @@
 <meta property="og:image:alt" content="The Escapement Project's card: open firmware for NXP's MCU-Link, and Verge's measured write rate against NXP's firmware.">
 <meta name="twitter:card" content="summary_large_image">
 <title>MCU-Link throughput</title>
-<script>try { const f = localStorage.getItem("face"); if (f === "day" || f === "night") document.documentElement.dataset.face = f; } catch { /* no choice kept */ }</script>
+<!-- The face chosen on an earlier visit, before the first paint; and .js, which tells base.css the
+     header's script will run (the phone menu needs it), as on every page of the project. -->
+<script>document.documentElement.classList.add("js"); try { const f = localStorage.getItem("face"); if (f === "day" || f === "night") document.documentElement.dataset.face = f; } catch { /* no choice kept */ }</script>
+<!-- The design tokens and the shared base sheet are copies of the site's (tokens.css, base.css),
+     inlined by build.py; then the page's own sheet. -->
 <style>__TOKENS__</style>
+<style>__BASE__</style>
 <style>
-/* The page on the project's design tokens (tokens.css above, kept current from the site's design/):
-   colours by role in a day and a night face, Saira for display, Hanken Grotesk for text, Martian Mono
-   for the headline figure and code. One headline, a key, then the result modules. */
-* { box-sizing: border-box; }
+/* The page's own parts, after tokens.css and base.css (copies of the site's, inlined above): the
+   page's row in the header, its head, its controls, the chart code's marks, and tickwave's
+   elements. The header, sections, figures, ruled rows and type come from base.css unchanged. */
 [hidden] { display: none !important; }
-html, body { background: var(--page); color: var(--ink); }
-body {
-  margin: 0;
-  font: 400 15px/1.55 var(--font-text);
-  padding-left: max(16px, env(safe-area-inset-left, 0px));
-  padding-right: max(16px, env(safe-area-inset-right, 0px));
-  padding-block: 20px 40px;
-}
-.page { max-width: 1240px; margin: 0 auto; display: grid; gap: 16px; }
-.micro { font: 500 12.5px/1.35 var(--font-text); color: var(--ink-2); }
-.num { font-variant-numeric: tabular-nums; }
-:focus-visible { outline: var(--focus-width) solid var(--ink); outline-offset: 2px; }
-h1, h2, h3 { font-family: var(--font-display); font-stretch: var(--display-stretch); font-weight: var(--display-weight); letter-spacing: .01em; }
-.panel, .rail, .views, .reading, .conditions, .module, .fault, .jlink-head, .subrail, .wire-text, footer { border: 1px solid var(--hair); background: var(--surface); border-radius: 10px; }
+code { font: var(--code-weight) 14px/1.5 var(--font-code); font-stretch: var(--code-stretch); overflow-wrap: anywhere; }
+.quiet { color: var(--ink-2); font-size: 15px; }
+/* The page's own controls take the focus ring base.css gives links and buttons. */
+summary:focus-visible, select:focus-visible, input:focus-visible { outline: var(--focus-width) solid var(--ink); outline-offset: 3px; }
 
-/* Title rail */
-.rail { display: flex; flex-wrap: wrap; align-items: stretch; overflow: hidden; }
-.rail-id { display: flex; align-items: center; gap: 9px; padding: 10px 16px; font: 13px/1 var(--font-display); font-stretch: var(--display-stretch); font-weight: var(--display-weight); letter-spacing: .04em; white-space: nowrap; color: var(--ink); text-decoration: none; border-right: 1px solid var(--hair); }
-.rail-id svg { width: 24px; height: 24px; }
-.rail-id:hover { background: var(--wash); }
-.rail-id:focus-visible { outline-offset: -4px; }
-.rail h1 { margin: 0; padding: 12px 16px; flex: 1 1 260px; font-size: clamp(20px, 2.6vw, 28px); line-height: 1.15; text-wrap: balance; }
-.rail-meta { display: flex; flex-wrap: wrap; gap: 6px 18px; align-items: center; padding: 10px 16px; border-left: 1px solid var(--hair); }
-.rail-meta span b { color: var(--ink); font-weight: 600; }
-.set-picker { display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-left: 1px solid var(--hair); }
-.set-picker select { color: var(--ink); background: var(--raised); border: 1px solid var(--rule); border-radius: 6px; padding: 6px 8px; font: 500 13px/1.2 var(--font-text); font-variant-numeric: tabular-nums; }
-.rail .switch { padding: 0 16px; border-left: 1px solid var(--hair); }
-.views { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; padding: 8px 12px; }
-.views .seg-row button { min-height: 32px; }
+/* The page's head: the title, the headline, the conditions. */
+.page-head { padding-top: 24px; padding-bottom: 48px; }
+.page-head h1 { margin-bottom: 28px; }
 
-/* The day/night switch: its thumb a window onto a disc with the sun and the moon on opposite halves,
-   turning half a revolution as the thumb travels. Both move only once the page has drawn them. */
-.switch { display: flex; align-items: center; background: none; border: 0; cursor: pointer; color: inherit; }
-.switch .track { position: relative; display: block; width: 46px; height: 26px; border-radius: 999px; border: 1.5px solid var(--rule); }
-.switch .thumb { position: absolute; top: 2px; left: 2px; width: 19px; height: 19px; border-radius: 50%; background: var(--ink); color: var(--page); overflow: hidden; }
-.switch .wheel { position: absolute; left: -10.5px; top: .5px; width: 40px; height: 40px; transform-origin: 20px 20px; }
-.switch[aria-checked="true"] .thumb { transform: translateX(20px); }
-.switch[aria-checked="true"] .wheel { transform: rotate(180deg); }
-.switch.ready .thumb, .switch.ready .wheel { transition: transform .26s cubic-bezier(.4, 0, .2, 1); }
-@media (prefers-reduced-motion: reduce) { .switch.ready .thumb, .switch.ready .wheel { transition: none; } }
+/* The headline: our fastest write in a window of lume, at the scale of the landing dial's window;
+   the comparison beside it as sentences. */
+.headline { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "window claim" ". versus" ". same"; gap: 0 24px; align-items: center; margin-bottom: 36px; }
+.window { grid-area: window; justify-self: start; background: var(--lume); color: var(--on-lume); box-shadow: inset 0 0 0 1px var(--window-edge); border-radius: 5px; padding: 7px 14px 8px; font: var(--figures-weight) 26px/1.25 var(--font-figures); font-stretch: var(--figures-stretch); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.window small { font-size: .6em; margin-left: .3em; }
+.headline .claim { grid-area: claim; font: 500 20px/1.5 var(--font-text); max-width: 42em; margin: 0; text-wrap: balance; }
+.headline .versus { grid-area: versus; margin: 8px 0 0; max-width: 44em; text-wrap: pretty; }
+.headline .same { grid-area: same; margin: 6px 0 0; max-width: 48em; text-wrap: pretty; }
 
-/* Headline: our fastest write in a window of lume; the comparison with stock beside it, quieter. */
-.hero { display: block; }
-.reading { display: grid; grid-template-columns: auto minmax(0, 1fr) minmax(0, 15rem); gap: 8px 24px; align-items: center; padding: 20px 22px 18px; }
-.big {
-  justify-self: start; background: var(--lume); color: var(--on-lume); box-shadow: inset 0 0 0 1px var(--window-edge); border-radius: 8px;
-  padding: .14em .3em .1em; font: var(--figures-weight) clamp(46px, 8vw, 100px)/1 var(--font-figures); font-stretch: var(--figures-stretch); font-variant-numeric: tabular-nums;
-}
-.big small { font-size: .5em; margin-left: .06em; }
-.reading-stack { display: grid; gap: 6px; min-width: 0; }
-.versus { align-self: stretch; display: grid; align-content: center; gap: 4px; padding-left: 24px; border-left: 1px solid var(--hair); }
-.versus .x { font: var(--figures-weight) 34px/1.1 var(--font-figures); font-stretch: var(--figures-stretch); font-variant-numeric: tabular-nums; color: var(--ink); }
-.versus p { margin: 0; color: var(--ink-2); font-size: 14px; }
-@media (max-width: 900px) { .reading { grid-template-columns: auto minmax(0, 1fr); } .versus { grid-column: 1 / -1; padding: 12px 0 0; border-left: 0; border-top: 1px solid var(--hair); } }
-.reading-stack p { margin: 0; max-width: 46ch; color: var(--ink); }
-.same-clock { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 18px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--hair); color: var(--ink-2); }
-.same-clock-item { display: flex; align-items: baseline; gap: 8px; }
-.same-clock-item strong { color: var(--ink); font: 600 20px/1.2 var(--font-text); font-variant-numeric: tabular-nums; }
-.same-clock-rates { grid-column: 1 / -1; font: 500 12.5px/1.4 var(--font-text); font-variant-numeric: tabular-nums; }
-.conditions summary { cursor: pointer; padding: 10px 14px; color: var(--ink-2); font: 500 13px/1.3 var(--font-text); }
-.conditions[open] summary { border-bottom: 1px solid var(--hair); }
-.conditions-body { padding: 10px 14px 12px; display: grid; gap: 6px; }
-.conditions-body p { margin: 0; color: var(--ink-2); }
-.conditions-meta { display: flex; flex-wrap: wrap; gap: 4px 16px; }
-.conditions-meta span b { color: var(--ink); font-weight: 600; }
-.conditions-builds { display: flex; flex-wrap: wrap; gap: 4px 16px; color: var(--ink-2); }
-.conditions-builds b { color: var(--ink); font-weight: 600; }
+/* The conditions: a ruled row that opens. */
+.conditions { border-top: 1px solid var(--hair); border-bottom: 1px solid var(--hair); }
+.conditions summary { display: flex; align-items: center; gap: 12px; padding: 12px 0; cursor: pointer; list-style: none; font-size: 15px; }
+.conditions summary::-webkit-details-marker { display: none; }
+.conditions summary::before { content: ""; width: 7px; height: 7px; margin: 0 2px 3px 3px; border-right: 1.5px solid var(--ink-2); border-bottom: 1.5px solid var(--ink-2); transform: rotate(-45deg); }
+.conditions[open] summary::before { transform: rotate(45deg); margin-bottom: 5px; }
+.conditions summary:hover { background: var(--wash); }
+.conditions-body { padding: 4px 0 20px; }
+.conditions-body > p { color: var(--ink-2); font-size: 15px; }
+.conditions .specs { font-size: 15px; }
+.conditions .builds > div { grid-template-columns: minmax(7em, 40%) minmax(0, 1fr); }
 
-/* The key: a probe's swatch is drawn with its chart line's own classes, so the two match. */
-.chart-key { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px 18px; padding: 0 2px; color: var(--ink); }
-.chart-key label { display: inline-flex; align-items: center; gap: 0; white-space: nowrap; cursor: pointer; }
-.chart-key input { margin: 0 8px 0 0; accent-color: var(--ink); }
+/* Segmented controls, hue-free: outlined in rule, the pressed one an ink fill with page text. */
+.views, .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.seg-label { color: var(--ink-2); font-size: 15px; }
+.seg-row { display: inline-flex; flex-wrap: wrap; }
+.seg-row button { font: 500 14px/1 var(--font-text); color: var(--ink); background: transparent; border: 1px solid var(--rule); margin: 0 0 0 -1px; padding: 9px 12px; min-height: 36px; cursor: pointer; }
+.seg-row button:first-child { margin-left: 0; border-radius: 6px 0 0 6px; }
+.seg-row button:last-child { border-radius: 0 6px 6px 0; }
+.seg-row button:only-child { border-radius: 6px; }
+.seg-row button:hover { background: var(--wash); }
+.seg-row button[aria-pressed="true"] { background: var(--ink); color: var(--page); border-color: var(--ink); position: relative; z-index: 1; }
+.seg-row button:focus-visible { position: relative; z-index: 2; }
+.controls { gap: 14px 16px; margin-bottom: 14px; }
+.controls .seg-row button { font-size: 13px; padding: 9px 9px; }
+.seg { display: grid; gap: 6px; }
+.seg .seg-label { font-size: 14px; }
+
+/* The key: which probes every figure shows. A swatch is drawn with its chart line's own classes. */
+.chart-key { display: flex; flex-wrap: wrap; gap: 6px 22px; margin: 0 0 28px; font-size: 15px; }
+.chart-key label { display: inline-flex; align-items: center; white-space: nowrap; cursor: pointer; }
+.chart-key input { margin: 0 8px 0 0; width: 16px; height: 16px; accent-color: var(--ink); }
 .chart-key label.off { color: var(--ink-2); }
 .chart-key label.off .swatch { opacity: .5; }
 .swatch { width: 26px; height: 10px; margin-right: 6px; flex: none; overflow: visible; vertical-align: middle; }
 
-/* Modules */
-.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
-.module { display: grid; align-content: start; min-width: 0; }
-.module.wide { grid-column: 1 / -1; }
-.mhead { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: baseline; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--hair); }
-.mhead h2 { margin: 0; font-size: 18px; line-height: 1.2; text-wrap: balance; }
-.mbody { padding: 12px 16px 14px; display: grid; gap: 10px; min-width: 0; }
-.mbody p { margin: 0; max-width: 68ch; }
-.chart-reference-toggle { display: inline-flex; align-items: center; gap: 7px; color: var(--ink); font: 500 12.5px/1.3 var(--font-text); cursor: pointer; }
-.chart-reference-toggle input { margin: 0; accent-color: var(--ink); }
-svg.chart { width: 100%; height: auto; display: block; overflow: visible; }
-.readout { display: flex; flex-wrap: wrap; gap: 4px 0; border-top: 1px solid var(--hair); padding-top: 8px; font: 400 13.5px/1.45 var(--font-text); font-variant-numeric: tabular-nums; }
-.readout > span { display: inline-flex; align-items: center; padding-right: 14px; margin-right: 14px; border-right: 1px solid var(--hair); white-space: nowrap; }
-.readout > span:last-child { border-right: 0; }
+/* A section's figures: two to a row, a wide one across both. */
+.figs { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 44px var(--gutter); align-items: start; }
+.figs > .wide { grid-column: 1 / -1; }
+.figs + .figs, .figs + .specs, .prose + .figs, .figs + .prose { margin-top: 44px; }
+.chart { padding: 14px 12px 10px; }
+/* The chart code draws its SVG with the class "chart" too: there it is the drawing, not the panel. */
+svg.chart { width: 100%; height: auto; display: block; overflow: visible; background: none; padding: 0; border-radius: 0; position: static; }
+.readout { display: flex; flex-wrap: wrap; gap: 4px 20px; margin-top: 8px; padding: 8px 4px 2px; border-top: 1px solid var(--hair); font-size: 14px; line-height: 1.45; font-variant-numeric: tabular-nums; }
+.readout > span { display: inline-flex; align-items: center; white-space: nowrap; }
+.readout > span:first-child { font-weight: 600; }
+.readout .micro { color: var(--ink); }
+.chart > p.micro { margin: 8px 4px; color: var(--ink-2); font-size: 15px; }
+.prose p { max-width: 36em; }
+h3 { font: 600 17px/1.4 var(--font-text); margin: 0 0 4px; }
+/* A part of a section with a heading of its own: the custom host's matrix in Throughput. */
+.part { margin-top: 56px; }
+.part > h3 { margin-bottom: 16px; }
+.notes > div { grid-template-columns: minmax(7em, 30%) minmax(0, 1fr); }
 
 /* Chart marks. Verge is teal (Clang solid with circles, GCC dashed with squares), NXP's firmware
    blue with circles, dotted and hollow past the fastest clock it reads right at; reference probes
@@ -122,8 +108,8 @@ svg.chart { width: 100%; height: auto; display: block; overflow: visible; }
    capture is thinner and fainter. */
 .ax { stroke: var(--rule); stroke-width: 1; fill: none; }
 .grid-line { stroke: var(--hair); stroke-width: 1; fill: none; }
-.tick { fill: var(--ink-2); font: 400 11.5px var(--font-text); font-variant-numeric: tabular-nums; }
-.axis-name { fill: var(--ink-2); font: 500 11.5px var(--font-text); }
+.tick { fill: var(--ink-2); font: 400 12px var(--font-text); font-variant-numeric: tabular-nums; }
+.axis-name { fill: var(--ink-2); font: 500 12px var(--font-text); }
 .line { fill: none; stroke-width: 2; stroke-linejoin: round; }
 .line.gcc, .line.clang { stroke: var(--series-verge); }
 .line.gcc { stroke-dasharray: var(--dash-second-build); }
@@ -142,242 +128,219 @@ svg.chart { width: 100%; height: auto; display: block; overflow: visible; }
 .mk.hollow.gcc, .mk.hollow.clang { stroke: var(--series-verge); }
 .mk.hollow.ref0, .mk.hollow.ref1, .mk.hollow.ref2, .mk.hollow.jlink { stroke: var(--series-context); }
 .mk.cond { opacity: var(--capture-opacity); }
+/* The key sits on the page, not on a chart's surface. */
+.chart-key .mk { stroke: var(--page); }
+.chart-key .mk.hollow { fill: var(--page); }
 .fail-mark { stroke: var(--fault-ink); stroke-width: 2; fill: none; }
-.fail-text { fill: var(--fault-ink); font: 600 11.5px var(--font-text); }
+.fail-text { fill: var(--fault-ink); font: 600 12px var(--font-text); }
 .sel-rule { stroke: var(--ink); stroke-opacity: .35; stroke-width: 1; fill: none; }
 .hit { fill: transparent; cursor: pointer; }
 /* A clock's column under focus: the 2 px ink ring, drawn as the column's own outline. */
 .hit:focus-visible { outline: none; stroke: var(--ink); stroke-width: var(--focus-width); }
-
-/* Controls: hue-free, the pressed one an ink fill with page text */
-.controls { display: flex; flex-wrap: wrap; gap: 10px 18px; }
-.seg { display: grid; gap: 4px; }
-.seg-row { display: flex; flex-wrap: wrap; }
-.seg button, .views button {
-  font: 500 13px/1 var(--font-text); color: var(--ink); background: var(--raised); border: 1px solid var(--hair); margin: 0 -1px -1px 0;
-  padding: 9px 11px; border-radius: 0; cursor: pointer; min-height: 34px;
-}
-.seg-row button:first-child { border-radius: 6px 0 0 6px; }
-.seg-row button:last-child { border-radius: 0 6px 6px 0; }
-.seg button[aria-pressed="true"], .views button[aria-pressed="true"] { background: var(--ink); color: var(--page); border-color: var(--ink); position: relative; z-index: 1; }
-
-/* Fault slab: the fault's fill with status ink on it */
-.fault { border-color: var(--fault-ink); overflow: hidden; display: grid; grid-template-columns: minmax(0, 300px) minmax(0, 1fr); }
-.fault-side { background: var(--fault-fill); color: var(--on-status); padding: 16px 18px; display: grid; gap: 6px; align-content: start; }
-.fault-side .count { font: 600 56px/.95 var(--font-display); font-stretch: var(--display-stretch); font-variant-numeric: tabular-nums; }
-.fault-side .count small { font-size: .4em; }
-.fault-side .micro { color: var(--on-status); }
-.fault-side p { margin: 0; font-weight: 500; }
-.fault-main { padding: 14px 16px; display: grid; gap: 10px; min-width: 0; }
-.pips { display: grid; gap: 6px; }
-.pip-row { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 10px; align-items: center; }
-.pip-row svg { width: 100%; height: auto; display: block; }
-.pip { fill: var(--hair); }
-.pip.bad { fill: var(--fault-fill); stroke: none; }
-.pip.stall { fill: var(--ink-2); }
-.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; }
-.sw { display: inline-block; width: 10px; height: 10px; vertical-align: -1px; margin-right: 6px; border-radius: 2px; }
-
-/* Notes and the source footer */
-.notes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
-.note { border-top: 2px solid var(--hair); padding-top: 10px; display: grid; gap: 6px; align-content: start; min-width: 0; }
-.note h3 { margin: 0; font-size: 16px; line-height: 1.25; }
-.note p { margin: 0; }
-.note.mark-gcc, .note.mark-clang { border-top-color: var(--series-verge); }
-footer { display: flex; flex-wrap: wrap; overflow: hidden; }
-footer > div { padding: 10px 16px; border-right: 1px solid var(--hair); display: grid; gap: 4px; min-width: 0; }
-footer > div:last-child { border-right: 0; flex: 1 1 240px; }
-footer code { font: 500 12.5px/1.45 var(--font-code); font-stretch: var(--code-stretch); color: var(--ink); overflow-wrap: anywhere; }
-
-/* Wire section */
-.subrail { display: flex; flex-wrap: wrap; align-items: stretch; overflow: hidden; }
-.subrail h2 { margin: 0; padding: 12px 16px; flex: 1 1 260px; font-size: clamp(18px, 2.2vw, 24px); line-height: 1.15; text-wrap: balance; }
-.ref { stroke: var(--ink-2); stroke-width: 1.5; stroke-dasharray: 6 5; fill: none; }
-.ref-text { fill: var(--ink-2); font: 500 11.5px var(--font-text); }
+svg .ref { stroke: var(--ink-2); stroke-width: 1.5; stroke-dasharray: 6 5; fill: none; }
+.ref-text { fill: var(--ink-2); font: 500 12px var(--font-text); }
 .ring { fill: none; stroke: var(--ink); stroke-width: 1; }
+.line.jlink-read, .line.jlink-write { stroke: var(--series-context); }
+.line.jlink-write { stroke-dasharray: var(--dash-second-build); }
+.mk.jlink-read, .mk.jlink-write { fill: var(--series-context); }
+
+/* The misread drawn as SWCLK: red only on the misread transfer. */
 .trace { stroke: var(--ink); stroke-width: 2; fill: none; stroke-linejoin: miter; }
 .trace.bad { stroke: var(--fault-ink); }
 .trace-break { stroke: var(--fault-ink); stroke-width: 2; fill: none; }
 .trace-label { fill: var(--ink-2); font: 600 12px var(--font-text); }
 .trace-value { fill: var(--ink); font: 400 11.5px var(--font-text); font-variant-numeric: tabular-nums; }
 .trace-value.bad { fill: var(--fault-ink); }
-.sets { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-.jlink-head { padding: 18px 20px; display: grid; gap: 6px; }
-.jlink-head h2 { margin: 0; font-size: 22px; line-height: 1.2; }
-.jlink-head p { margin: 0; max-width: 78ch; }
-.jlink-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
-.jlink-grid .mhead h3 { margin: 0; font-size: 17px; line-height: 1.25; }
-.jlink-note { color: var(--ink-2); }
-.line.jlink-read, .line.jlink-write { stroke: var(--series-context); }
-.line.jlink-write { stroke-dasharray: var(--dash-second-build); }
-.mk.jlink-read, .mk.jlink-write { fill: var(--series-context); }
 
-/* On the wire: prose whose figures open the recordings they come from, then those recordings.
-   tickwave's elements take the page's colours and fonts from the tokens. */
-.wire-view { display: grid; gap: 10px; }
-.wire-text { padding: 16px 20px 4px; }
-.wire-text p { margin: 0 0 12px; max-width: 72ch; line-height: 1.55; }
-.recordings { display: grid; gap: 8px; }
-tickwave-ref { text-decoration: underline dotted; text-underline-offset: 3px; cursor: help; }
+/* Case maps: a mark per case, a row per clock; the fault fill only on cases that failed. */
+.pips { display: grid; gap: 6px; padding: 4px 4px 2px; }
+.pip-row { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 10px; align-items: center; font-size: 13px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.pip-row svg { width: 100%; height: auto; display: block; }
+.pip { fill: var(--hair); }
+.pip.bad { fill: var(--fault-fill); }
+.pip.stall { fill: var(--ink-2); }
+.chart > .legend { padding: 0 4px 10px; }
+.legend .sw { display: inline-block; width: 10px; height: 10px; vertical-align: -1px; margin-right: 6px; border-radius: 2px; }
 
-@media (max-width: 900px) {
-  .hero, .grid, .fault, .jlink-grid { grid-template-columns: minmax(0, 1fr); }
-  .notes { grid-template-columns: minmax(0, 1fr); }
-  .rail-meta, .set-picker, .rail .switch { border-left: 0; border-top: 1px solid var(--hair); }
-  .set-picker { flex: 1 1 auto; }
+/* On the wire: the set's part, with the section's own head. tickwave's elements take the page's
+   colours and fonts from the tokens; their parts take the site's ruled rows. */
+.band:has(> .wrap > #on-the-wire[hidden]) { display: none; }
+#on-the-wire .wire-view { border: 0; padding: 0; }
+.recordings { margin-top: 32px; }
+.recordings tickwave-view { margin: 0; font-size: 15px; }
+/* A row per recording, as the site's repository index: its title, what it holds under it, and
+   the button that opens it. */
+.recordings tickwave-view::part(summary) { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 24px; align-items: center; padding: 14px 0; background: none; border: 0; border-top: 1px solid var(--hair); border-radius: 0; }
+.recordings tickwave-view::part(facts) { grid-row: 2; grid-column: 1; }
+.recordings tickwave-view::part(open-button) { grid-row: 1 / 3; grid-column: 2; }
+.recordings tickwave-view:last-child::part(summary) { border-bottom: 1px solid var(--hair); }
+.recordings tickwave-view::part(title) { font-weight: 600; font-size: 17px; overflow-wrap: anywhere; }
+.recordings tickwave-view::part(facts) { color: var(--ink-2); font-size: 15px; }
+.recordings tickwave-view::part(open-button) { font-size: 14px; padding: 5px 14px; min-height: 32px; }
+.recordings tickwave-view::part(viewer) { background: var(--surface); border: 0; border-radius: 14px; margin: 14px 0; }
+tickwave-ref { cursor: help; }
+
+/* The page's own row in the header, under the shared row that every page shows: the wire, and
+   the measurement set. The script makes it (.js). Buttons for the wire from 861 px, where they and
+   the set's menu fit one row with room to spare; a menu below that. Every control is 32 px tall,
+   so the row is, in every browser. */
+:root.js { --header: 101px; }
+.js header .wrap { grid-template-rows: 60px auto; grid-template-areas: "brand nav face" "tools tools tools"; row-gap: 0; padding-bottom: 8px; }
+.dock { grid-area: tools; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; }
+.dock .wire { display: flex; align-items: center; gap: 8px 12px; }
+.dock .seg-row button { font-size: 13px; padding: 0 10px; height: 32px; min-height: 0; }
+.dock .seg-label, .set-picker { font-size: 14px; color: var(--ink-2); }
+.dock select { height: 32px; font: 500 14px/1.2 var(--font-text); font-variant-numeric: tabular-nums; color: var(--ink); background: var(--page); border: 1px solid var(--rule); border-radius: 6px; padding: 0 6px; }
+.dock .menu { display: none; }
+.set-picker { display: inline-flex; align-items: center; gap: 8px; }
+
+@media (min-width: 2000px) {
+  /* The heading column beside the content, as the site's sections have it. */
+  .band:has(#on-the-wire) #on-the-wire, .band #on-the-wire .wire-view { display: contents; }
+  #on-the-wire .wire-view > :not(.head) { grid-column: 2; }
+}
+@media (max-width: 860px) {
+  :root.js { --header: 89px; }
+  .js header .wrap { grid-template-rows: 34px auto; row-gap: 6px; }
+  .dock .buttons { display: none; }
+  .dock .menu { display: inline-flex; align-items: center; gap: 8px; }
+  .figs { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 520px) {
-  .reading { grid-template-columns: minmax(0, 1fr); }
-  .rail-id { flex: 1 0 100%; border-right: 0; border-bottom: 1px solid var(--hair); }
+  /* Under the mark, the menu and the switch; the set's label is read out but not shown, so both
+     controls share the row down to 320 px. */
+  .js header .wrap { grid-template-areas: "brand . menu face" "tools tools tools tools"; }
+  .set-picker .set-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .headline { grid-template-columns: minmax(0, 1fr); grid-template-areas: "window" "claim" "versus" "same"; }
+  .headline .claim { margin-top: 14px; font-size: 18px; }
+  .pip-row { grid-template-columns: 44px minmax(0, 1fr); gap: 6px; }
+}
+@media (max-width: 400px) {
+  /* The wire's menu and the set's share the row down to 320 px: the row never wraps, and where a
+     scrollbar takes its room the wire's menu narrows instead. */
+  .dock { flex-wrap: nowrap; column-gap: 12px; }
+  .dock .wire, .dock .menu, .dock .menu select { min-width: 0; }
+  .dock .menu { gap: 6px; }
 }
 </style>
 </head>
 <body>
-
-<div class="page">
-  <header class="rail">
-    <a class="rail-id" id="home" href="/" data-published="https://escapement-project.github.io/">__MARK__Escapement Project</a>
-    <h1 id="title">MCU-Link throughput</h1>
-    <label class="set-picker micro" id="sets" hidden>Measurement set <select id="set-select"></select></label>
-    <button class="switch" id="faces" type="button" role="switch" aria-checked="false" aria-label="Night face"><span class="track"><span class="thumb"><svg class="wheel" viewBox="0 0 40 40" aria-hidden="true"><g transform="translate(14 3) scale(.75)"><circle cx="8" cy="8" r="3.2" fill="currentColor"/><path d="M8 1.2v1.6M8 13.2v1.6M1.2 8h1.6M13.2 8h1.6M3.2 3.2l1.1 1.1M11.7 11.7l1.1 1.1M3.2 12.8l1.1-1.1M11.7 4.3l1.1-1.1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></g><g transform="rotate(180 20 20) translate(14 3) scale(.75)"><path d="M10.8 1.8a6.3 6.3 0 1 0 3.4 10.6A5.2 5.2 0 0 1 10.8 1.8z" fill="currentColor"/></g></svg></span></span></button>
-  </header>
-
-  <nav class="views" id="views" aria-label="Wire protocol" hidden></nav>
-
-  <section class="hero">
-    <div class="reading">
-      <div class="big" id="headline-value"></div>
-      <div class="reading-stack">
-        <div class="micro" id="headline-label"></div>
-        <p id="headline-detail"></p>
-      </div>
-      <div class="versus" id="headline-versus"></div>
-      <div class="same-clock" id="same-clock"></div>
-    </div>
-  </section>
+__HEADER__
+<main id="main">
+<div class="wrap page-head">
+  <h1 id="title">MCU-Link throughput</h1>
+  <!-- The set picker lives in the header's row for the page, beside the wire; the script moves it there. -->
+  <label class="set-picker" id="sets" hidden><span class="set-label">Measurement set</span> <select id="set-select"></select></label>
+  <div class="headline">
+    <div class="window" id="headline-value"></div>
+    <p class="claim" id="headline-claim"></p>
+    <p class="versus" id="headline-versus"></p>
+    <p class="same quiet" id="same-clock"></p>
+  </div>
   <details class="conditions" id="conditions">
     <summary>Test conditions and firmware details</summary>
     <div class="conditions-body">
       <p id="target-state" hidden></p>
-      <div class="conditions-meta micro" id="meta"></div>
-      <div class="conditions-builds micro" id="builds"></div>
+      <div class="two">
+        <dl class="specs" id="meta"></dl>
+        <dl class="specs builds" id="builds"></dl>
+      </div>
     </div>
   </details>
-
-  <section class="grid">
-    <div class="chart-key micro" id="chart-key" aria-label="Probes shown"></div>
-    <article class="module">
-      <div class="mhead"><h2>probe-rs, 4 KiB reads</h2><span class="micro">KiB/s · median of 7 · attach excluded</span></div>
-      <div class="mbody"><div id="c-read"></div></div>
-    </article>
-    <article class="module">
-      <div class="mhead"><h2>probe-rs, 4 KiB writes</h2><span class="micro">KiB/s · median of 7 · attach excluded</span></div>
-      <div class="mbody"><div id="c-write"></div></div>
-    </article>
-
-    <article class="module wide" id="m-explore">
-      <div class="mhead"><h2>Custom host, SWD command matrix</h2><span class="micro" id="x-caption"></span><span class="micro">KiB/s · median of 3 · ~250 ms</span></div>
-      <div class="mbody">
-        <div class="controls" id="controls"></div>
-        <div id="c-explore"></div>
-        <p class="micro" id="x-peak"></p>
-      </div>
-    </article>
-
-    <article class="module" id="m-cliff">
-      <div class="mhead"><h2>One-word commands, 8 queued</h2><span class="micro">AP read through DAP_Transfer · commands/s</span></div>
-      <div class="mbody"><div id="c-cliff"></div><p id="cliff-text"></p></div>
-    </article>
-    <article class="module" id="m-rt">
-      <div class="mhead"><h2>Single-word read round trip</h2><span class="micro">probe-rs · <span class="keep">µs</span> · median</span></div>
-      <div class="mbody"><div id="c-rt"></div><p id="rt-text"></p></div>
-    </article>
-  </section>
-
-  <section class="fault" id="stock-errors" aria-labelledby="fault-title">
-    <div class="fault-side">
-      <div class="micro" id="fault-heading">Stock measurement status</div>
-      <div class="count" id="fault-count"></div>
-      <p id="fault-title">Cases without a timed result</p>
-    </div>
-    <div class="fault-main">
-      <div class="legend micro">
-        <span><i class="sw" style="background: var(--hair);"></i>measured</span>
-        <span><i class="sw" style="background: var(--fault-fill);"></i>failed</span>
-        <span>rows: requested clock · marks: command, access, words, depth</span>
-      </div>
-      <div class="pips" id="pips"></div>
-    </div>
-  </section>
-
-  <section class="jlink-head" id="jlink-head" aria-labelledby="jlink-title">
-    <div class="micro">SEGGER workload</div>
-    <h2 id="jlink-title">J-Link Ultra</h2>
-    <p id="jlink-description"></p>
-  </section>
-  <section class="jlink-grid" id="jlink-grid" aria-label="J-Link measurements">
-    <article class="module">
-      <div class="mhead"><h3>JLinkExe · TestRSpeed / TestWSpeed</h3><span class="micro">KByte/s · as reported by SEGGER</span></div>
-      <div class="mbody"><div id="jlink-chart"></div><p class="jlink-note" id="jlink-tool-note"></p></div>
-    </article>
-  </section>
-
-
-  <div id="wire-results">
-  <header class="subrail">
-    <h2>Measured SWD clock</h2>
-    <div class="rail-meta micro" id="wire-meta"></div>
-  </header>
-
-  <section class="grid">
-    <article class="module">
-      <div class="mhead"><h2>Read data bits</h2><span class="micro">MHz on the wire · median data bit</span></div>
-      <div class="mbody"><div id="w-read"></div></div>
-    </article>
-    <article class="module">
-      <div class="mhead"><h2>Write data bits</h2><span class="micro">MHz on the wire · median data bit</span></div>
-      <div class="mbody"><div id="w-write"></div></div>
-    </article>
-    <article class="module">
-      <div class="mhead"><h2>Peak SWD rate</h2><span class="micro">MHz · shortest mean period per transfer</span></div>
-      <div class="mbody"><div id="w-fast"></div><p id="w-fast-text"></p></div>
-    </article>
-    <article class="module">
-      <div class="mhead"><h2>Capture notes</h2><span class="micro" id="w-how-caption"></span></div>
-      <div class="mbody" id="w-how"></div>
-    </article>
-  </section>
-
-  <section class="fault" id="wire-errors" aria-labelledby="mis-title">
-    <div class="fault-side">
-      <div class="micro">Stock acknowledgement errors</div>
-      <div class="count" id="mis-count"></div>
-      <p id="mis-title">Misread acknowledgements</p>
-    </div>
-    <div class="fault-main">
-      <span class="micro" id="trace-caption"></span>
-      <div id="trace"></div>
-      <div class="legend micro">
-        <span><i class="sw" style="background: var(--ink-2);"></i>stall · read correctly</span>
-        <span><i class="sw" style="background: var(--fault-fill);"></i>stall · misread</span>
-        <span>2,000 × eight DPIDR reads · depth 2</span>
-      </div>
-      <div class="pips" id="stall-pips"></div>
-      <p id="mis-text"></p>
-    </div>
-  </section>
-  </div>
-
-  __WIRE__
-  <section class="notes" id="notes"></section>
-
-  <footer>
-    <div><span class="micro">Results</span><code id="results-path"></code></div>
-    <div><span class="micro">Tools</span><code>throughput.py · swd-throughput · wireclock.py · dap.py</code></div>
-  </footer>
 </div>
 
+<section class="band" id="throughput">
+  <div class="wrap">
+    <div class="head"><h2>Throughput</h2><p class="kicker" id="throughput-kicker"></p></div>
+    <div>
+      <div class="chart-key" id="chart-key" aria-label="Probes shown"></div>
+      <div class="figs">
+        <figure><div class="chart"><div id="c-read"></div></div><figcaption><b class="n"></b> probe-rs, 4 KiB reads. KiB/s, median of 7, attach excluded.</figcaption></figure>
+        <figure><div class="chart"><div id="c-write"></div></div><figcaption><b class="n"></b> probe-rs, 4 KiB writes. KiB/s, median of 7, attach excluded.</figcaption></figure>
+        <figure id="m-rt"><div class="chart"><div id="c-rt"></div></div><figcaption><b class="n"></b> Single-word read round trip. probe-rs, µs, median. <span id="rt-text"></span></figcaption></figure>
+        <dl class="specs notes" id="notes"></dl>
+      </div>
+      <div class="part" id="custom-host">
+        <h3>Custom host, SWD command matrix</h3>
+        <div class="figs">
+          <figure class="wide" id="m-explore">
+            <div class="controls" id="controls"></div>
+            <div class="chart"><div id="c-explore"></div></div>
+            <figcaption><b class="n"></b> <span id="x-caption"></span>. KiB/s, median of 3, ~250 ms. <span id="x-peak"></span></figcaption>
+          </figure>
+          <figure class="wide" id="m-cliff"><div class="chart"><div id="c-cliff"></div></div><figcaption><b class="n"></b> One-word commands, 8 queued. AP read through DAP_Transfer, commands/s. <span id="cliff-text"></span></figcaption></figure>
+          <figure class="wide" id="stock-errors">
+            <div class="chart">
+              <ul class="legend"><li><i class="sw" style="background: var(--hair);"></i>measured</li><li><i class="sw" style="background: var(--fault-fill);"></i>failed</li></ul>
+              <div class="pips" id="pips"></div>
+            </div>
+            <figcaption><b class="n"></b> <span id="fault-heading">Stock measurement status</span>: <span id="fault-count"></span> <span id="fault-title">cases without a timed result</span>. Rows: requested clock. Marks: command, access, words, depth.</figcaption>
+          </figure>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band" id="jlink-head" aria-labelledby="jlink-title">
+  <div class="wrap">
+    <div class="head"><h2 id="jlink-title">J-Link Ultra</h2><p class="kicker">SEGGER workload</p></div>
+    <div id="jlink-grid">
+      <p id="jlink-description"></p>
+      <figure><div class="chart"><div id="jlink-chart"></div></div><figcaption><b class="n"></b> JLinkExe, TestRSpeed / TestWSpeed. KByte/s, as reported by SEGGER. <span id="jlink-tool-note"></span></figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<section class="band" id="wire-results">
+  <div class="wrap">
+    <div class="head"><h2>Measured SWD clock</h2><p class="kicker" id="wire-meta"></p></div>
+    <div>
+      <div class="figs">
+        <figure><div class="chart"><div id="w-read"></div></div><figcaption><b class="n"></b> Read data bits. MHz on the wire, median data bit.</figcaption></figure>
+        <figure><div class="chart"><div id="w-write"></div></div><figcaption><b class="n"></b> Write data bits. MHz on the wire, median data bit.</figcaption></figure>
+        <figure><div class="chart"><div id="w-fast"></div></div><figcaption><b class="n"></b> Peak SWD rate. MHz, shortest mean period per transfer.</figcaption></figure>
+        <div class="prose"><h3>Capture notes</h3><p class="quiet" id="w-how-caption"></p><div id="w-how"></div><p id="w-fast-text"></p></div>
+      </div>
+      <div class="figs" id="wire-errors">
+        <figure class="wide"><div class="chart"><div id="trace"></div></div><figcaption><b class="n"></b> <span id="mis-heading">Stock acknowledgement errors</span>: <span id="mis-count"></span> <span id="mis-title">misread acknowledgements</span>. <span id="trace-caption"></span>.</figcaption></figure>
+        <figure class="wide">
+          <div class="chart">
+            <ul class="legend"><li><i class="sw" style="background: var(--ink-2);"></i>stall, read correctly</li><li><i class="sw" style="background: var(--fault-fill);"></i>stall, misread</li></ul>
+            <div class="pips" id="stall-pips"></div>
+          </div>
+          <figcaption><b class="n"></b> 2,000 × eight DPIDR reads, depth 2.</figcaption>
+        </figure>
+        <div class="prose wide"><p id="mis-text"></p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band" id="wire">
+  <div class="wrap">
+  __WIRE__
+  </div>
+</section>
+
+<section class="band" id="sources">
+  <div class="wrap">
+    <div class="head"><h2>Sources</h2></div>
+    <div>
+      <dl class="specs">
+        <div><dt>Results</dt><dd id="results-path"></dd></div>
+        <div><dt>Tools</dt><dd><code>throughput.py</code>, <code>swd-throughput</code>, <code>wireclock.py</code>, <code>dap.py</code></dd></div>
+      </dl>
+    </div>
+  </div>
+</section>
+</main>
+__FOOTER__
+
 <script id="data" type="application/json">__DATA__</script>
+<!-- The day and night switch and the header's script: copies of the site's face.js and header.js. -->
+<script>__FACEJS__</script>
+<script>__HEADERJS__</script>
 <script>
 const ALL = JSON.parse(document.getElementById("data").textContent);
 let SET = ALL.order[ALL.order.length - 1];
@@ -401,6 +364,8 @@ function el(tag, attrs = {}, parent) {
   if (parent) parent.appendChild(e);
   return e;
 }
+// The width a chart's container gives it: the chart code draws one SVG unit a pixel at this width.
+const widthOf = (id, fallback) => Math.round($(id).clientWidth) || fallback;
 function niceStep(v) {
   const p = 10 ** Math.floor(Math.log10(v));
   for (const m of [1, 1.2, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10]) if (m * p >= v) return m * p;
@@ -411,7 +376,7 @@ function niceStep(v) {
 const JLINK = (() => {
   const R = ALL.references.jlink;
   return {
-    id: "jlink", name: `J-Link Ultra · ${R.date}`, role: "reference", style: "jlink", condition: null, external: true,
+    id: "jlink", name: `J-Link Ultra, ${R.date}`, short: "J-Link Ultra", role: "reference", style: "jlink", condition: null, external: true,
     build: R.firmware, product: R.probe, serial: "", packets: null, taken: R.date, runs: 1, custom: {}, fails: [], errors: {},
     probe_rs: R.probe_rs.flatMap((p) => [
       { khz: p.mhz * 1000, arm: "read32", bytes: 4096, kib: p.read_kib_s, runs: 1 },
@@ -427,7 +392,8 @@ const visible = () => allSeries().filter(isShown);
 const oursShown = () => visible().filter((s) => s.role === "ours" && !s.condition);
 const stockSeries = () => V.series.find((s) => s.role === "stock" && !s.condition);
 const styleOf = (s) => `${s.style}${s.condition ? ` cond cond${(s.cond_index ?? 0) % 2}` : ""}`;
-const short = (s) => s.condition ? s.name : s.name.split(" · ")[0];
+// A series' name without its date or condition, where the sentence around it gives those.
+const short = (s) => s.condition ? s.name : s.short ?? s.name;
 
 // A marker per probe: Verge's Clang build and NXP's firmware circles (their colours tell them apart),
 // GCC squares, the J-Link a diamond, other references triangles up, down, and squares. Hollow where
@@ -538,7 +504,7 @@ function chart(host, { xs, series, unit, digits = 0, selected, onSelect, height 
       const v = e.values[i], r = e.ranges && e.ranges[i], part = e.partial && e.partial[i];
       const spread = r && fmt(r[0], digits) !== fmt(r[1], digits) ? ` (${fmt(r[0], digits)}–${fmt(r[1], digits)})` : "";
       const partly = part ? `failed in ${part.of - part.runs} of ${part.of} runs (${fmt(part.kib ?? part.us, digits)} ${unit} in the ${part.runs > 1 ? "others" : "other"})` : null;
-      const text = v == null ? (partly || (e.failed && e.failed[i] ? "failed" : "–")) : `${fmt(v, digits)}${spread} ${unit}${e.rings && e.rings[i] ? " · from SWDIO" : ""}`;
+      const text = v == null ? (partly || (e.failed && e.failed[i] ? "failed" : "–")) : `${fmt(v, digits)}${spread} ${unit}${e.rings && e.rings[i] ? ", from SWDIO" : ""}`;
       return `<span>${swatch(e.s)}${e.s.name} ${text}${wrongAt(e, i) && (v != null || partly) ? ", reads wrong" : ""}</span>`;
     }).join("");
   }
@@ -612,18 +578,71 @@ function comparisonClock() {
   return (common.length ? common : mine).at(-1);
 }
 
+// The page's row in the header, under the shared row: the wire and the measurement set. Views of
+// one protocol in several formats (cJTAG OScan1, 2, 5, 6) form a group named by the protocol.
+// Buttons where they fit, a menu where they do not; the wire shows even for one view, so the row is
+// the same in every set. The controls are drawn again only when the set's views change, so one
+// that has the focus keeps it.
+const dock = Object.assign(document.createElement("div"), { className: "dock" });
+const wire = Object.assign(document.createElement("div"), { className: "wire" });
+wire.setAttribute("role", "group");
+wire.setAttribute("aria-label", "Wire protocol");
+dock.append(wire, $("sets"));
+document.querySelector("header .wrap").append(dock);
+let viewsDrawn = "";
 function renderViews() {
-  $("views").hidden = D.views.length < 2;
-  $("views").innerHTML = `<span class="micro">Wire</span><div class="seg-row">${D.views.map((v) =>
-    `<button type="button" data-view="${v.id}" aria-pressed="${v.id === VIEW}">${v.title}</button>`).join("")}</div>`;
+  const ids = D.views.map((v) => v.id).join(" ");
+  if (ids !== viewsDrawn) {
+    viewsDrawn = ids;
+    const groups = [];
+    for (const v of D.views) {
+      const group = v.format ? v.title.split(" ")[0] : null, name = v.format ? v.title.slice(group.length + 1) : v.title;
+      if (groups.length && groups.at(-1).group === group) groups.at(-1).views.push([v, name]);
+      else groups.push({ group, views: [[v, name]] });
+    }
+    const buttons = groups.map(({ group, views }) => `<div role="group"${group ? ` aria-label="${group}"` : ""} class="views">${group ? `<span class="seg-label" aria-hidden="true">${group}</span>` : ""}<div class="seg-row">${views.map(([v, name]) =>
+      `<button type="button" data-view="${v.id}">${name}</button>`).join("")}</div></div>`).join("");
+    wire.innerHTML = `<div class="views buttons"><span class="seg-label">Wire</span>${buttons}</div>`
+      + `<label class="menu"><span class="seg-label">Wire</span><select>${D.views.map((v) => `<option value="${v.id}">${v.title}</option>`).join("")}</select></label>`;
+  }
+  for (const b of wire.querySelectorAll("button[data-view]")) b.setAttribute("aria-pressed", String(b.dataset.view === VIEW));
+  wire.querySelector("select").value = VIEW;
 }
-$("views").addEventListener("click", (e) => {
-  const b = e.target.closest("button[data-view]");
-  if (!b) return;
-  VIEW = WANT = b.dataset.view;
+// A new wire redraws the page under the reader. The section they were in stays where it was on
+// screen; where the new view does not show it, the nearest shown section above it comes to the top.
+// A section that grew shorter is kept in view down to its end.
+const bands = () => [...document.querySelectorAll("main > .page-head, main > section")];
+const onScreen = (el) => el.getClientRects().length > 0;
+function sectionInView() {
+  const line = Math.ceil(document.querySelector("header").getBoundingClientRect().bottom) + 1;
+  const list = bands().filter(onScreen);
+  const el = list.filter((b) => b.getBoundingClientRect().top <= line).at(-1) ?? list[0];
+  return { el, top: el.getBoundingClientRect().top, line };
+}
+function keepInView({ el, top, line }) {
+  const all = bands();
+  let target = el, at = top;
+  if (!onScreen(el)) {
+    target = all.slice(0, all.indexOf(el) + 1).reverse().find(onScreen) ?? all.find(onScreen);
+    at = line - 1;
+  }
+  const box = target.getBoundingClientRect();
+  at = Math.max(at, Math.min(line - 1, innerHeight * 0.5 - box.height));
+  scrollBy(0, box.top - at);
+}
+const pickView = (id) => {
+  if (id === VIEW) return;
+  const was = sectionInView();
+  VIEW = WANT = id;
   mainSelectedClock = null;
   renderAll();
+  keepInView(was);
+};
+wire.addEventListener("click", (e) => {
+  const b = e.target.closest("button[data-view]");
+  if (b) pickView(b.dataset.view);
 });
+wire.addEventListener("change", (e) => pickView(e.target.value));
 
 function renderKey() {
   $("chart-key").innerHTML = allSeries().map((s) =>
@@ -639,16 +658,21 @@ $("chart-key").addEventListener("change", (e) => {
 function renderTop() {
   const M = V.meta;
   $("title").textContent = `MCU-Link ${V.title} throughput`;
+  $("throughput-kicker").textContent = [M.chip && `Target ${M.chip}`, M.probe_rs && `probe-rs ${M.probe_rs}`].filter(Boolean).join(", ");
   $("meta").innerHTML = [
-    ["set", SET], ["wire", V.title], ["matrix", M.matrix], ["target", M.chip], ["DPIDR", M.dpidr], ["probe-rs", M.probe_rs],
-  ].filter(([, v]) => v).map(([k, v]) => `<span>${k} <b>${v}</b></span>`).join("");
-  $("builds").innerHTML = V.series.map((f) =>
-    `<span>${f.name}${f.build && !f.name.includes(f.build) ? ` <b>${f.build}</b>` : ""}${f.product && !f.name.includes(f.product) ? ` · ${f.product}` : ""} · serial ${f.serial}${f.packets ? ` · ${f.packets[0]} × ${f.packets[1]} B` : ""}${f.runs > 1 ? ` · ${f.runs} runs` : ""}</span>`).join("");
+    ["Set", SET], ["Wire", V.title], ["Matrix", M.matrix], ["Target", M.chip], ["DPIDR", M.dpidr], ["probe-rs", M.probe_rs],
+  ].filter(([, v]) => v).map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join("");
+  $("builds").innerHTML = V.series.map((f) => `<div><dt>${f.name}</dt><dd>${[
+    f.build && !f.name.includes(f.build) && f.build, f.product && !f.name.includes(f.product) && f.product, `serial ${f.serial}`,
+    f.packets && `${f.packets[0]} × ${f.packets[1]} B`, f.runs > 1 && `${f.runs} runs`,
+  ].filter(Boolean).join(", ")}</dd></div>`).join("");
   const stock = stockSeries();
   const evidence = stock && !stock.checks && D.stock_reads_right?.[V.protocol]?.evidence;
-  $("results-path").textContent = (V.protocol === "swd" && D.wire && Object.keys(D.wire).length
-    ? `results/throughput/${SET}-*.json · results/wireclock/${SET}-*.json`
-    : `results/throughput/${SET}-*.json`) + (evidence ? ` · stock's reads: ${evidence}` : "");
+  $("results-path").innerHTML = [
+    `<code>results/throughput/${SET}-*.json</code>`,
+    V.protocol === "swd" && D.wire && Object.keys(D.wire).length && `<code>results/wireclock/${SET}-*.json</code>`,
+    evidence && `stock's reads: <code>${evidence}</code>`,
+  ].filter(Boolean).join("<br>");
   $("target-state").hidden = !D.context;
   $("target-state").textContent = D.context || "";
 
@@ -658,31 +682,29 @@ function renderTop() {
   const stockUpTo = stock && rightUpTo(stock);
   const stockPeak = stockUpTo != null && peakWrite([stock]);
   const ratio = peak && stockPeak && stockPeak.kib > 0 ? peak.kib / stockPeak.kib : null;
-  // Lead with our speed; the comparison sits beside it, quieter.
+  // Lead with our speed in its window; the comparison follows it as sentences.
   const versus = $("headline-versus");
   if (peak) {
     // No thousands separator in the headline: at its size the comma widens it more than it helps.
-    $("headline-value").innerHTML = `${peak.kib.toLocaleString("en-US", { maximumFractionDigits: 0, useGrouping: false })}<small> KiB/s</small>`;
+    $("headline-value").innerHTML = `${peak.kib.toLocaleString("en-US", { maximumFractionDigits: 0, useGrouping: false })}<small>KiB/s</small>`;
     // A non-breaking hyphen: the label must not wrap inside "probe-rs".
-    $("headline-label").textContent = `Fastest 4 KiB write over ${V.title}, through probe\u2011rs`;
-    $("headline-detail").textContent = `Verge built with ${short(peak.s)}, at ${peak.khz / 1000} MHz.`;
+    $("headline-claim").textContent = `Fastest 4 KiB write over ${V.title}, through probe‑rs. Verge built with ${short(peak.s)}, at ${peak.khz / 1000} MHz.`;
     if (ratio != null) {
     const there = PR(stock, "write32", 4096, stockUpTo) ? "it wrote slower"
       : PR_FAILED(stock, stockUpTo) ? "its write did not complete" : "this set did not measure it";
     const where = stockPeak.khz === stockUpTo ? ", the fastest clock it reads right at"
       : `. Stock reads right up to ${stockUpTo / 1000} MHz, where ${there}`;
-      versus.innerHTML = `<div class="micro">Against stock</div><div class="x">${fmt(ratio, 2)}×</div><p>${short(stock)}: ${fmt(stockPeak.kib, 1)} KiB/s at ${stockPeak.khz / 1000} MHz${where}.</p>`;
+      versus.textContent = `${fmt(ratio, 2)}× against stock. ${short(stock)}: ${fmt(stockPeak.kib, 1)} KiB/s at ${stockPeak.khz / 1000} MHz${where}.`;
     } else {
       const why = !stock ? (V.protocol === "cjtag" ? "Stock does not run cJTAG." : "No stock run on this wire in this set.")
         : stockUpTo === undefined ? "No record of the clocks stock reads right at."
         : stockUpTo === null ? "Stock read wrong at every clock."
         : `No completed stock write at a clock it reads right at (up to ${stockUpTo / 1000} MHz).`;
-      versus.innerHTML = `<div class="micro">Against stock</div><p>${why}</p>`;
+      versus.textContent = why;
     }
   } else {
     $("headline-value").innerHTML = "–";
-    $("headline-label").textContent = "No completed 4 KiB write";
-    $("headline-detail").textContent = "";
+    $("headline-claim").textContent = "No completed 4 KiB write";
     versus.innerHTML = "";
   }
 
@@ -691,8 +713,8 @@ function renderTop() {
   const mine = peak && PR(peak.s, "write32", 4096, khz);
   const others = allSeries().filter((s) => s.role !== "ours" && !s.condition).map((s) => ({ s, p: PR(s, "write32", 4096, khz) })).filter((o) => o.p && o.p.kib > 0);
   $("same-clock").innerHTML = mine && others.length
-    ? others.map((o) => `<div class="same-clock-item"><strong>${relativePercent(mine.kib / o.p.kib)}</strong><span>vs ${short(o.s)}${o.s.external ? ", both through probe-rs" : ""}</span></div>`).join("")
-      + `<div class="same-clock-rates">10 MHz · 4 KiB probe-rs writes · ${short(peak.s)} ${fmt(mine.kib, 1)} · ${others.map((o) => `${short(o.s)} ${fmt(o.p.kib, 1)}`).join(" · ")} KiB/s</div>`
+    ? others.map((o) => `${relativePercent(mine.kib / o.p.kib)} vs ${short(o.s)}${o.s.external ? ", both through probe-rs" : ""}`).join(", ")
+      + ` at 10 MHz. 4 KiB probe-rs writes: ${short(peak.s)} ${fmt(mine.kib, 1)}, ${others.map((o) => `${short(o.s)} ${fmt(o.p.kib, 1)}`).join(", ")} KiB/s.`
     : "";
   $("same-clock").hidden = !(mine && others.length);
 }
@@ -706,10 +728,10 @@ function renderJLink() {
   const xs = R.jlinkexe.map((p) => p.mhz);
   const entry = (name, style, values) => ({ s: { id: style, name, role: "reference", style, condition: null }, values });
   const series = [
-    entry("TestRSpeed · read", "jlink-read", R.jlinkexe.map((p) => p.read_kbyte_s)),
-    entry("TestWSpeed · write", "jlink-write", R.jlinkexe.map((p) => p.write_kbyte_s)),
+    entry("TestRSpeed, read", "jlink-read", R.jlinkexe.map((p) => p.read_kbyte_s)),
+    entry("TestWSpeed, write", "jlink-write", R.jlinkexe.map((p) => p.write_kbyte_s)),
   ];
-  chart($("jlink-chart"), { xs, series, unit: "KByte/s", digits: 0, selected: xs.indexOf(10), height: 300, width: 1200 });
+  chart($("jlink-chart"), { xs, series, unit: "KByte/s", digits: 0, selected: xs.indexOf(10), height: 300, width: widthOf("jlink-chart", 1200) });
   $("jlink-description").textContent = "JLinkExe uses a different workload from the 4 KiB probe-rs charts.";
   $("jlink-tool-note").textContent = `${R.firmware}. ${R.target_state}.`;
 }
@@ -734,17 +756,17 @@ function renderProbeRs() {
   const kept = prXs.indexOf(mainSelectedClock ?? selectedClock);
   const index = kept >= 0 ? kept : fallback;
   mainSelectedClock = prXs[index];
-  readChart = chart($("c-read"), { xs: prXs, series: entries("read32"), unit: "KiB/s", selected: index, onSelect: (i) => { mainSelectedClock = prXs[i]; writeChart.show(i); } });
-  writeChart = chart($("c-write"), { xs: prXs, series: entries("write32"), unit: "KiB/s", selected: index, onSelect: (i) => { mainSelectedClock = prXs[i]; readChart.show(i); } });
+  readChart = chart($("c-read"), { xs: prXs, series: entries("read32"), unit: "KiB/s", selected: index, width: widthOf("c-read", 640), onSelect: (i) => { mainSelectedClock = prXs[i]; writeChart.show(i); } });
+  writeChart = chart($("c-write"), { xs: prXs, series: entries("write32"), unit: "KiB/s", selected: index, width: widthOf("c-write", 640), onSelect: (i) => { mainSelectedClock = prXs[i]; readChart.show(i); } });
 
   const rtList = list.filter((s) => !s.external);
   const rtEntries = rtList.map((s) => ({
     s, wrong: wrongClocks(s, prClocks), values: prClocks.map((k) => PR(s, "rt", 4, k)?.us ?? null), failed: prClocks.map((k) => PR_FAILED(s, k)),
     partial: prClocks.map((k) => { const p = PART(s, "rt", 4, k); return p && !complete(p) ? p : null; }),
   }));
-  chart($("c-rt"), { xs: prXs, series: rtEntries, unit: "µs", selected: fallback, height: 230, width: customSeries().length ? 640 : 1200 });
+  chart($("c-rt"), { xs: prXs, series: rtEntries, unit: "µs", selected: fallback, height: 230, width: widthOf("c-rt", customSeries().length ? 640 : 1200) });
   const rts = rtList.map((s) => PR(s, "rt", 4, selectedClock * 1000)?.us).filter((v) => v != null);
-  $("rt-text").textContent = rts.length ? `${selectedClock} MHz · ${fmt(Math.min(...rts))}–${fmt(Math.max(...rts))} µs across the series shown.` : "";
+  $("rt-text").textContent = rts.length ? `${selectedClock} MHz: ${fmt(Math.min(...rts))}–${fmt(Math.max(...rts))} µs across the series shown.` : "";
 }
 
 /* Explorer over the custom host's matrix: SWD only */
@@ -762,6 +784,9 @@ const customSeries = () => visible().filter((s) => Object.keys(s.custom || {}).l
 function words() { return WORDS[state.command][state.access.endsWith("write") ? "write" : "read"][state.words]; }
 function drawExplorer() {
   const list = customSeries();
+  // The custom host's part shows with a matrix to draw or a failure map; before any chart in it is
+  // drawn, so each takes its container's width.
+  $("custom-host").hidden = !list.length && !V.series.some((s) => s.role !== "ours" && (s.fails || []).length);
   $("m-explore").hidden = !list.length;
   if (!list.length) return;
   const xs = V.meta.clocks;
@@ -772,19 +797,19 @@ function drawExplorer() {
     values: xs.map((m) => C(s, state.command, state.access, w, state.depth, m)?.[idx] ?? null),
     failed: xs.map((m) => C(s, state.command, state.access, w, state.depth, m) === null),
   }));
-  $("x-caption").textContent = `${state.command === "block" ? "DAP_TransferBlock" : "DAP_Transfer"} · ${state.access.replace("-", " ")} · ${w} words · depth ${state.depth}`;
-  chart($("c-explore"), { xs, series, unit: state.metric === "kib" ? "KiB/s" : "commands/s", digits: state.metric === "kib" && Math.max(...series.flatMap((e) => e.values.filter((v) => v != null))) < 100 ? 1 : 0, selected: selX, onSelect: (i) => { selX = i; }, height: 330, width: 1200 });
+  $("x-caption").textContent = `${state.command === "block" ? "DAP_TransferBlock" : "DAP_Transfer"}, ${state.access.replace("-", " ")}, ${w} words, depth ${state.depth}`;
+  chart($("c-explore"), { xs, series, unit: state.metric === "kib" ? "KiB/s" : "commands/s", digits: state.metric === "kib" && Math.max(...series.flatMap((e) => e.values.filter((v) => v != null))) < 100 ? 1 : 0, selected: selX, onSelect: (i) => { selX = i; }, height: 330, width: widthOf("c-explore", 1200) });
   let peak = null;
   for (const s of list.filter((x) => x.role === "ours")) for (const [key, value] of Object.entries(s.custom || {})) {
     if (value && key.includes("|ap-") && (!peak || value[1] > peak.value)) peak = { s, key, value: value[1] };
   }
   if (peak) {
     const [command, access, words, depth, mhz] = peak.key.split("|");
-    $("x-peak").textContent = `Peak: ${fmt(peak.value)} KiB/s · ${short(peak.s)} · ${words}-word ${command} ${access.replace("-", " ")} · ${mhz} MHz · depth ${depth}.`;
+    $("x-peak").textContent = `Peak: ${fmt(peak.value)} KiB/s, ${short(peak.s)}, ${words}-word ${command} ${access.replace("-", " ")}, ${mhz} MHz, depth ${depth}.`;
   } else $("x-peak").textContent = "No custom-host memory-throughput result is available.";
 }
 $("controls").innerHTML = GROUPS.map(([key, label, opts]) => `
-  <div class="seg"><span class="micro">${label}</span><div class="seg-row">${opts.map(([v, t]) =>
+  <div class="seg"><span class="seg-label">${label}</span><div class="seg-row">${opts.map(([v, t]) =>
     `<button type="button" id="seg-${key}-${v}" data-key="${key}" data-value="${v}" aria-pressed="${String(state[key]) === String(v)}">${t}</button>`).join("")}</div></div>`).join("");
 $("controls").addEventListener("click", (e) => {
   const b = e.target.closest("button");
@@ -798,31 +823,30 @@ $("controls").addEventListener("click", (e) => {
 function renderCliffAndFault() {
   const list = customSeries();
   $("m-cliff").hidden = !list.length;
-  $("m-rt").classList.toggle("wide", !list.length);
   const xs = V.meta.clocks;
   if (list.length) {
     const cliff = list.map((s) => ({ s, wrong: wrongClocks(s, xs.map(kHz)), values: xs.map((m) => C(s, "transfer", "ap-read", 1, 8, m)?.[0] ?? null), failed: xs.map((m) => C(s, "transfer", "ap-read", 1, 8, m) === null) }));
-    chart($("c-cliff"), { xs, series: cliff, unit: "commands/s", selected: xs.length - 1, height: 230 });
-    $("cliff-text").textContent = `10 MHz · ${list.filter((s) => s.role === "ours").map((s) => `${short(s)} ${fmt(C(s, "transfer", "ap-read", 1, 8, 10)?.[0])}`).join(" · ")} commands/s.`;
+    chart($("c-cliff"), { xs, series: cliff, unit: "commands/s", selected: xs.length - 1, height: 230, width: widthOf("c-cliff", 640) });
+    $("cliff-text").textContent = `10 MHz: ${list.filter((s) => s.role === "ours").map((s) => `${short(s)} ${fmt(C(s, "transfer", "ap-read", 1, 8, 10)?.[0])}`).join(", ")} commands/s.`;
   }
   // The first series other than ours whose custom host failed cases: stock, as a rule.
   const bad = V.series.find((s) => s.role !== "ours" && (s.fails || []).length);
   $("stock-errors").hidden = !bad;
   if (!bad) return;
   const fails = bad.fails.length, keys = Object.keys(bad.custom);
-  $("fault-count").innerHTML = `${fails}<small> / ${keys.length}</small>`;
+  $("fault-count").textContent = `${fails} of ${keys.length}`;
   $("pips").innerHTML = xs.map((m) => {
     const row = keys.filter((k) => k.endsWith(`|${m}`));
     const s = 10, g = 2, w = row.length * (s + g);
     const rects = row.map((k, i) => {
       const reason = bad.errors?.[k];
-      return `<rect x="${i * (s + g)}" y="0" width="${s}" height="${s}" class="pip${bad.custom[k] === null ? " bad" : ""}"><title>${k.replaceAll("|", " · ")}${reason ? ` · ${reason}` : ""}</title></rect>`;
+      return `<rect x="${i * (s + g)}" y="0" width="${s}" height="${s}" class="pip${bad.custom[k] === null ? " bad" : ""}"><title>${k.replaceAll("|", ", ")}${reason ? `: ${reason}` : ""}</title></rect>`;
     }).join("");
-    return `<div class="pip-row"><span class="micro">${m} MHz</span><svg viewBox="0 0 ${w} ${s}" preserveAspectRatio="xMinYMid meet" role="img" aria-label="${m} MHz: ${row.filter((k) => bad.custom[k] === null).length} of ${row.length} cases failed">${rects}</svg></div>`;
+    return `<div class="pip-row"><span>${m} MHz</span><svg viewBox="0 0 ${w} ${s}" preserveAspectRatio="xMinYMid meet" role="img" aria-label="${m} MHz: ${row.filter((k) => bad.custom[k] === null).length} of ${row.length} cases failed">${rects}</svg></div>`;
   }).join("");
   const attach = Object.values(bad.errors || {}).some((e) => e.toLowerCase().includes("could not attach"));
   $("fault-heading").textContent = `${short(bad)} ${attach ? "attach failures" : "measurement failures"}`;
-  $("fault-title").textContent = (attach ? "Timed commands did not run" : "Cases without a timed result") + (bad.runs > 1 ? ` in at least one of ${bad.runs} runs` : "");
+  $("fault-title").textContent = (attach ? "timed commands did not run" : "cases without a timed result") + (bad.runs > 1 ? ` in at least one of ${bad.runs} runs` : "");
 }
 
 const WIRE_FW = ["gcc", "clang", "stock"];
@@ -844,16 +868,16 @@ function renderWire() {
   $("wire-results").hidden = false;
   const xs = [...new Set(shown.flatMap((w) => w.rows.map((r) => r.mhz)))].sort((a, b) => a - b);
   const at = (fw, mhz) => W[fw]?.rows.find((r) => r.mhz === mhz);
-  $("wire-meta").innerHTML = [["matrix", shown[0].matrix], ["analyser", "100 MS/s at the target"], ["taken", shown[0].taken.slice(0, 10)]]
-    .map(([k, v]) => `<span>${k} <b>${v}</b></span>`).join("");
+  $("wire-meta").textContent = [["Matrix", shown[0].matrix], ["analyser", "100 MS/s at the target"], ["taken", shown[0].taken.slice(0, 10)]]
+    .map(([k, v]) => `${k} ${v}`).join(", ");
   const series = (key) => WIRE_FW.filter((fw) => W[fw]).map((fw) => ({
     s: WIRE_SERIES[fw], values: xs.map((m) => at(fw, m)?.[key] ?? null), rings: xs.map((m) => at(fw, m)?.[`${key}_from`] === "swdio"),
   }));
   const sel = xs.indexOf(50) >= 0 ? xs.indexOf(50) : xs.length - 1;
   let rc, wc, fc;
-  rc = chart($("w-read"), { xs, series: series("read"), unit: "MHz", digits: 2, selected: sel, logY: true, ref: true, onSelect: (i) => { wc.show(i); fc.show(i); } });
-  wc = chart($("w-write"), { xs, series: series("write"), unit: "MHz", digits: 2, selected: sel, logY: true, ref: true, onSelect: (i) => { rc.show(i); fc.show(i); } });
-  fc = chart($("w-fast"), { xs, series: series("fastest"), unit: "MHz", digits: 2, selected: sel, logY: true, ref: true, height: 250, onSelect: (i) => { rc.show(i); wc.show(i); } });
+  rc = chart($("w-read"), { xs, series: series("read"), unit: "MHz", digits: 2, selected: sel, logY: true, ref: true, width: widthOf("w-read", 640), onSelect: (i) => { wc.show(i); fc.show(i); } });
+  wc = chart($("w-write"), { xs, series: series("write"), unit: "MHz", digits: 2, selected: sel, logY: true, ref: true, width: widthOf("w-write", 640), onSelect: (i) => { rc.show(i); fc.show(i); } });
+  fc = chart($("w-fast"), { xs, series: series("fastest"), unit: "MHz", digits: 2, selected: sel, logY: true, ref: true, height: 250, width: widthOf("w-fast", 640), onSelect: (i) => { rc.show(i); wc.show(i); } });
 
   const overList = (fw) => (W[fw]?.rows || []).filter((r) => r.fastest > r.mhz * 1.005).map((r) => `${r.mhz} MHz requested (${fmt(r.fastest, 1)} MHz measured)`);
   const g50 = at("gcc", 50) || at("clang", 50);
@@ -863,7 +887,7 @@ function renderWire() {
     go.length ? `Verge exceeds the requested clock during parts of a transfer: ${go.join(", ")}.` : "No measured Verge peak is more than 0.5% above the requested clock.",
   ].filter(Boolean).join(" ");
   const delay = stock?.rows.find((r) => r.delay != null)?.delay;
-  $("w-how-caption").textContent = `${xs.length} clocks · ${WIRE_FW.filter((fw) => W[fw]).join(", ")}`;
+  $("w-how-caption").textContent = `${xs.length} clocks: ${WIRE_FW.filter((fw) => W[fw]).join(", ")}`;
   $("w-how").innerHTML = [
     `At a requested 50 MHz, Verge reads at ${fmt(g50?.read, 1)} MHz and writes at ${fmt(g50?.write, 1)} MHz.`,
     "Read timing matches the emulator within a few ns, apart from one edge. GCC and Clang traces match.",
@@ -879,7 +903,7 @@ function renderWire() {
   $("mis-count").innerHTML = `${mis}`;
   $("wire-errors").hidden = !t || mis === 0;
   if (t) {
-    $("trace-caption").textContent = `SWCLK around the acknowledgement · ${t.mhz} MHz requested · positions ${t.positions[0]} to ${t.positions[t.positions.length - 1]} · ns`;
+    $("trace-caption").textContent = `SWCLK around the acknowledgement, ${t.mhz} MHz requested, positions ${t.positions[0]} to ${t.positions[t.positions.length - 1]}, ns`;
     const WW = 1200, HH = 190, L = 92, R = 16, CAP = 160, PH = 28;
     const svg = el("svg", { viewBox: `0 0 ${WW} ${HH}`, class: "chart", role: "img", "aria-label": "SWCLK as usual and in a misread transfer" });
     $("trace").appendChild(svg);
@@ -918,7 +942,7 @@ function renderWire() {
     const cells = Array.from({ length: Math.max(n, 1) }, (_, i) => i < r.misreads8 ? "pip bad" : i < n ? "pip stall" : "pip");
     const w = Math.max(100, cells.length) * (s + g);
     const rects = cells.map((c, i) => `<rect x="${i * (s + g)}" y="0" width="${s}" height="${s}" class="${c}"></rect>`).join("");
-    return `<div class="pip-row"><span class="micro">${r.mhz} MHz</span><svg viewBox="0 0 ${w} ${s}" preserveAspectRatio="xMinYMid meet" role="img" aria-label="${r.mhz} MHz: ${n} stalls at position 8, ${r.misreads8} misread">${rects}</svg></div>`;
+    return `<div class="pip-row"><span>${r.mhz} MHz</span><svg viewBox="0 0 ${w} ${s}" preserveAspectRatio="xMinYMid meet" role="img" aria-label="${r.mhz} MHz: ${n} stalls at position 8, ${r.misreads8} misread">${rects}</svg></div>`;
   }).join("");
   const hi = rows.filter((r) => r.failed > 0), lo = rows.filter((r) => !r.failed);
   const stalls = (list) => list.reduce((n, r) => n + (r.stalls8 || 0) + (r.misreads8 || 0), 0);
@@ -944,7 +968,7 @@ function renderNotes() {
   notes.push(["", "Highest completed clock requests", `4 KiB writes: Verge ${top(ours, "write32")}${stock ? `, stock ${top([stock], "write32")}` : ""}. Verge reads: ${top(ours, "read32")}.${g50 ? ` At a requested 50 MHz, measured wire rates are ${fmt(g50.read, 1)} MHz read / ${fmt(g50.write, 1)} MHz write.` : ""}`]);
   const conds = V.series.filter((s) => s.condition);
   if (conds.length) notes.push(["", "Under energy capture", `${conds.map((s) => s.name).join("; ")}: tick them in the key to compare with the runs without capture.`]);
-  $("notes").innerHTML = notes.map(([c, h, p]) => `<div class="note ${c}"><h3>${h}</h3><p>${p}</p></div>`).join("");
+  $("notes").innerHTML = notes.map(([, h, p]) => `<div><dt>${h}</dt><dd>${p}</dd></div>`).join("");
 }
 
 /* The set's wire template holds a part for each view with recordings; tickwave loads with the first
@@ -975,9 +999,23 @@ function renderAll() {
   renderWire();
   renderOnTheWire();
   renderNotes();
+  numberFigures();
 }
+// Each figure the view shows takes the next number.
+function numberFigures() {
+  let n = 0;
+  for (const b of document.querySelectorAll("figcaption > b.n")) if (b.getClientRects().length) b.textContent = `Figure ${++n}.`;
+}
+// The charts draw at their containers' widths, so a new width draws them again.
+let drawnAt = innerWidth, redraw = 0;
+addEventListener("resize", () => {
+  if (innerWidth === drawnAt) return;
+  drawnAt = innerWidth;
+  clearTimeout(redraw);
+  redraw = setTimeout(() => { renderJLink(); renderProbeRs(); drawExplorer(); renderCliffAndFault(); renderWire(); }, 120);
+});
 
-/* With more than one dated set, keep the date picker in the title rail. */
+/* With more than one dated set, the set picker shows in the header's row, beside the wire. */
 if (ALL.order.length > 1) {
   $("sets").hidden = false;
   $("set-select").innerHTML = ALL.order.map((d) => `<option value="${d}" ${d === SET ? "selected" : ""}>${d}</option>`).join("");
@@ -986,24 +1024,7 @@ if (ALL.order.length > 1) {
     renderAll();
   });
 }
-// Day or night: the system's choice until the switch is used, then the one chosen, kept in this browser
-// (and applied in the head, before the first paint). The switch shows the face on screen, so it
-// follows the system too while nothing is chosen.
-const faceShown = () => getComputedStyle(document.documentElement).colorScheme === "dark" ? "night" : "day";
-const faces = $("faces");
-const syncFace = () => faces.setAttribute("aria-checked", faceShown() === "night");
-syncFace();
-matchMedia("(prefers-color-scheme: dark)").addEventListener("change", syncFace);
-faces.addEventListener("click", () => {
-  const face = faceShown() === "night" ? "day" : "night";
-  document.documentElement.dataset.face = face;
-  faces.setAttribute("aria-checked", face === "night");
-  try { localStorage.setItem("face", face); } catch { /* the choice lasts this visit only */ }
-});
-// The site serves this page; opened from disk, "/" would be the filesystem's root.
-if (location.protocol === "file:") $("home").href = $("home").dataset.published;
 renderAll();
-requestAnimationFrame(() => requestAnimationFrame(() => faces.classList.add("ready")));
 </script>
 </body>
 </html>

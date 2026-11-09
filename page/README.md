@@ -7,20 +7,38 @@ Build the standalone page from the committed throughput and wire-clock results, 
 uv run python -I build.py
 ```
 
-The last date opens by default. Earlier dates remain available in the date selector. The build
+The last date opens by default. Earlier dates remain available in the set picker. The build
 writes `out/index.html`. The `out/` folder holds the page and its fonts and nothing else, so it can
-be served as it is. The project's site serves it at `/measurements/`, and the page's header links
-back to the site. Opened from disk, the header links to the published site.
+be served as it is. The project's site serves it at `/measurements/`.
 
-The page's colours, type, line patterns, mark and favicon come from the project's design tokens.
-`tokens.css`, `out/fonts/`, `dial.svg` and `favicon.ico` are copies of the site repository's
-`static/tokens.css`, `static/fonts/`, `design/marks/dial.svg` and `static/favicon.ico`. The build
-inlines all but the fonts into the page. To check the copies are current, run this from the site
+The page shows the project's shared header and footer, the same as every page of the project's
+site, with Measurements marked as the page shown. Under the header's row of places, a row of the
+page's own holds the wire and the measurement set; a new wire keeps the reader in the section they
+were reading, or the nearest section above it the new wire shows. Opened from disk, the header's
+links go to the published site.
+
+The page's colours, type, line patterns, mark and favicon come from the project's design tokens,
+and its header, footer and base styles from the site. These are copies of the site repository's
+files:
+
+| Copy | Of the site's |
+|---|---|
+| `tokens.css`, `out/fonts/` | `static/tokens.css`, `static/fonts/` |
+| `dial.svg`, `favicon.ico` | `design/marks/dial.svg`, `static/favicon.ico` |
+| `base.css` | `static/base.css`, the base every page shares |
+| `header.html`, `footer.html` | `design/header.html`, `design/footer.html` |
+| `face.js`, `header.js` | `static/js/face.js`, `static/js/header.js` |
+
+The build inlines all but the fonts into the page, and fills the header in: the mark, links that
+start at the site's root, and Measurements marked as this page. `template.html` holds only the
+page's own markup, styles and script. To check the copies are current, run this from the site
 repository (`escapement-project.github.io`):
 
 ```sh
 uv run design/build.py --check ../mculink-bench/page/tokens.css ../mculink-bench/page/out/fonts/* \
-    ../mculink-bench/page/dial.svg ../mculink-bench/page/favicon.ico
+    ../mculink-bench/page/dial.svg ../mculink-bench/page/favicon.ico \
+    ../mculink-bench/page/base.css ../mculink-bench/page/header.html ../mculink-bench/page/footer.html \
+    ../mculink-bench/page/face.js ../mculink-bench/page/header.js
 ```
 
 The build inlines the copies, so the page carries them only once it is rebuilt. This fails while
@@ -55,8 +73,8 @@ compared through the same probe-rs revision and workload. A probe's own best hos
 with another probe's best host, such as our CMSIS-DAP host against SEGGER's DLL. probe-rs on one
 probe against a vendor's own host on another says more about the hosts than the probes.
 
-The headline shows our peak 4 KiB probe-rs write throughput on the wire shown. Beside it, smaller,
-is that peak as a multiple of stock's. Stock counts only up to the fastest clock it reads right at:
+The headline shows our peak 4 KiB probe-rs write throughput on the wire shown, in a window of lume.
+After it, a sentence gives that peak as a multiple of stock's. Stock counts only up to the fastest clock it reads right at:
 faster, it misreads, reporting errors or returning wrong data. The comparison names that clock.
 Results from `throughput.py` say at each clock they measured whether the data came back right, and
 the page applies the same limit to any series that has them. For sets taken before those checks,
@@ -85,7 +103,7 @@ them.
 
 The J-Link data lives in `reference/jlink-2026-10-22.json`. Its probe-rs results use the same
 revision, 4 KiB workload, target and 10-pin connection as the 2026-10 MCU-Link measurements. They
-appear as the series "J-Link Ultra · 2026-10-22", off until ticked, only in SWD views measured
+appear as the series "J-Link Ultra, 2026-10-22", off until ticked, only in SWD views measured
 through that probe-rs revision. The J-Link section below
 graphs SEGGER's `TestRSpeed` and `TestWSpeed` results in their reported KByte/s units. Those
 commands use a different workload. See the reference note for calculations and target state.

@@ -3,6 +3,9 @@
     build.py [DATE ...]   # write out/index.html for these sets, or for every set in sets.json
     build.py --check      # fail if out/index.html differs from a fresh build of every set
 
+The page shows the project's shared header and footer and takes its base styles and header
+scripts from the site: copies of the site's files, inlined, so the page also works from disk.
+
 A set with a wire fragment, wire/<DATE>.html, also gets its section on the wire: prose whose
 figures open the wire recordings they come from, through tickwave. The build checks every
 reference in a fragment against the recordings' sidecars, in a checkout of mculink-recordings
@@ -147,27 +150,41 @@ def main() -> None:
     template = (PAGE / "template.html").read_text()
     if template.count("__DATA__") != 1:
         raise SystemExit("template must contain exactly one __DATA__ placeholder")
-    for placeholder in ("__TOKENS__", "__MARK__", "__ICON__", "__WIRE__"):
+    for placeholder in ("__TOKENS__", "__BASE__", "__HEADER__", "__FOOTER__", "__FACEJS__", "__HEADERJS__", "__ICON__", "__WIRE__"):
         if template.count(placeholder) != 1:
             raise SystemExit(f"template must contain exactly one {placeholder} placeholder")
-    # The design tokens, a copy of the site's static/tokens.css; their fonts load from fonts/ beside
-    # the page. out/ is the published page and nothing else: the site serves the folder as it is.
-    tokens = (PAGE / "tokens.css").read_text()
-    # The project's mark and favicon, copies of the site's design/marks/dial.svg and
-    # static/favicon.ico, inlined so the page carries them when opened from disk too.
+    # Copies of the site's files (see README.md), inlined so the page carries them when opened from
+    # disk too: the design tokens, whose fonts load from fonts/ beside the page; the shared base
+    # sheet; the header and footer every page of the project shows; the day and night switch and the
+    # header's script; and the project's mark and favicon. out/ is the published page and nothing
+    # else: the site serves the folder as it is.
+    copy = {name: (PAGE / name).read_text() for name in ("tokens.css", "base.css", "header.html", "footer.html", "face.js", "header.js")}
+    for name, closing in (("tokens.css", "</style"), ("base.css", "</style"), ("face.js", "</script"), ("header.js", "</script")):
+        if closing in copy[name].lower():
+            raise SystemExit(f"{name} holds {closing}>, which would end the element it is inlined in")
     mark = (PAGE / "dial.svg").read_text().strip().replace("<svg ", '<svg aria-hidden="true" fill="currentColor" ', 1)
     icon = "data:image/x-icon;base64," + base64.b64encode((PAGE / "favicon.ico").read_bytes()).decode()
+    # The header's links are root-relative: the site serves this page, and opened from disk its
+    # script points them at the published site. Its Measurements place is this page.
+    header = copy["header.html"].strip()
+    for marker, count in (("{{mark}}", 1), ("{{base}}", None), ('data-page="measurements"', 1)):
+        if header.count(marker) == 0 or (count and header.count(marker) != count):
+            raise SystemExit(f"header.html: expected {count or 'some'} {marker}; the site's header changed shape")
+    header = (header.replace("{{mark}}", mark).replace("{{base}}", "")
+              .replace('data-page="measurements"', 'data-page="measurements" aria-current="page"'))
     # Each set's wire section as an inert template; the page shows the part for the view shown.
     wire = "".join(f'<template id="wire-{d}">\n{frag}</template>\n' for d in dates
                    if (frag := wire_fragment(d, [v["id"] for v in data["sets"][d]["views"]], args.recordings,
                                              args.recordings_url)) is not None)
     wire = f'<div id="on-the-wire" data-tickwave="{htmllib.escape(args.tickwave_url)}"></div>\n{wire}'
-    html = (template.replace("__TOKENS__", tokens).replace("__MARK__", mark).replace("__ICON__", icon)
-            .replace("__WIRE__", wire).replace("__DATA__", json.dumps(data, separators=(",", ":"))))
+    html = (template.replace("__TOKENS__", copy["tokens.css"]).replace("__BASE__", copy["base.css"])
+            .replace("__HEADER__", header).replace("__FOOTER__", copy["footer.html"].strip())
+            .replace("__FACEJS__", copy["face.js"]).replace("__HEADERJS__", copy["header.js"])
+            .replace("__ICON__", icon).replace("__WIRE__", wire).replace("__DATA__", json.dumps(data, separators=(",", ":"))))
     output = PAGE / "out" / "index.html"
     if args.check:
-        # The page is what readers get: its copies of the tokens, mark and favicon can be current
-        # while the page still carries old ones, until it is rebuilt.
+        # The page is what readers get: its copies of the site's files can be current while the
+        # page still carries old ones, until it is rebuilt.
         if not output.is_file() or output.read_text() != html:
             raise SystemExit(f"stale: {output.relative_to(ROOT)} differs from a fresh build; run page/build.py")
         print(f"current: {output.relative_to(ROOT)}")

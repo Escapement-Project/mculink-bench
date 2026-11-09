@@ -50,7 +50,7 @@ def series_of(label: str, record: dict) -> dict:
         build = (fw.get("dap_info") or {}).get("firmware version") or ""
     sid = base + (f"-capture{rate}" if rate else "")
     condition = f"capture at {int(rate):,} pairs/s" if rate else None
-    return {"id": sid, "name": name + (f" · {condition}" if condition else ""), "role": role, "style": style,
+    return {"id": sid, "name": name + (f", {condition}" if condition else ""), "role": role, "style": style,
             "condition": condition, "build": build}
 
 
@@ -151,7 +151,7 @@ def throughput(date: str, patterns: list[str]) -> dict | None:
         first = g["records"][0]
         view = views.setdefault(vid, {
             "id": vid, "protocol": protocol, "format": fmt,
-            "title": TITLE.get(protocol, protocol) + (f" · {fmt.replace('oscan', 'OScan')}" if fmt else ""),
+            "title": TITLE.get(protocol, protocol) + (f" {fmt.replace('oscan', 'OScan')}" if fmt else ""),
             "series": [],
             "meta": {"matrix": first["matrix"], "chip": first["chip"],
                      "dpidr": (first.get("target") or {}).get("dpidr"),

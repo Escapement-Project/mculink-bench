@@ -1,8 +1,8 @@
 <section class="wire-view" data-view="swd">
-  <header class="subrail">
+  <div class="head">
     <h2>On the wire</h2>
-    <div class="rail-meta micro"><span>MSPM0L1306</span><span>analyser at 1 ns on SWCLK and SWDIO</span><span>recorded 2026-11-04</span></div>
-  </header>
+    <p class="kicker">MSPM0L1306, analyser at 1 ns on SWCLK and SWDIO, recorded 2026-11-04</p>
+  </div>
   <div class="wire-text">
     <p>These are recordings of the wire itself, every clock edge of a 64 KiB flash read at each clock asked. Hover over or tap an underlined figure to see the stretch of wire it comes from. The analyser's leads load the lines: with them on, the probe samples read data a cycle later at 50 and 37.5 MHz than it does without them.</p>
     <p>Asked for 50 MHz, Verge sends each request at <tickwave-ref for="v-verge" annotation="wire_swd/request/384679581">50 MHz</tickwave-ref> and writes data at <tickwave-ref for="v-verge" annotation="wire_swd/data/385111071">50 MHz</tickwave-ref>. It reads data at <tickwave-ref for="v-verge" annotation="wire_swd/data/384679862">37.5 MHz</tickwave-ref>. Before the first bit of read data, the probe checks the acknowledge. That bit's period stretches to <tickwave-ref for="v-verge" annotation="wire_swd/ack-check/384679862">about 80 ns</tickwave-ref>.</p>
@@ -16,10 +16,10 @@
   </div>
 </section>
 <section class="wire-view" data-view="jtag">
-  <header class="subrail">
+  <div class="head">
     <h2>On the wire</h2>
-    <div class="rail-meta micro"><span>CC1312R1</span><span>analyser at 1 ns on TCK, TMS, TDI and TDO</span><span>recorded 2026-11-04</span></div>
-  </header>
+    <p class="kicker">CC1312R1, analyser at 1 ns on TCK, TMS, TDI and TDO, recorded 2026-11-04</p>
+  </div>
   <div class="wire-text">
     <p>These are recordings of the wire itself, every clock edge of probe-rs's runs. Hover over or tap an underlined figure to see the stretch of wire it comes from.</p>
     <p>Asked for 30 or 50 MHz, Verge's TCK runs at 30 MHz in its fast bursts: <tickwave-ref for="v-jtag" annotation="wire_clock/clock/9969845407">85% of their periods</tickwave-ref> are 33 ns. Most of the rest are 53 ns, where the generator takes a longer step. Capturing energy at 100,000 pairs a second as well, it keeps <tickwave-ref for="v-jtag-capture" annotation="wire_clock/clock/10091908928">83% of them</tickwave-ref> at 33 ns.</p>
@@ -33,10 +33,10 @@
   </div>
 </section>
 <section class="wire-view" data-view="cjtag-oscan1">
-  <header class="subrail">
+  <div class="head">
     <h2>On the wire</h2>
-    <div class="rail-meta micro"><span>CC1312R1</span><span>analyser at 1 ns on TCKC and TMSC</span><span>recorded 2026-11-04</span></div>
-  </header>
+    <p class="kicker">CC1312R1, analyser at 1 ns on TCKC and TMSC, recorded 2026-11-04</p>
+  </div>
   <div class="wire-text">
     <p>In cJTAG every JTAG bit is a frame of packets on TMSC. In OScan1 a frame has three: inverted TDI, TMS and TDO. With packets at 50 MHz, Verge's frames take <tickwave-ref for="v-oscan1" annotation="wire_cjtag/frame/28412491163">127 ns</tickwave-ref> or <tickwave-ref for="v-oscan1" annotation="wire_cjtag/frame/28420785224">133 ns</tickwave-ref>, a JTAG clock of 7.9 or 7.5 MHz. The TDO packet is the long one: the probe waits out <tickwave-ref for="v-oscan1" annotation="wire_cjtag/tdo/28412491210">the target's TDO delay</tickwave-ref> before ending it.</p>
   </div>
@@ -45,10 +45,10 @@
   </div>
 </section>
 <section class="wire-view" data-view="cjtag-oscan2">
-  <header class="subrail">
+  <div class="head">
     <h2>On the wire</h2>
-    <div class="rail-meta micro"><span>CC1312R1</span><span>analyser at 1 ns on TCKC and TMSC</span><span>recorded 2026-11-04</span></div>
-  </header>
+    <p class="kicker">CC1312R1, analyser at 1 ns on TCKC and TMSC, recorded 2026-11-04</p>
+  </div>
   <div class="wire-text">
     <p>In cJTAG every JTAG bit is a frame of packets on TMSC. In OScan2, as in OScan1, most frames have three. With packets at 50 MHz, Verge's frames take <tickwave-ref for="v-oscan2" annotation="wire_cjtag/frame/26344840323">127 ns</tickwave-ref> or <tickwave-ref for="v-oscan2" annotation="wire_cjtag/frame/26354443789">133 ns</tickwave-ref>, a JTAG clock of 7.9 or 7.5 MHz. The TDO packet is the long one: the probe waits out <tickwave-ref for="v-oscan2" annotation="wire_cjtag/tdo/26344840370">the target's TDO delay</tickwave-ref> before ending it.</p>
   </div>
@@ -57,10 +57,10 @@
   </div>
 </section>
 <section class="wire-view" data-view="cjtag-oscan5">
-  <header class="subrail">
+  <div class="head">
     <h2>On the wire</h2>
-    <div class="rail-meta micro"><span>CC1312R1</span><span>analyser at 1 ns on TCKC and TMSC</span><span>recorded 2026-11-04</span></div>
-  </header>
+    <p class="kicker">CC1312R1, analyser at 1 ns on TCKC and TMSC, recorded 2026-11-04</p>
+  </div>
   <div class="wire-text">
     <p>In cJTAG every JTAG bit is a frame of packets on TMSC. In OScan5 a shift needs two packets a bit, TDI and TDO. Verge's two-packet frames take <tickwave-ref for="v-oscan5" annotation="wire_cjtag/frame/21271888413">100 ns</tickwave-ref> or <tickwave-ref for="v-oscan5" annotation="wire_cjtag/frame/21278618968">107 ns</tickwave-ref>, a JTAG clock of 10.0 or 9.4 MHz. The TDO packet is the long one: the probe waits out <tickwave-ref for="v-oscan5" annotation="wire_cjtag/tdo/21278618995">the target's TDO delay</tickwave-ref> before ending it.</p>
   </div>
@@ -69,10 +69,10 @@
   </div>
 </section>
 <section class="wire-view" data-view="cjtag-oscan6">
-  <header class="subrail">
+  <div class="head">
     <h2>On the wire</h2>
-    <div class="rail-meta micro"><span>CC1312R1</span><span>analyser at 1 ns on TCKC and TMSC</span><span>recorded 2026-11-04</span></div>
-  </header>
+    <p class="kicker">CC1312R1, analyser at 1 ns on TCKC and TMSC, recorded 2026-11-04</p>
+  </div>
   <div class="wire-text">
     <p>In cJTAG every JTAG bit is a frame of packets on TMSC. In OScan6, as in OScan5, a shift needs two packets a bit. Verge's two-packet frames take <tickwave-ref for="v-oscan6" annotation="wire_cjtag/frame/19381325954">100 ns</tickwave-ref> or <tickwave-ref for="v-oscan6" annotation="wire_cjtag/frame/19388202838">107 ns</tickwave-ref>, a JTAG clock of 10.0 or 9.4 MHz. The TDO packet is the long one: the probe waits out <tickwave-ref for="v-oscan6" annotation="wire_cjtag/tdo/19388202865">the target's TDO delay</tickwave-ref> before ending it.</p>
   </div>
