@@ -254,7 +254,13 @@ __HEADER__
   <div class="wrap">
     <div class="head"><h2>Measured SWD clock</h2><p class="kicker" id="wire-meta"></p></div>
     <div>
-      <div class="figs">
+      <div class="figs" id="wire-recorded">
+        <figure><div class="chart"><tickwave-chart id="r-read" group="recorded" legend="above" readout="below" sweep="off" height="250"></tickwave-chart></div><figcaption><b class="n"></b> Read data bits. MHz on the wire, each read's median transfer.</figcaption></figure>
+        <figure><div class="chart"><tickwave-chart id="r-write" group="recorded" legend="above" readout="below" sweep="off" height="250"></tickwave-chart></div><figcaption><b class="n"></b> Write data bits. MHz on the wire, each read's median transfer.</figcaption></figure>
+        <figure><div class="chart"><tickwave-chart id="r-request" group="recorded" legend="above" readout="below" sweep="off" height="250"></tickwave-chart></div><figcaption><b class="n"></b> Request bits. MHz on the wire, each read's median transfer.</figcaption></figure>
+        <div class="prose"><h3>Recordings</h3><p>Each point is one 64 KiB flash read, recorded with the analyser's leads on the debug pins. They load the lines, so some reads sample a cycle later than they do without them. Pointing at a point shows its read; a click opens the recording below.</p></div>
+      </div>
+      <div class="figs" id="wire-clock">
         <figure><div class="chart"><tickwave-chart id="w-read" group="wire" legend="above" readout="below" sweep="off" height="250"></tickwave-chart></div><figcaption><b class="n"></b> Read data bits. MHz on the wire, median data bit.</figcaption></figure>
         <figure><div class="chart"><tickwave-chart id="w-write" group="wire" legend="above" readout="below" sweep="off" height="250"></tickwave-chart></div><figcaption><b class="n"></b> Write data bits. MHz on the wire, median data bit.</figcaption></figure>
         <figure><div class="chart"><tickwave-chart id="w-fast" group="wire" legend="above" readout="below" sweep="off" height="250"></tickwave-chart></div><figcaption><b class="n"></b> Peak SWD rate. MHz, shortest mean period per transfer.</figcaption></figure>
@@ -335,10 +341,11 @@ const groupOf = (c) => c.getAttribute("group") || c.id;
 for (const c of document.querySelectorAll("tickwave-chart")) c.addEventListener("tickwave-pick", (e) => { if (e.detail.x != null) picked.add(groupOf(c)); });
 // What the page last gave each chart: the element's `data` reads back its parsed copy.
 const given = new Map();
-function setChart(id, { data, show, selected }) {
+function setChart(id, { data, src, show, selected }) {
   const c = $(id);
   chartsReady.then(() => {
     if (selected != null && !picked.has(groupOf(c))) c.setAttribute("selected", selected);
+    if (src && c.getAttribute("src") !== src) c.setAttribute("src", src);
     if (data && given.get(id) !== data) { given.set(id, data); c.data = data; }
     if (show) c.setAttribute("show", show.join(" "));
   });
@@ -718,13 +725,19 @@ const WIRE_FW = ["gcc", "clang", "stock"];
 function renderWire() {
   const W = V.protocol === "swd" ? D.wire : {}, stock = W.stock;
   const shown = Object.values(W);
+  const recorded = V.protocol === "swd" ? D.recorded_wire : null;
   for (const id of ["trace", "stall-pips"]) $(id).textContent = "";
+  $("wire-results").hidden = !shown.length && !recorded;
+  $("wire-recorded").hidden = !recorded;
+  $("wire-clock").hidden = !shown.length;
+  if (recorded) {
+    $("wire-meta").textContent = `Recordings, the analyser at 1 GS/s on the debug pins, taken ${SET}`;
+    for (const url of recorded) setChart(`r-${url.match(/wire-clock-(\w+)\.chart\.json$/)[1]}`, { src: url, selected: "50" });
+  }
   if (!shown.length) {
-    $("wire-meta").textContent = "not measured in this set";
-    $("wire-results").hidden = true;
+    $("wire-errors").hidden = true;
     return;
   }
-  $("wire-results").hidden = false;
   const xs = [...new Set(shown.flatMap((w) => w.rows.map((r) => r.mhz)))].sort((a, b) => a - b);
   const at = (fw, mhz) => W[fw]?.rows.find((r) => r.mhz === mhz);
   $("wire-meta").textContent = [["Matrix", shown[0].matrix], ["analyser", "100 MS/s at the target"], ["taken", shown[0].taken.slice(0, 10)]]
@@ -823,6 +836,15 @@ function renderNotes() {
   if (conds.length) notes.push(["", "Under energy capture", `${conds.map((s) => s.name).join("; ")}: tick them in the key to compare with the runs without capture.`]);
   $("notes").innerHTML = notes.map(([, h, p]) => `<div><dt>${h}</dt><dd>${p}</dd></div>`).join("");
 }
+
+// A recorded point's click opens the read below, in the "On the wire" part's view of the same
+// recording, where the part has one; otherwise the chart keeps its popover open.
+for (const id of ["r-read", "r-write", "r-request"]) $(id).addEventListener("tickwave-evidence", (e) => {
+  const view = [...$("on-the-wire").querySelectorAll("tickwave-view[src]")].find((v) => new URL(v.getAttribute("src"), document.baseURI).href === e.detail.recording);
+  if (!view) return;
+  e.preventDefault();
+  customElements.whenDefined("tickwave-view").then(() => view.reveal(e.detail.annotation));
+});
 
 /* The set's wire template holds a part for each view with recordings; tickwave loads with the first
    one shown, from its own site at the version the build pins. */

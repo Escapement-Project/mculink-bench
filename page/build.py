@@ -9,7 +9,9 @@ scripts from the site: copies of the site's files, inlined, so the page also wor
 A set with a wire fragment, wire/<DATE>.html, also gets its section on the wire: prose whose
 figures open the wire recordings they come from, through tickwave. The build checks every
 reference in a fragment against the recordings' sidecars, in a checkout of mculink-recordings
-(--recordings, beside this repository by default).
+(--recordings, beside this repository by default). A set whose sets.json entry names
+`wire_charts` shows those charts from the recordings, each point's recording and annotation checked
+the same way.
 """
 from __future__ import annotations
 
@@ -131,6 +133,36 @@ def wire_fragment(date: str, view_ids: list[str], recordings: pathlib.Path, reco
         f'src="{htmllib.escape(base + m.group(1))}.tickwave" annotations="{htmllib.escape(base + m.group(1))}.annotations.toml"'), text)
 
 
+def wire_charts(date: str, names: list[str], recordings: pathlib.Path, recordings_url: str) -> list[str]:
+    """The set's wire-clock charts in the recordings, as URLs, each point's evidence checked: its
+    recording's sidecar has the annotation (tools/wire/wire_chart.py writes them)."""
+    problems, urls = [], []
+    for name in names:
+        path = recordings / date / f"{name}.chart.json"
+        if not path.is_file():
+            problems.append(f"no {path}")
+            continue
+        chart = json.loads(path.read_text())
+        if chart.get("format") != "tickwave-chart/1":
+            problems.append(f"{name}: format {chart.get('format')!r}")
+        for series in chart.get("series", []):
+            for point in series.get("points", []):
+                e = (point or {}).get("evidence")
+                if not e:
+                    continue
+                # The sidecars, not the recordings: a build checks out only the small files, and
+                # the recordings repository checks its recordings against them.
+                rec = e["recording"].removesuffix(".tickwave")
+                if not (recordings / date / f"{rec}.annotations.toml").is_file():
+                    problems.append(f"{name}: no sidecar for {e['recording']}")
+                elif e["annotation"] not in sidecar_ids(recordings, date, rec):
+                    problems.append(f"{name}: {rec} has no annotation {e['annotation']}")
+        urls.append(f"{recordings_url}{date}/{name}.chart.json")
+    if problems:
+        raise SystemExit(f"sets.json {date} wire_charts:\n  " + "\n  ".join(problems))
+    return urls
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("dates", nargs="*", help="sets to include; every set in sets.json without")
@@ -147,6 +179,10 @@ def main() -> None:
     # Without dates, every set in sets.json, oldest first.
     dates = args.dates or sorted(json.loads((PAGE / "sets.json").read_text()))
     data = build_data(dates)
+    manifest = json.loads((PAGE / "sets.json").read_text())
+    for d in dates:
+        if manifest[d].get("wire_charts"):
+            data["sets"][d]["recorded_wire"] = wire_charts(d, manifest[d]["wire_charts"], args.recordings, args.recordings_url)
     template = (PAGE / "template.html").read_text()
     if template.count("__DATA__") != 1:
         raise SystemExit("template must contain exactly one __DATA__ placeholder")

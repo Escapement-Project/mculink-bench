@@ -23,6 +23,7 @@
     "stock_reads_right": {
       "swd": {"up_to_khz": 20000, "evidence": "results/throughput/2026-11-04.md"},
       "jtag": {"up_to_khz": 10000, "evidence": "results/throughput/2026-11-04.md"}
-    }
+    },
+    "wire_charts": ["wire-clock-request", "wire-clock-read", "wire-clock-write"]
   }
 }
