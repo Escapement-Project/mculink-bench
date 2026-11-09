@@ -210,8 +210,9 @@ def check_consistent(date: str, groups: dict) -> None:
             raise ValueError(f"{date} {vid}: results from more than one probe-rs revision or matrix: {sorted(hosts)}")
 
 
-def wire(date: str) -> dict | None:
-    out = {}
+def wire(date: str) -> tuple[dict, dict]:
+    """The set's SWD wire per firmware, and its three wire-clock charts; both empty without it."""
+    out, figures = {}, {}
     for label in WIRE_LABELS:
         path = f"{REPO}/results/wireclock/{date}-{label}.json"
         if not os.path.exists(path):
@@ -221,13 +222,16 @@ def wire(date: str) -> dict | None:
         for c in r["clocks"]:
             s = c.get("summary", {})
             row = {"mhz": c["clock_mhz"]}
+            fig = figures.setdefault(label, {})[c["clock_mhz"]] = {}
             for d in ("read", "write"):
                 if f"{d}_data_ns" in s:
                     row[d] = round(1000 / s[f"{d}_data_ns"], 3)
                     row[f"{d}_from"] = s[f"{d}_data_from"]
+                    fig[d] = (1000 / s[f"{d}_data_ns"], s[f"{d}_data_from"])
             if "fastest" in s:
                 row["fastest"] = round(1000 / s["fastest"]["period_ns"], 3)
                 row["fastest_at"] = s["fastest"]["position"]
+                fig["fastest"] = (1000 / s["fastest"]["period_ns"], None)
             pipelined = next((k for k in c["kinds"] if k["depth"] > 1), None)
             if pipelined:
                 w = pipelined["wire"]
@@ -259,11 +263,45 @@ def wire(date: str) -> dict | None:
                 "host_ack": m["host_ack"], "wire_ack": m["wire_ack"],
             }
         out[label] = entry
-    return out or None
+    return out, wire_charts(date, figures) if figures else {}
+
+
+WIRE_NAMES = {"gcc": "GCC", "clang": "Clang", "stock": "Stock"}
+WIRE_FIGURES = {"read": "Read data bits", "write": "Write data bits", "fastest": "Peak SWD rate"}
+
+
+def wire_charts(date: str, figures: dict) -> dict:
+    """The clock on the wire against the clock asked for, log against log, in MHz to the hundredth
+    as the page shows it; a figure timed from SWDIO edges, where SWCLK was too fast to resolve,
+    takes a ring."""
+    clocks = sorted({m for by in figures.values() for m in by})
+    charts = {}
+    for key, title in WIRE_FIGURES.items():
+        series = []
+        for label in WIRE_LABELS:
+            if label not in figures:
+                continue
+            points = []
+            for m in clocks:
+                f = figures[label].get(m, {}).get(key)
+                points.append(None if f is None else {"value": f"{f[0]:.2f}"}
+                              | ({"ring": True, "note": "from SWDIO"} if f[1] == "swdio" else {}))
+            look = look_of({"style": label, "condition": None})
+            series.append(series_head({"id": label, "name": WIRE_NAMES[label]}, look) | {"points": points})
+        charts[key] = {"format": "tickwave-chart/1",
+                       "source": f"mculink-bench results/wireclock/{date}: SWD, the analyser at 100 MS/s at the target; "
+                                 f"{title.lower()}, the median over each clock's transfers",
+                       "x": clock_axis("SWD clock asked for", [dec(m) for m in clocks]),
+                       "y": {"name": title, "unit": "MHz", "scale": "log"},
+                       "reference": "y=x", "series": series}
+    return charts
 
 
 def build_data(dates: list[str]) -> dict:
     manifest = json.load(open(f"{PAGE}/sets.json"))
+    with open(f"{PAGE}/reference/jlink-2026-10-22.json") as f:
+        reference = json.load(f)
+    reference["look"] = JLINK_LOOK
     sets = {}
     for date in dates:
         if date not in manifest:
@@ -271,27 +309,58 @@ def build_data(dates: list[str]) -> dict:
         t = throughput(date, manifest[date]["labels"])
         if t is None:
             raise ValueError(f"no throughput results for {date}")
-        t["wire"] = wire(date) or {}
+        t["wire"], t["wire_charts"] = wire(date)
         t["context"] = manifest[date].get("context")
         t["stock_reads_right"] = manifest[date].get("stock_reads_right") or {}
         for protocol, entry in t["stock_reads_right"].items():
             if not os.path.exists(f"{REPO}/{entry['evidence']}"):
                 raise ValueError(f"{date} {protocol}: no {entry['evidence']}, the evidence for stock's reads")
+        for view in t["views"]:
+            for s in view["series"]:
+                s["look"] = look_of(s)
+            view["charts"] = view_charts(date, view, t["stock_reads_right"].get(view["protocol"]), reference)
         sets[date] = t
-    with open(f"{PAGE}/reference/jlink-2026-10-22.json") as f:
-        reference = json.load(f)
+    reference["chart"] = jlink_chart(reference)
     return {"sets": sets, "order": dates, "references": {"jlink": reference}}
 
 
-# The page's chart encoding, by series style: colour token, line pattern and marker.
+# The charts, in tickwave's `tickwave-chart/1` (tickwave's CHARTS.md): every value a decimal string
+# with the digits the page shows, and the verdicts, failures and ranges the page draws.
+
+# The page's encoding, by series style: colour token, line pattern and marker. A run under capture
+# keeps its build's pattern, the second condition of a view takes the long dash.
 STYLE = {"gcc": ("verge", "second-build", "square"), "clang": ("verge", "solid", "circle"),
          "stock": ("nxp", "solid", "circle"), "ref0": ("context", "reference", "triangle-up"),
          "ref1": ("context", "reference", "triangle-down"), "ref2": ("context", "reference", "square")}
+JLINK_LOOK = {"colour": "context", "pattern": "reference", "marker": "diamond", "capture": False}
 UNKNOWN = object()
 
 
+def look_of(s: dict) -> dict:
+    colour, pattern, marker = STYLE[s["style"]]
+    if s["condition"] and s.get("cond_index", 0) % 2:
+        pattern = "capture-second"
+    return {"colour": colour, "pattern": pattern, "marker": marker, "capture": bool(s["condition"])}
+
+
+def dec(x) -> str:
+    """A decimal as plain text, without trailing zeros or an exponent: 50, 37.5, 0.8."""
+    return format((x if isinstance(x, Decimal) else Decimal(str(x))).normalize(), "f")
+
+
 def mhz_text(khz: float) -> str:
-    return str(Decimal(int(khz)) / 1000)
+    return dec(Decimal(int(khz)) / 1000)
+
+
+def clock_axis(name: str, mhz: list[str]) -> dict:
+    # The page pads the axis by 0.8 below the first clock and 1.25 above the last.
+    return {"name": name, "unit": "MHz", "scale": "log", "values": mhz,
+            "min": dec(Decimal(mhz[0]) * Decimal("0.8")), "max": dec(Decimal(mhz[-1]) * Decimal("1.25"))}
+
+
+def series_head(s: dict, look: dict) -> dict:
+    return ({"id": s["id"], "name": s["name"], "short": s["name"]} | {k: look[k] for k in ("colour", "pattern", "marker")}
+            | ({"capture": True} if look["capture"] else {}))
 
 
 def right_up_to(s: dict, recorded: dict | None):
@@ -323,67 +392,96 @@ def wrong_at(s: dict, khz: int, recorded: dict | None) -> bool:
     return up_to is None or (up_to is not UNKNOWN and khz > up_to)
 
 
-def probe_rs_chart(date: str, data: dict, vid: str, arm: str) -> dict:
-    """One of a view's 4 KiB charts as the page draws it, in tickwave's `tickwave-chart/1`."""
-    if arm not in ("read32", "write32"):
-        raise ValueError(f"{arm}: the charts are read32 and write32")
-    view = next((v for v in data["views"] if v["id"] == vid), None)
-    if view is None:
-        raise ValueError(f"{date} has no view {vid}: {[v['id'] for v in data['views']]}")
-    recorded = data["stock_reads_right"].get(view["protocol"])
-    part = lambda s, k: next((p for p in s["probe_rs"] if p["arm"] == arm and p["bytes"] == 4096 and p["khz"] == k), None)
-    complete = lambda p: p is not None and p["runs"] == p["of"]
-    clocks = sorted({p["khz"] for s in view["series"] for p in s["probe_rs"]
+def jlink_series(reference: dict) -> dict:
+    """The J-Link as the template's JLINK: a reference series, shown only when ticked."""
+    return {"id": "jlink", "name": f"J-Link Ultra, {reference['date']}", "role": "reference", "condition": None,
+            "external": True, "checks": None, "look": JLINK_LOOK,
+            "probe_rs": [{"khz": int(p["mhz"] * 1000), "arm": arm, "bytes": 4096, "kib": p[key], "runs": 1, "of": 1}
+                         for p in reference["probe_rs"] for arm, key in (("read32", "read_kib_s"), ("write32", "write_kib_s"))]}
+
+
+# A probe-rs chart: the arm, its transfer size, the figure, the y axis and what a figure is.
+ARMS = {"read": ("read32", 4096, "kib", "4 KiB reads", "KiB/s"),
+        "write": ("write32", 4096, "kib", "4 KiB writes", "KiB/s"),
+        "rt": ("rt", 4, "us", "Single-word read round trip", "µs")}
+
+
+def probe_rs_chart(date: str, view: dict, which: str, recorded: dict | None, series: list[dict]) -> dict:
+    """One of a view's probe-rs charts as the page draws it: its clocks are those any series read
+    4 KiB at or failed at, and a point the series' median over the runs that completed it."""
+    arm, size, field, title, unit = ARMS[which]
+    part = lambda s, k: next((p for p in s["probe_rs"] if p["arm"] == arm and p["bytes"] == size and p["khz"] == k), None)
+    complete = lambda p: p is not None and p["runs"] == p.get("of", p["runs"])
+    clocks = sorted({p["khz"] for s in series for p in s["probe_rs"]
                      if (p["arm"] == "read32" and p["bytes"] == 4096) or p["arm"] == "failed"})
-    series = []
-    for s in view["series"]:
-        colour, pattern, marker = STYLE[s["style"]]
-        if s["condition"] and s.get("cond_index", 0) % 2:
-            pattern = "capture-second"
+    out = []
+    for s in series:
         points = []
         for k in clocks:
             p = part(s, k)
             failed = any(q["khz"] == k and (q["arm"] == "failed" or not complete(q)) for q in s["probe_rs"])
             wrong = {"verdict": "wrong"} if wrong_at(s, k, recorded) else {}
             if complete(p):
-                spread = {"range": [f"{p['kib_lo']:.1f}", f"{p['kib_hi']:.1f}"]} if p["runs"] > 1 and p["kib_lo"] != p["kib_hi"] else {}
-                points.append({"value": f"{p['kib']:.1f}"} | spread | wrong)
+                spread = ({"range": [f"{p['kib_lo']:.1f}", f"{p['kib_hi']:.1f}"]}
+                          if field == "kib" and p["runs"] > 1 and p.get("kib_lo") is not None and p["kib_lo"] != p["kib_hi"] else {})
+                points.append({"value": f"{p[field]:.1f}"} | spread | wrong)
             elif p is not None:
-                points.append({"partial": {"failed": p["of"] - p["runs"], "of": p["of"], "value": f"{p['kib']:.1f}"}} | wrong)
+                points.append({"partial": {"failed": p["of"] - p["runs"], "of": p["of"], "value": f"{p[field]:.1f}"}} | wrong)
             elif failed:
                 points.append({"failed": True})
             else:
                 points.append(None)
-        series.append({"id": s["id"], "name": s["name"], "short": s["name"], "colour": colour, "pattern": pattern,
-                       "marker": marker} | ({"capture": True} if s["condition"] else {})
-                      | ({"hidden": True} if s["condition"] else {}) | ({"fails": "mark"} if s["role"] == "ours" else {})
-                      | {"points": points})
-    what = {"read32": "reads", "write32": "writes"}[arm]
-    title = TITLE.get(view["protocol"], view["protocol"])
+        out.append(series_head(s, s["look"]) | ({"hidden": True} if s["condition"] or s.get("external") else {})
+                   | ({"fails": "mark"} if s["role"] == "ours" else {}) | {"points": points})
+    each = "each run's figure the median of {}, attach excluded, and a point the median of the runs"
     return {
         "format": "tickwave-chart/1",
-        "source": f"mculink-bench results/throughput/{date}: {view['title']}, probe-rs 4 KiB {what} on the "
-                  f"{view['meta']['chip']}; each run's figure the median of {view['meta']['repeats']}, attach "
-                  "excluded, and a point the median of the runs",
-        # The page pads the axis by 0.8 below the first clock and 1.25 above the last.
-        "x": {"name": f"{title} clock asked for", "unit": "MHz", "scale": "log", "values": [mhz_text(k) for k in clocks],
-              "min": str((Decimal(mhz_text(clocks[0])) * Decimal("0.8")).normalize()),
-              "max": str((Decimal(mhz_text(clocks[-1])) * Decimal("1.25")).normalize())},
-        "y": {"name": f"4 KiB {what}", "unit": "KiB/s", "scale": "linear"},
-        "series": series,
+        "source": f"mculink-bench results/throughput/{date}: {view['title']}, probe-rs, {title.lower()} on the "
+                  f"{view['meta']['chip']}; " + each.format(view["meta"]["repeats"]),
+        "x": clock_axis(f"{TITLE.get(view['protocol'], view['protocol'])} clock asked for", [mhz_text(k) for k in clocks]),
+        "y": {"name": title, "unit": unit, "scale": "linear"},
+        "series": out,
     }
+
+
+def jlink_here(view: dict, reference: dict) -> bool:
+    """The J-Link ran through one probe-rs revision; it joins only a view measured through it."""
+    return view["protocol"] == "swd" and view["meta"]["probe_rs"] in reference["host_tool"]
+
+
+def view_charts(date: str, view: dict, recorded: dict | None, reference: dict) -> dict:
+    with_jlink = view["series"] + ([jlink_series(reference)] if jlink_here(view, reference) else [])
+    return {"read": probe_rs_chart(date, view, "read", recorded, with_jlink),
+            "write": probe_rs_chart(date, view, "write", recorded, with_jlink),
+            "rt": probe_rs_chart(date, view, "rt", recorded, view["series"])}
+
+
+def jlink_chart(reference: dict) -> dict:
+    rows = reference["jlinkexe"]
+    series = [({"id": f"jlink-{d}", "name": name, "short": name, "colour": "context", "pattern": pattern, "marker": "diamond"}
+               | {"points": [{"value": dec(p[f"{d}_kbyte_s"])} for p in rows]})
+              for d, name, pattern in (("read", "TestRSpeed, read", "solid"), ("write", "TestWSpeed, write", "second-build"))]
+    return {"format": "tickwave-chart/1",
+            "source": f"page/reference/jlink-2026-10-22.json: {reference['segger_tool']}, {reference['firmware']}",
+            "x": clock_axis("SWD clock asked for", [dec(p["mhz"]) for p in rows]),
+            "y": {"name": "JLinkExe TestRSpeed and TestWSpeed", "unit": "KByte/s", "scale": "linear"},
+            "series": series}
 
 
 def main() -> None:
     if len(sys.argv) == 6 and sys.argv[1] == "--chart":
-        _, _, date, vid, arm, out = sys.argv
-        chart = probe_rs_chart(date, build_data([date])["sets"][date], vid, arm)
+        _, _, date, vid, which, out = sys.argv
+        views = build_data([date])["sets"][date]["views"]
+        view = next((v for v in views if v["id"] == vid), None)
+        if view is None or which not in view["charts"]:
+            sys.exit(f"{date}: views {[v['id'] for v in views]}, charts {list(ARMS)}")
+        chart = view["charts"][which]
         with open(out, "w") as f:
             f.write(json.dumps(chart, indent=1, ensure_ascii=False) + "\n")
         print(f"wrote {out}: {len(chart['series'])} series at {len(chart['x']['values'])} clocks")
         return
     if len(sys.argv) < 3:
-        sys.exit("usage: extract.py OUTPUT.json DATE [DATE ...] | extract.py --chart DATE VIEW ARM OUT.chart.json")
+        sys.exit("usage: extract.py OUTPUT.json DATE [DATE ...] | extract.py --chart DATE VIEW read|write|rt OUT.chart.json")
     data = build_data(sys.argv[2:])
     with open(sys.argv[1], "w") as f:
         json.dump(data, f, separators=(",", ":"))

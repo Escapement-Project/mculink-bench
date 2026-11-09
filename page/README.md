@@ -59,7 +59,7 @@ JSON:
 uv run python -I extract.py measurements.json 2026-10-20 2026-10-21 2026-10-24 2026-10-25 2026-11-04
 ```
 
-`extract.py --chart DATE VIEW ARM OUT` writes one of a view's 4 KiB charts (`read32` or `write32`)
+`extract.py --chart DATE VIEW CHART OUT` writes one of a view's charts (`read`, `write` or `rt`)
 in tickwave's chart format, with the verdicts, failures and styles the page draws. The page does not
 use it yet.
 
