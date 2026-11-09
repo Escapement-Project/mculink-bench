@@ -8,6 +8,9 @@ MCU-Link and target.
   `results/throughput/`.
 - `tools/wireclock.py` compares the SWD clock asked for with logic analyser recordings. Results are
   in `results/wireclock/`.
+- `tools/wire/` decodes analyser recordings into tickwave's annotations: SWD transfers
+  (`wire_swd.py`), cJTAG frames (`wire_cjtag.py`) and clock bursts (`wire_clock.py`). `wire_chart.py`
+  charts a set's session figures. The recordings are in the mculink-recordings repository.
 - `tools/flash-timing/` times flash programming of a CC1312R1 through probe-rs, and through SEGGER's
   Flasher ARM for comparison. Results are in `results/flash-timing/`.
 - `page/` builds the results page from the throughput and wire-clock results.
