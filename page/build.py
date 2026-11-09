@@ -4,7 +4,7 @@
     build.py --check      # fail if out/index.html differs from a fresh build of every set
 
 A set with a wire fragment, wire/<DATE>.html, also gets its section on the wire: prose whose
-figures open the wire recordings they come from, through chrono. The build checks every
+figures open the wire recordings they come from, through tickwave. The build checks every
 reference in a fragment against the recordings' sidecars, in a checkout of mculink-recordings
 (--recordings, beside this repository by default).
 """
@@ -18,22 +18,24 @@ import pathlib
 import re
 import sys
 import tomllib
+from html.parser import HTMLParser
 
 PAGE = pathlib.Path(__file__).resolve().parent
 ROOT = PAGE.parent
 sys.path.insert(0, str(PAGE))
 from extract import build_data
 
-# Where the published page finds the recordings and chrono's elements. The recordings repository
-# serves <date>/<name>.chrono beside each recording's sidecar; chrono's site serves a pinned
-# version of chrono.js, which loads its worker and decoder from beside itself.
+# Where the published page finds the recordings and tickwave's elements. The recordings repository
+# serves <date>/<name>.tickwave beside each recording's sidecar; tickwave's site serves a pinned
+# version of tickwave.js, which loads its worker and decoder from beside itself.
 RECORDINGS_URL = "https://escapement-project.github.io/mculink-recordings/"
-CHRONO_URL = "https://escapement-project.github.io/chrono/v0.1.0/"
+TICKWAVE_URL = "https://escapement-project.github.io/tickwave/v0.1.0/"
 
 
 def sidecar_ids(recordings: pathlib.Path, date: str, name: str) -> set[str]:
     """Every annotation id a page may cite in a recording: the hand-written file's own, and each
-    included generator file's, as <source>/<id>."""
+    included generator file's, as <source>/<id>. Every file must name the same recording. The
+    full check, `tickwave annotations check`, runs where the recordings are."""
     toml = recordings / date / f"{name}.annotations.toml"
     if not toml.is_file():
         raise SystemExit(f"wire/{date}.html: no sidecar {toml}")
@@ -41,38 +43,89 @@ def sidecar_ids(recordings: pathlib.Path, date: str, name: str) -> set[str]:
     ids = {a["id"] for a in side.get("annotation", [])}
     for inc in side.get("include", []):
         lines = (toml.parent / inc).read_text().splitlines()
-        source = json.loads(lines[0])["source"]
-        ids |= {f"{source}/{json.loads(line)['id']}" for line in lines[1:] if line.strip()}
+        head = json.loads(lines[0])
+        if head.get("recording_id") != side.get("recording_id"):
+            raise SystemExit(f"{inc}: recording_id differs from {toml.name}'s")
+        ids |= {f"{head['source']}/{json.loads(line)['id']}" for line in lines[1:] if line.strip()}
     return ids
 
 
-def wire_fragment(date: str, recordings: pathlib.Path, recordings_url: str) -> str | None:
-    """The set's wire fragment, references checked, recordings resolved to URLs; None without one.
+class Fragment(HTMLParser):
+    """A wire fragment's parts, each a <section class="wire-view" data-view="...">, with the views
+    and references inside it, and every element where it should not be."""
 
-    In the fragment a view names its recording, <chrono-view id="v" data-recording="NAME">, and a
-    reference names the view and the annotation, <chrono-ref for="v" annotation="SOURCE/ID">."""
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.parts: list[tuple[str | None, dict[str, str], list[tuple[str, str, int]]]] = []
+        self.problems: list[str] = []
+        self.depth = 0  # sections open inside the current part, the part's own included
+
+    def handle_starttag(self, tag: str, attrs: list) -> None:
+        a, line = dict(attrs), self.getpos()[0]
+        if tag == "section" and "wire-view" in (a.get("class") or "").split():
+            if self.depth:
+                self.problems.append(f"line {line}: a part inside a part")
+            self.parts.append((a.get("data-view"), {}, []))
+            self.depth = 1
+        elif tag == "section" and self.depth:
+            self.depth += 1
+        elif tag.startswith("tickwave-") and not self.depth:
+            self.problems.append(f"line {line}: <{tag}> outside a part")
+        elif tag == "tickwave-view":
+            views = self.parts[-1][1]
+            if set(a) & {"src", "annotations"} or not a.get("id") or not a.get("data-recording"):
+                self.problems.append(f"line {line}: a view takes id and data-recording, not src or annotations")
+            elif a["id"] in views:
+                self.problems.append(f"line {line}: a second view {a['id']} in its part")
+            else:
+                views[a["id"]] = a["data-recording"]
+        elif tag == "tickwave-ref":
+            if set(a) & {"src", "annotations"} or not a.get("for") or not a.get("annotation"):
+                self.problems.append(f"line {line}: a reference takes for and annotation, not src or annotations")
+            else:
+                self.parts[-1][2].append((a["for"], a["annotation"], line))
+        elif tag.startswith("tickwave-"):
+            self.problems.append(f"line {line}: <{tag}> is not used in a fragment")
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag == "section" and self.depth:
+            self.depth -= 1
+
+
+def wire_fragment(date: str, view_ids: list[str], recordings: pathlib.Path, recordings_url: str) -> str | None:
+    """The set's wire fragment, every reference checked, recordings resolved to URLs; None
+    without one.
+
+    A part shows with its wire view. In it, a view names its recording, <tickwave-view id="v"
+    data-recording="NAME">, and a reference names a view of its own part and an annotation of that
+    recording, <tickwave-ref for="v" annotation="SOURCE/ID">."""
     path = PAGE / "wire" / f"{date}.html"
     if not path.is_file():
         return None
     text = path.read_text()
-    problems = []
-    # One part a wire view, each a top-level <section class="wire-view" data-view="...">: a
-    # reference names a view in its own part, which the page shows on its own.
-    parts = re.split(r'(?=<section class="wire-view")', text)[1:]
-    if not parts:
+    frag = Fragment()
+    frag.feed(text)
+    frag.close()
+    problems = list(frag.problems)
+    if not frag.parts:
         problems.append('no <section class="wire-view" data-view="..."> parts')
-    for part in parts:
-        views = dict(re.findall(r'<chrono-view id="([^"]+)" data-recording="([^"]+)"', part))
-        for view, ann in re.findall(r'<chrono-ref for="([^"]+)" annotation="([^"]+)"', part):
-            if view not in views:
-                problems.append(f"reference to {ann} names view {view}, not in its part")
-            elif ann not in sidecar_ids(recordings, date, views[view]):
-                problems.append(f"{views[view]} has no annotation {ann}")
+    seen = set()
+    for view, views, refs in frag.parts:
+        if view not in view_ids:
+            problems.append(f"part for view {view!r}: the set's views are {', '.join(view_ids)}")
+        elif view in seen:
+            problems.append(f"a second part for view {view}")
+        seen.add(view)
+        for to, ann, line in refs:
+            if to not in views:
+                problems.append(f"line {line}: reference to {ann} names view {to}, not in its part")
+            elif ann not in sidecar_ids(recordings, date, views[to]):
+                problems.append(f"line {line}: {views[to]} has no annotation {ann}")
     if problems:
         raise SystemExit(f"wire/{date}.html:\n  " + "\n  ".join(problems))
     base = f"{recordings_url}{date}/"
     return re.sub(r'data-recording="([^"]+)"', lambda m: (
-        f'src="{htmllib.escape(base + m.group(1))}.chrono" annotations="{htmllib.escape(base + m.group(1))}.annotations.toml"'), text)
+        f'src="{htmllib.escape(base + m.group(1))}.tickwave" annotations="{htmllib.escape(base + m.group(1))}.annotations.toml"'), text)
 
 
 def main() -> None:
@@ -82,9 +135,9 @@ def main() -> None:
     ap.add_argument("--recordings", type=pathlib.Path, default=ROOT.parent / "mculink-recordings",
                     help="a checkout of mculink-recordings, for the wire fragments' references")
     ap.add_argument("--recordings-url", default=RECORDINGS_URL, help="for a local preview")
-    ap.add_argument("--chrono-url", default=CHRONO_URL, help="for a local preview")
+    ap.add_argument("--tickwave-url", default=TICKWAVE_URL, help="for a local preview")
     args = ap.parse_args()
-    if args.check and (args.recordings_url != RECORDINGS_URL or args.chrono_url != CHRONO_URL):
+    if args.check and (args.recordings_url != RECORDINGS_URL or args.tickwave_url != TICKWAVE_URL):
         raise SystemExit("--check builds the published page: leave the URLs as they are")
     if args.check and args.dates:
         raise SystemExit("--check builds every set: give no dates")
@@ -106,8 +159,9 @@ def main() -> None:
     icon = "data:image/x-icon;base64," + base64.b64encode((PAGE / "favicon.ico").read_bytes()).decode()
     # Each set's wire section as an inert template; the page shows the part for the view shown.
     wire = "".join(f'<template id="wire-{d}">\n{frag}</template>\n' for d in dates
-                   if (frag := wire_fragment(d, args.recordings, args.recordings_url)) is not None)
-    wire = f'<div id="on-the-wire" data-chrono="{htmllib.escape(args.chrono_url)}"></div>\n{wire}'
+                   if (frag := wire_fragment(d, [v["id"] for v in data["sets"][d]["views"]], args.recordings,
+                                             args.recordings_url)) is not None)
+    wire = f'<div id="on-the-wire" data-tickwave="{htmllib.escape(args.tickwave_url)}"></div>\n{wire}'
     html = (template.replace("__TOKENS__", tokens).replace("__MARK__", mark).replace("__ICON__", icon)
             .replace("__WIRE__", wire).replace("__DATA__", json.dumps(data, separators=(",", ":"))))
     output = PAGE / "out" / "index.html"

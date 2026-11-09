@@ -213,12 +213,12 @@ footer code { font: 500 12.5px/1.45 var(--font-code); font-stretch: var(--code-s
 .mk.jlink-read, .mk.jlink-write { fill: var(--series-context); }
 
 /* On the wire: prose whose figures open the recordings they come from, then those recordings.
-   chrono's elements take the page's colours and fonts from the tokens. */
+   tickwave's elements take the page's colours and fonts from the tokens. */
 .wire-view { display: grid; gap: 10px; }
 .wire-text { padding: 16px 20px 4px; }
 .wire-text p { margin: 0 0 12px; max-width: 72ch; line-height: 1.55; }
 .recordings { display: grid; gap: 8px; }
-chrono-ref { text-decoration: underline dotted; text-underline-offset: 3px; cursor: help; }
+tickwave-ref { text-decoration: underline dotted; text-underline-offset: 3px; cursor: help; }
 
 @media (max-width: 900px) {
   .hero, .grid, .fault, .jlink-grid { grid-template-columns: minmax(0, 1fr); }
@@ -946,15 +946,18 @@ function renderNotes() {
   $("notes").innerHTML = notes.map(([c, h, p]) => `<div class="note ${c}"><h3>${h}</h3><p>${p}</p></div>`).join("");
 }
 
-/* The set's wire template holds a part for each view with recordings; chrono loads with the first
+/* The set's wire template holds a part for each view with recordings; tickwave loads with the first
    one shown, from its own site at the version the build pins. */
-let chronoLoad = null;
+let tickwaveLoad = null, wireShown = null;
 function renderOnTheWire() {
+  // Only a new set or view replaces the part: a ticked series must not close an open recording.
+  if (wireShown === `${SET}|${VIEW}`) return;
+  wireShown = `${SET}|${VIEW}`;
   const box = $("on-the-wire");
   const part = document.getElementById(`wire-${SET}`)?.content.querySelector(`.wire-view[data-view="${VIEW}"]`);
   box.replaceChildren(...(part ? [part.cloneNode(true)] : []));
   box.hidden = !part;
-  if (part && !chronoLoad) chronoLoad = import(`${box.dataset.chrono}chrono.js`).catch((e) => console.warn("chrono did not load:", e));
+  if (part && !tickwaveLoad) tickwaveLoad = import(`${box.dataset.tickwave}tickwave.js`).catch((e) => console.warn("tickwave did not load:", e));
 }
 
 function renderAll() {

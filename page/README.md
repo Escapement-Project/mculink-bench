@@ -68,17 +68,20 @@ details” for the target state, run metadata and build IDs.
 A set can have a section on the wire: prose whose figures open the analyser recordings they come
 from. Its text is `wire/<date>.html`, one `<section class="wire-view" data-view="...">` for each
 wire view it covers (`swd`, `jtag`, `cjtag-oscan1` and so on), shown with that view. A part names
-its recordings, `<chrono-view id="v" data-recording="gcc-swd-reads">`, and cites annotations in
-them, `<chrono-ref for="v" annotation="wire_swd/read/380567201">37.5 MHz</chrono-ref>`. Hovering
+its recordings, `<tickwave-view id="v" data-recording="gcc-swd-reads">`, and cites annotations in
+them, `<tickwave-ref for="v" annotation="wire_swd/read/380567201">37.5 MHz</tickwave-ref>`. Hovering
 or tapping a reference opens an inset of that stretch of wire; the recordings stay collapsed until
-opened. chrono draws them: the page loads its elements from chrono's site at the version
+opened. tickwave draws them: the page loads its elements from tickwave's site at the version
 `build.py` pins, and the recordings from the `mculink-recordings` repository's site, at
-`<date>/<name>.chrono` beside each recording's annotations.
+`<date>/<name>.tickwave` beside each recording's annotations.
 
 The build checks every reference against the annotations in a checkout of `mculink-recordings`,
-beside this repository by default (`--recordings DIR`), and fails on one that names an annotation
-the recording does not have, or a view outside its part. For a local preview, `--recordings-url`
-and `--chrono-url` point the page at local copies; `--check` refuses them.
+beside this repository by default (`--recordings DIR`). It fails on a reference that names an
+annotation the recording does not have or a view outside its part, on a part for a view the set does
+not have, and on sidecar files that name different recordings. Checking the sidecars against the
+recordings themselves, `tickwave annotations check`, is the recordings repository's job. For a local
+preview, `--recordings-url` and `--tickwave-url` point the page at local copies; `--check` refuses
+them.
 
 The J-Link data lives in `reference/jlink-2026-10-22.json`. Its probe-rs results use the same
 revision, 4 KiB workload, target and 10-pin connection as the 2026-10 MCU-Link measurements. They
