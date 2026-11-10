@@ -9,7 +9,7 @@ uv run python -I build.py
 
 The last date opens by default. Earlier dates remain available in the set picker. The build
 writes `out/index.html`. The `out/` folder holds the page and its fonts and nothing else, so it can
-be served as it is. The project's site serves it at `/measurements/`.
+be served as it is. The project's site serves it at `/verge/measurements/`.
 
 The page shows the project's shared header and footer, the same as every page of the project's
 site, with Measurements marked as the page shown. Under the header's row of places, a row of the
@@ -24,21 +24,22 @@ files:
 | Copy | Of the site's |
 |---|---|
 | `tokens.css`, `out/fonts/` | `static/tokens.css`, `static/fonts/` |
-| `dial.svg`, `favicon.ico` | `design/marks/dial.svg`, `static/favicon.ico` |
+| `dial.svg`, `favicon-verge.ico` | `design/marks/dial.svg`, `static/favicon-verge.ico` |
 | `base.css` | `static/base.css`, the base every page shares |
-| `header.html`, `footer.html` | `design/header.html`, `design/footer.html` |
+| `header.html`, `header-verge.html`, `footer.html` | `design/header.html`, `design/header-verge.html`, `design/footer.html` |
 | `face.js`, `header.js` | `static/js/face.js`, `static/js/header.js` |
 
 The build inlines all but the fonts into the page, and fills the header in: the mark, links that
-start at the site's root, and Measurements marked as this page. `template.html` holds only the
+start at the site's root, and Verge's group in place of Verge's link, with Measurements marked as
+this page. `template.html` holds only the
 page's own markup, styles and script. To check the copies are current, run this from the site
 repository (`escapement-project.github.io`):
 
 ```sh
 uv run design/build.py --check ../mculink-bench/page/tokens.css ../mculink-bench/page/out/fonts/* \
-    ../mculink-bench/page/dial.svg ../mculink-bench/page/favicon.ico \
-    ../mculink-bench/page/base.css ../mculink-bench/page/header.html ../mculink-bench/page/footer.html \
-    ../mculink-bench/page/face.js ../mculink-bench/page/header.js
+    ../mculink-bench/page/dial.svg ../mculink-bench/page/favicon-verge.ico \
+    ../mculink-bench/page/base.css ../mculink-bench/page/header.html ../mculink-bench/page/header-verge.html \
+    ../mculink-bench/page/footer.html ../mculink-bench/page/face.js ../mculink-bench/page/header.js
 ```
 
 The build inlines the copies, so the page carries them only once it is rebuilt. This fails while

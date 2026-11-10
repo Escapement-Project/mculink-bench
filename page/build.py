@@ -191,23 +191,31 @@ def main() -> None:
             raise SystemExit(f"template must contain exactly one {placeholder} placeholder")
     # Copies of the site's files (see README.md), inlined so the page carries them when opened from
     # disk too: the design tokens, whose fonts load from fonts/ beside the page; the shared base
-    # sheet; the header and footer every page of the project shows; the day and night switch and the
-    # header's script; and the project's mark and favicon. out/ is the published page and nothing
+    # sheet; the header and footer every page of the project shows, and the group of Verge's pages the
+    # header shows on them; the day and night switch and the header's script; and the project's mark
+    # and Verge's favicon. out/ is the published page and nothing
     # else: the site serves the folder as it is.
-    copy = {name: (PAGE / name).read_text() for name in ("tokens.css", "base.css", "header.html", "footer.html", "face.js", "header.js")}
+    copy = {name: (PAGE / name).read_text() for name in ("tokens.css", "base.css", "header.html", "header-verge.html",
+                                                          "footer.html", "face.js", "header.js")}
     for name, closing in (("tokens.css", "</style"), ("base.css", "</style"), ("face.js", "</script"), ("header.js", "</script")):
         if closing in copy[name].lower():
             raise SystemExit(f"{name} holds {closing}>, which would end the element it is inlined in")
     mark = (PAGE / "dial.svg").read_text().strip().replace("<svg ", '<svg aria-hidden="true" fill="currentColor" ', 1)
-    icon = "data:image/x-icon;base64," + base64.b64encode((PAGE / "favicon.ico").read_bytes()).decode()
+    icon = "data:image/x-icon;base64," + base64.b64encode((PAGE / "favicon-verge.ico").read_bytes()).decode()
     # The header's links are root-relative: the site serves this page, and opened from disk its
-    # script points them at the published site. Its Measurements place is this page.
-    header = copy["header.html"].strip()
-    for marker, count in (("{{mark}}", 1), ("{{base}}", None), ('data-page="measurements"', 1)):
-        if header.count(marker) == 0 or (count and header.count(marker) != count):
-            raise SystemExit(f"header.html: expected {count or 'some'} {marker}; the site's header changed shape")
-    header = (header.replace("{{mark}}", mark).replace("{{base}}", "")
-              .replace('data-page="measurements"', 'data-page="measurements" aria-current="page"'))
+    # script points them at the published site. The page is one of Verge's, so Verge's link gives way
+    # to Verge's group (the site's design/README.md), with Verge marked and this page's entry as the
+    # page shown.
+    header, group = copy["header.html"].strip(), copy["header-verge.html"].strip()
+    link = '<a href="{{base}}/verge/" data-page="verge">Verge</a>'
+    for name, text, marker, count in (("header.html", header, "{{mark}}", 1), ("header.html", header, "{{base}}", None),
+                                      ("header.html", header, link, 1), ("header-verge.html", group, 'data-page="verge"', 1),
+                                      ("header-verge.html", group, 'data-page="verge/measurements"', 1)):
+        if text.count(marker) == 0 or (count and text.count(marker) != count):
+            raise SystemExit(f"{name}: expected {count or 'some'} {marker}; the site's header changed shape")
+    header = (header.replace(link, group).replace("{{mark}}", mark).replace("{{base}}", "")
+              .replace('data-page="verge"', 'data-page="verge" aria-current="true"')
+              .replace('data-page="verge/measurements"', 'data-page="verge/measurements" aria-current="page"'))
     # Each set's wire section as an inert template; the page shows the part for the view shown.
     wire = "".join(f'<template id="wire-{d}">\n{frag}</template>\n' for d in dates
                    if (frag := wire_fragment(d, [v["id"] for v in data["sets"][d]["views"]], args.recordings,
