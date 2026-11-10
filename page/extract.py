@@ -471,9 +471,9 @@ def jlink_chart(reference: dict) -> dict:
             "series": series}
 
 
-# The landing page's figures (the site's data/landing.json): one set's SWD 4 KiB writes, as Table 1,
-# Figure 1 and the headline. Per series: the landing's id, the page's style, Table 1's name, the
-# chart's name and its short name.
+# The site's figures (its data/landing.json): one set's SWD 4 KiB writes, as the headline on the
+# landing page and Verge's page, and Table 1 and Figure 1 on Verge's page. Per series: the landing's
+# id, the page's style, Table 1's name, the chart's name and its short name.
 LANDING = {"date": "2026-11-04", "view": "swd"}
 LANDING_SERIES = [("clang", "clang", "Clang build", "Verge, Clang build", "Verge"),
                   ("stock", "stock", "Stock V3.174", "NXP's firmware V3.174", "NXP"),
