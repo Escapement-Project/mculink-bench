@@ -194,6 +194,19 @@ header nav .product > a[aria-current="page"]::after, header nav .product > a + a
 .switch[aria-checked="true"] .wheel { transform: rotate(180deg); }
 .switch.ready .thumb, .switch.ready .wheel { transition: transform .26s cubic-bezier(.4, 0, .2, 1); }
 @media (prefers-reduced-motion: reduce) { .switch.ready .thumb, .switch.ready .wheel { transition: none; } }
+/* While the face turns (face.js sets .face-turning as the thumb travels, and a little after), the
+   page's colours change with the thumb rather than at once. Only then, so nothing fades as a page
+   loads; a part with a transition of its own more specific than this keeps it. The thumb is ink on
+   the page, and fading the two towards each other would lose it half-way, so it keeps its colours
+   until the page is half-way (35 % of the turn on this curve, as the wheel stands edge-on) and then
+   takes the new ones at once; so do drawings made by script (face.js's "facechange"). */
+@media (prefers-reduced-motion: no-preference) {
+  :root.face-turning, :root.face-turning *, :root.face-turning *::before, :root.face-turning *::after {
+    transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, box-shadow;
+    transition-duration: .26s; transition-timing-function: cubic-bezier(.4, 0, .2, 1);
+  }
+  :root.face-turning .switch.ready .thumb { transition: transform .26s cubic-bezier(.4, 0, .2, 1), background-color 0s .091s, color 0s .091s; }
+}
 
 h1 { font: 400 clamp(28px, 3.6vw, 42px)/1.25 var(--font-display); margin: 0 0 22px; letter-spacing: .01em; }
 .lede { font-size: 20px; max-width: 26em; margin: 0 0 18px; }
@@ -310,7 +323,7 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
 /* The button's word is never part of a selection, and the button hides while the reader selects text
    in its box. */
 .copy { user-select: none; -webkit-user-select: none; }
-.selecting > .copy, .doc .codeblock.selecting .copy { visibility: hidden; opacity: 0; }
+.selecting > .copy, article.doc .codeblock.selecting .copy { visibility: hidden; opacity: 0; }
 .copy .tick { width: 11px; height: 11px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 12; animation: copy-tick .26s .06s ease-out backwards; }
 @keyframes copy-press { 0% { transform: scale(.9); } 55% { transform: scale(1.05); } 100% { transform: scale(1); } }
 @keyframes copy-tick { from { stroke-dashoffset: 12; } to { stroke-dashoffset: 0; } }
@@ -321,11 +334,11 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
 /* A doc's code block (copy.js wraps it): its button shows over the code's corner while the block is
    pointed at, while the button has the keyboard's focus, or once it has copied, so the code needs no
    room kept for it. Without hover, as on a touch screen, it stays. */
-.doc .codeblock { margin: 0 0 16px; }
-.doc .codeblock pre { margin: 0; }
-.doc .codeblock .copy { top: 8px; right: 10px; opacity: 0; transition: opacity .15s, color .18s, background-color .18s, border-color .18s; }
-.doc .codeblock:hover .copy, .doc .codeblock .copy:focus-visible, .doc .codeblock.copied .copy { opacity: 1; }
-@media (hover: none) { .doc .codeblock .copy { opacity: 1; } }
+article.doc .codeblock { margin: 0 0 16px; }
+article.doc .codeblock pre { margin: 0; }
+article.doc .codeblock .copy { top: 8px; right: 10px; opacity: 0; transition: opacity .15s, color .18s, background-color .18s, border-color .18s; }
+article.doc .codeblock:hover .copy, article.doc .codeblock .copy:focus-visible, article.doc .codeblock.copied .copy { opacity: 1; }
+@media (hover: none) { article.doc .codeblock .copy { opacity: 1; } }
 </style>
 <style>
 /* The page's own parts, after tokens.css and base.css (copies of the site's, inlined above): the
@@ -702,24 +715,38 @@ tickwave-ref { cursor: help; }
 <!-- The day and night switch and the header's script: copies of the site's face.js and header.js. -->
 <script>// The day/night switch, on every page. The system's face until the switch is used, then the one
 // chosen, kept in this browser; the head's inline script applies a kept choice before first paint.
-// A page that draws in the face's colours listens for "facechange".
+// A page that draws in the face's colours listens for "facechange", which comes as the page's
+// colours pass half-way while they turn (base.css's .face-turning), at once otherwise.
 (() => {
   const root = document.documentElement, sw = document.getElementById("faces");
   if (!sw) return;
   const shown = () => getComputedStyle(root).colorScheme === "dark" ? "night" : "day";
   const sync = () => sw.setAttribute("aria-checked", shown() === "night");
   sync();
+  // The colours follow the thumb over its travel (base.css's .face-turning). The class goes on with
+  // the new face, in the same style change, so the change itself is what transitions.
+  const still = matchMedia("(prefers-reduced-motion: reduce)");
+  const changed = () => document.dispatchEvent(new CustomEvent("facechange"));
+  let turning = 0, half = 0;
   sw.addEventListener("click", () => {
     const face = shown() === "night" ? "day" : "night";
+    if (!still.matches) {
+      root.classList.add("face-turning");
+      clearTimeout(turning); clearTimeout(half);
+      // Long enough for a drawing changed at the half-way point to finish its own fade.
+      turning = setTimeout(() => root.classList.remove("face-turning"), 360);
+    }
     root.dataset.face = face;
     try { localStorage.setItem("face", face); } catch { /* the choice lasts this visit only */ }
     sync();
-    document.dispatchEvent(new CustomEvent("facechange"));
+    if (still.matches) changed();
+    else half = setTimeout(changed, 91); // base.css's half-way point, where the thumb takes the new face
   });
   // While nothing is chosen the face follows the system, and the switch and the page's drawings with it.
+  // That change is instant: the event comes after the new face is drawn, too late to transition it.
   matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
     sync();
-    document.dispatchEvent(new CustomEvent("facechange"));
+    changed();
   });
   // The switch moves only once the page has drawn it where it belongs, so a night page loads still.
   requestAnimationFrame(() => requestAnimationFrame(() => sw.classList.add("ready")));
