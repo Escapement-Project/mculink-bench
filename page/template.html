@@ -17,8 +17,8 @@
 <meta property="og:image:alt" content="The Escapement Project's card: open firmware for NXP's MCU-Link, and Verge's measured write rate against NXP's firmware.">
 <meta name="twitter:card" content="summary_large_image">
 <title>MCU-Link throughput</title>
-<!-- The face chosen on an earlier visit, before the first paint; and .js, which tells base.css the
-     header's script will run (the phone menu needs it), as on every page of the project. -->
+<!-- The face chosen on an earlier visit, before the first paint; and .js, which tells the sheets the
+     page's script will run (it makes the page's row in the header). -->
 <script>document.documentElement.classList.add("js"); try { const f = localStorage.getItem("face"); if (f === "day" || f === "night") document.documentElement.dataset.face = f; } catch { /* no choice kept */ }</script>
 <!-- The design tokens and the shared base sheet are copies of the site's (tokens.css, base.css),
      inlined by build.py; then the page's own sheet. -->
@@ -164,9 +164,11 @@ tickwave-ref { cursor: help; }
   .figs { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 520px) {
-  /* Under the mark, the menu and the switch; the set's label is read out but not shown, so both
-     controls share the row down to 320 px. */
-  .js header .wrap { grid-template-areas: "brand . menu face" "tools tools tools tools"; }
+  /* The shared header's two rows, the mark and the switch and then the places, and the page's row
+     under them. Back on the way up (header.js): the mark and the places, then the page's row. The
+     set's label is read out but not shown, so both controls share the row down to 320 px. */
+  .js header .wrap { grid-template-rows: 34px auto auto; grid-template-areas: "brand face" "nav nav" "tools tools"; row-gap: 10px; }
+  .js.header-away header .wrap { grid-template-rows: auto auto; grid-template-areas: "brand nav" "tools tools"; row-gap: 8px; }
   .set-picker .set-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .headline { grid-template-columns: minmax(0, 1fr); grid-template-areas: "window" "claim" "versus" "same"; }
   .headline .claim { margin-top: 14px; font-size: 18px; }

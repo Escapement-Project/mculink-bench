@@ -17,8 +17,8 @@
 <meta property="og:image:alt" content="The Escapement Project's card: open firmware for NXP's MCU-Link, and Verge's measured write rate against NXP's firmware.">
 <meta name="twitter:card" content="summary_large_image">
 <title>MCU-Link throughput</title>
-<!-- The face chosen on an earlier visit, before the first paint; and .js, which tells base.css the
-     header's script will run (the phone menu needs it), as on every page of the project. -->
+<!-- The face chosen on an earlier visit, before the first paint; and .js, which tells the sheets the
+     page's script will run (it makes the page's row in the header). -->
 <script>document.documentElement.classList.add("js"); try { const f = localStorage.getItem("face"); if (f === "day" || f === "night") document.documentElement.dataset.face = f; } catch { /* no choice kept */ }</script>
 <!-- The design tokens and the shared base sheet are copies of the site's (tokens.css, base.css),
      inlined by build.py; then the page's own sheet. -->
@@ -138,16 +138,29 @@ a { color: inherit; }
 .nb { white-space: nowrap; }
 a:focus-visible, button:focus-visible, [tabindex]:focus-visible { outline: var(--focus-width) solid var(--ink); outline-offset: 3px; }
 .wrap { max-width: 1120px; margin: 0 auto; padding: 0 var(--gutter); }
+/* Scrollbars thin and in the page's own colours, in either face: the page's on the page, a scroll
+   area's on its own background. The colour is inherited and the width is not, so each scroll area
+   names its width. */
+html { scrollbar-width: thin; scrollbar-color: var(--rule) var(--page); }
+:where(pre, table, figure, .diagram, nav) { scrollbar-width: thin; scrollbar-color: var(--rule) transparent; }
 
-/* The header stays on screen and looks the same at every scroll position: it sticks to the top,
-   and once the page has scrolled (header.js sets .scrolled) a hairline shows under it. Nothing in
-   it moves. --header is its height with the rule, for links into the page and the focus; header.js
-   keeps it at the header's measured height, and these values stand without the script. */
+/* The header looks the same at every scroll position. Above a phone's width it sticks to the top,
+   and once the page has scrolled (header.js sets .scrolled) a hairline shows under it; on a phone it
+   scrolls away with the page. Nothing in it moves. --header is its height with the rule, for links
+   into the page and the focus; header.js keeps it at the header's measured height, and these values
+   stand without the script. */
 :root { --header: 61px; }
 header { position: sticky; top: 0; z-index: 10; background: var(--page); border-bottom: 1px solid transparent; }
 .scrolled header { border-bottom-color: var(--hair); }
 html { scroll-padding-top: var(--header); }
 @media print { header { position: static; } }
+/* Where the header scrolls away (--header-returns, set below and by a page's own sheet), header.js
+   brings it back while the reader scrolls up: away, it waits fixed above the window, and the page
+   keeps its place. */
+.header-away body { padding-top: var(--header-flow); }
+.header-away header { position: fixed; top: 0; left: 0; right: 0; transform: translateY(-100%); }
+.header-away.header-back header { transform: none; }
+@media (prefers-reduced-motion: no-preference) { .header-moves header { transition: transform .2s ease-out; } }
 header .wrap { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "brand nav face"; align-items: center; gap: 12px 26px; min-height: 60px; }
 .brand { grid-area: brand; display: flex; align-items: center; gap: 10px; text-decoration: none; font: 400 14px/1 var(--font-display); letter-spacing: .04em; white-space: nowrap; }
 .brand svg { width: 28px; height: 28px; }
@@ -157,10 +170,6 @@ header nav a:hover { color: var(--ink); }
 /* Where the reader is: the page among the project's pages, or the section of this page. In ink,
    underlined. */
 header nav a[aria-current] { color: var(--ink); text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 7px; }
-/* On phones the places are behind a menu button, which header.js opens. The page's head script sets
-   .js on <html> before the first paint; without it the button is never drawn and the places stay
-   in the header. */
-.menu-button { display: none; }
 /* A link past the header to the page's content, shown only while it has the focus. */
 .skip { position: absolute; left: -9999px; top: 0; }
 .skip:focus { left: 12px; top: 12px; z-index: 11; background: var(--raised); padding: 6px 10px; border-radius: 6px; }
@@ -258,22 +267,19 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
   .two { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 520px) {
-  /* With the script: one row of the mark, a menu of the places and the switch. The menu opens the
-     places in a panel under the header, over the page, so the header itself never changes. */
-  .js header .wrap { grid-template-columns: auto minmax(0, 1fr) auto auto; grid-template-areas: "brand . menu face"; column-gap: 12px; }
+  /* Two rows that scroll away with the page: the mark and the switch, the places under them. */
+  :root { --header-returns: 1; }
+  header { position: static; }
+  html { scroll-padding-top: 8px; }
+  header .wrap { grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: 34px auto; grid-template-areas: "brand face" "nav nav"; row-gap: 10px; padding-top: 12px; padding-bottom: 10px; }
+  /* The places wrap rather than widen the page on the narrowest phones. */
+  header nav { justify-self: start; flex-wrap: wrap; gap: 6px 14px; font-size: 14px; }
   .brand svg { width: 24px; height: 24px; }
-  .js header .menu-button { grid-area: menu; display: inline-flex; align-items: center; gap: 8px; font: 500 15px/1 var(--font-text); color: var(--ink); background: none; border: 1px solid var(--rule); border-radius: 6px; padding: 7px 10px; cursor: pointer; }
-  .js header .menu-button::after { content: ""; width: 6px; height: 6px; margin-bottom: 3px; border-right: 1.5px solid var(--ink-2); border-bottom: 1.5px solid var(--ink-2); transform: rotate(45deg); }
-  .js header .menu-button[aria-expanded="true"] { background: var(--wash); }
-  .js header .menu-button[aria-expanded="true"]::after { transform: rotate(-135deg); margin: 3px 0 0; }
-  .js header nav { display: none; }
-  .js header.open nav { display: grid; position: absolute; top: 100%; left: 0; right: 0; justify-self: stretch; justify-items: start; gap: 0; padding: 4px var(--gutter) 10px; background: var(--page); border-bottom: 1px solid var(--hair); box-shadow: 0 6px 10px rgba(0, 0, 0, .08); font-size: 16px; }
-  .js header.open nav a { padding: 10px 0; }
-  /* Without it, two rows: the mark and the switch, the places under them. */
-  html:not(.js) { --header: 91px; }
-  html:not(.js) header .wrap { grid-template-columns: auto auto; grid-template-rows: 34px 24px; grid-template-areas: "brand face" "nav nav"; justify-content: space-between; row-gap: 10px; padding-top: 12px; padding-bottom: 10px; }
-  html:not(.js) header nav { justify-self: start; gap: 14px; font-size: 14px; }
-  html:not(.js) .brand .name { display: inline; }
+  .brand .name { display: inline; }
+  /* Back on the way up, one row: the mark and the places. */
+  .header-away header .wrap { grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto; grid-template-areas: "brand nav"; column-gap: 12px; padding-top: 10px; padding-bottom: 10px; }
+  .header-away header nav { column-gap: 12px; }
+  .header-away header :is(.brand .name, .switch) { display: none; }
   .specs > div { grid-template-columns: 1fr; gap: 0; }
   .specs dt { font-size: 14px; }
   th, td { padding: 6px 4px; font-size: 14px; }
@@ -419,9 +425,11 @@ tickwave-ref { cursor: help; }
   .figs { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 520px) {
-  /* Under the mark, the menu and the switch; the set's label is read out but not shown, so both
-     controls share the row down to 320 px. */
-  .js header .wrap { grid-template-areas: "brand . menu face" "tools tools tools tools"; }
+  /* The shared header's two rows, the mark and the switch and then the places, and the page's row
+     under them. Back on the way up (header.js): the mark and the places, then the page's row. The
+     set's label is read out but not shown, so both controls share the row down to 320 px. */
+  .js header .wrap { grid-template-rows: 34px auto auto; grid-template-areas: "brand face" "nav nav" "tools tools"; row-gap: 10px; }
+  .js.header-away header .wrap { grid-template-rows: auto auto; grid-template-areas: "brand nav" "tools tools"; row-gap: 8px; }
   .set-picker .set-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .headline { grid-template-columns: minmax(0, 1fr); grid-template-areas: "window" "claim" "versus" "same"; }
   .headline .claim { margin-top: 14px; font-size: 18px; }
@@ -441,7 +449,6 @@ tickwave-ref { cursor: help; }
 <header data-published="https://escapement-project.github.io">
   <div class="wrap">
     <a class="brand" href="/" data-page="landing"><svg aria-hidden="true" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><path fill-rule="evenodd" d="M32,3 A29,29 0 1,0 32.01,3 Z M32,9 A23,23 0 1,0 32.01,9 Z"/><path d="M9.796,38 H29 V20 H51.621 A23,23 0 0,1 54.204,26 H35 V44 H12.379 A23,23 0 0,1 9.796,38 Z"/></svg><span class="name">Escapement Project</span></a>
-    <button class="menu-button" type="button" aria-expanded="false" aria-controls="places">Menu</button>
     <nav id="places" aria-label="Escapement Project"><a href="/verge/" data-page="verge">Verge</a><a href="/verge/docs/" data-page="docs">Docs</a><a href="/measurements/" data-page="measurements" aria-current="page">Measurements</a><a href="/tickwave/" data-page="tickwave">tickwave</a><a href="/#source">Source</a></nav>
     <button class="switch" id="faces" type="button" role="switch" aria-checked="false" aria-label="Night face"><span class="track"><span class="thumb"><svg class="wheel" viewBox="0 0 40 40" aria-hidden="true"><g transform="translate(14 3) scale(.75)"><circle cx="8" cy="8" r="3.2" fill="currentColor"/><path d="M8 1.2v1.6M8 13.2v1.6M1.2 8h1.6M13.2 8h1.6M3.2 3.2l1.1 1.1M11.7 11.7l1.1 1.1M3.2 12.8l1.1-1.1M11.7 4.3l1.1-1.1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></g><g transform="rotate(180 20 20) translate(14 3) scale(.75)"><path d="M10.8 1.8a6.3 6.3 0 1 0 3.4 10.6A5.2 5.2 0 0 1 10.8 1.8z" fill="currentColor"/></g></svg></span></span></button>
   </div>
@@ -677,9 +684,9 @@ tickwave-ref { cursor: help; }
 })();
 </script>
 <script>// The shared header, on every page of the project (design/header.html). It looks the same at every
-// scroll position; this script adds what changes: the hairline once the page has scrolled, the
-// mark on the section the reader is in, and the menu of places on phones. Without it the header
-// still works: the places show, and the menu button is only drawn on phones.
+// scroll position; this script adds what changes: the hairline once the page has scrolled, the mark
+// on the section the reader is in, and, where the header scrolls away, its return when the reader
+// scrolls up. Without it the header still works.
 (() => {
   const header = document.querySelector("header[data-published]");
   if (!header) return;
@@ -731,29 +738,57 @@ tickwave-ref { cursor: help; }
     addEventListener("resize", mark);
   }
 
-  // The menu of places, drawn on phones only. Open, the places follow the button in the tab order;
-  // Escape closes it and gives the focus back to the button. The focus or a click going anywhere but
-  // the button and its places closes it, a page's own controls in the header included, as does
-  // following a place.
-  const button = header.querySelector(".menu-button"), places = header.querySelector("nav");
-  if (!button || !places) return;
-  const open = () => header.classList.contains("open");
-  const set = (to, refocus = false) => {
-    header.classList.toggle("open", to);
-    button.setAttribute("aria-expanded", String(to));
-    if (!to && refocus) button.focus();
+  // Where the header scrolls away with the page (the sheets set --header-returns: on a phone, and on
+  // a doc page narrower than its contents rail), it comes back as one row when the reader scrolls
+  // up, and leaves again on the way down. Once it is out of sight it waits fixed above the window,
+  // and the page keeps its place with padding the size of the header; back at the top of the page it
+  // is in the flow again. A jump, as to a link in the page, sends it away.
+  let flow = 0, last = scrollY, moves = 0;
+  const has = (name) => root.classList.contains(name);
+  const away = (to) => {
+    if (to) {
+      root.style.setProperty("--header-flow", `${flow}px`);
+      root.classList.add("header-away");
+      root.style.setProperty("--header-back", `${header.offsetHeight}px`);
+      // Out of sight first, then moving: the header must not slide up past the reader as it goes.
+      // A return before that frame cancels it, or a later going away would slide.
+      cancelAnimationFrame(moves);
+      moves = requestAnimationFrame(() => root.classList.add("header-moves"));
+    } else {
+      cancelAnimationFrame(moves);
+      root.classList.remove("header-away", "header-back", "header-moves");
+    }
   };
-  button.addEventListener("click", () => set(!open()));
-  places.addEventListener("click", (e) => { if (e.target.closest("a")) set(false); });
-  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && open()) set(false, header.contains(document.activeElement)); });
-  const inMenu = (el) => el instanceof Node && (button.contains(el) || places.contains(el));
-  document.addEventListener("pointerdown", (e) => { if (open() && !inMenu(e.target)) set(false); });
-  // The focus arriving anywhere else, whether it left the menu or was never in it (a click that
-  // does not focus the button, as in Safari).
-  document.addEventListener("focusin", (e) => { if (open() && !inMenu(e.target)) set(false); });
-  header.addEventListener("focusout", (e) => { if (open() && e.relatedTarget === null && inMenu(e.target)) set(false); });
-  // Wider than a phone the places show in the row and the menu is not drawn: nothing stays open.
-  matchMedia("(max-width: 520px)").addEventListener("change", () => set(false));
+  const place = () => {
+    if (getComputedStyle(root).getPropertyValue("--header-returns").trim() !== "1") {
+      if (has("header-away")) away(false);
+      last = scrollY;
+      return;
+    }
+    if (!has("header-away")) flow = header.offsetHeight;
+    const out = scrollY > flow;
+    if (out !== has("header-away")) away(out);
+    const moved = scrollY - last;
+    if (!out || Math.abs(moved) > innerHeight) {
+      root.classList.remove("header-back");
+      last = scrollY;
+    } else if (Math.abs(moved) > 6) {
+      if (moved < 0) root.classList.add("header-back");
+      else if (!header.contains(document.activeElement)) root.classList.remove("header-back");
+      last = scrollY;
+    }
+  };
+  place();
+  addEventListener("scroll", place, { passive: true });
+  // A new width, as when a phone turns, can give the header another height in either layout: back
+  // in the flow to measure it, then away again if it was, all before the next paint.
+  addEventListener("resize", () => {
+    const back = has("header-back");
+    if (has("header-away")) away(false);
+    place();
+    if (back && has("header-away")) root.classList.add("header-back");
+  });
+  header.addEventListener("focusin", () => { if (has("header-away")) root.classList.add("header-back"); });
 })();
 </script>
 <script>
