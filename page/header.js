@@ -64,7 +64,7 @@
     if (to) {
       root.style.setProperty("--header-flow", `${flow}px`);
       root.classList.add("header-away");
-      root.style.setProperty("--header-back", `${header.offsetHeight}px`);
+      root.style.setProperty("--header-back", `${header.getBoundingClientRect().height}px`);
       // Out of sight first, then moving: the header must not slide up past the reader as it goes.
       // A return before that frame cancels it, or a later going away would slide.
       cancelAnimationFrame(moves);
@@ -80,7 +80,8 @@
       last = scrollY;
       return;
     }
-    if (!has("header-away")) flow = header.offsetHeight;
+    // Its exact height: a whole pixel would move the page by the fraction as it goes away.
+    if (!has("header-away")) flow = header.getBoundingClientRect().height;
     const out = scrollY > flow;
     if (out !== has("header-away")) away(out);
     const moved = scrollY - last;
