@@ -20,7 +20,7 @@ use std::time::{Duration, Instant};
 
 use anyhow::Context as _;
 use indicatif::ProgressStyle;
-use probe_rs::probe::{DebugProbeSelector, WireProtocol, list::Lister};
+use probe_rs::probe::{DebugProbeSelector, ScanFormat, WireProtocol, list::Lister};
 use probe_rs::{MemoryInterface, Permissions, Session, config::TargetSelector};
 use tracing::{Span, info, info_span, warn};
 use tracing_indicatif::IndicatifLayer;
@@ -71,6 +71,26 @@ impl Protocol {
     }
 }
 
+/// A scan format to hold cJTAG to.
+#[derive(Clone, Copy, PartialEq, Eq, Debug, clap::ValueEnum)]
+enum CjtagFormat {
+    Oscan1,
+    Oscan2,
+    Oscan5,
+    Oscan6,
+}
+
+impl CjtagFormat {
+    fn scan_format(self) -> ScanFormat {
+        match self {
+            Self::Oscan1 => ScanFormat::OScan1,
+            Self::Oscan2 => ScanFormat::OScan2,
+            Self::Oscan5 => ScanFormat::OScan5,
+            Self::Oscan6 => ScanFormat::OScan6,
+        }
+    }
+}
+
 #[derive(clap::Parser)]
 #[command(
     about = "Probe throughput over SWD, JTAG or cJTAG, decomposed into fixed and per-byte cost"
@@ -84,9 +104,14 @@ struct Cli {
     #[arg(long)]
     probe: Option<String>,
 
-    /// Debug wire protocol to select.
+    /// Debug wire protocol to select. cJTAG needs an MCU-Link running Verge.
     #[arg(long, value_enum, default_value_t = Protocol::Swd)]
     protocol: Protocol,
+
+    /// With cJTAG, hold the target to one scan format: it switches to it where it has it, and stays
+    /// in OScan1 where not. Left out, the fastest format both it and the probe have.
+    #[arg(long, value_enum)]
+    cjtag_format: Option<CjtagFormat>,
 
     /// Wire clock speeds to sweep, in kHz.
     #[arg(long, value_delimiter = ',', default_values_t = [1000u32, 2000, 5000, 10000, 20000, 30000, 50000])]
@@ -188,6 +213,10 @@ impl Point {
 
 fn main() -> anyhow::Result<()> {
     let cli = <Cli as clap::Parser>::parse();
+    anyhow::ensure!(
+        cli.cjtag_format.is_none() || cli.protocol == Protocol::Cjtag,
+        "--cjtag-format needs --protocol cjtag"
+    );
     if cli.list {
         for probe in Lister::new().list_all() {
             println!(
@@ -676,11 +705,14 @@ fn attach(cli: &Cli, speed_khz: u32) -> anyhow::Result<(Session, u32)> {
         }
     };
 
+    let usb_id = (selector.vendor_id, selector.product_id);
     let mut probe = lister.open(selector)?;
-    if cli.protocol == Protocol::Cjtag {
-        // probe-rs frames cJTAG over CMSIS-DAP only through a probe's own vendor commands.
-        escapement_verge_probe::install_cjtag_support(&mut probe)?;
-    }
+    escapement_verge_probe::prepare_probe(
+        &mut probe,
+        usb_id,
+        cli.protocol.wire_protocol(),
+        cli.cjtag_format.map(CjtagFormat::scan_format),
+    )?;
     probe.select_protocol(cli.protocol.wire_protocol())?;
     let actual = probe.set_speed(speed_khz)?;
     let session = probe.attach(

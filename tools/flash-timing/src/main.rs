@@ -16,7 +16,7 @@ use probe_rs::flashing::{
     DownloadOptions, FlashProgress, HexLoader, ProgressEvent, ProgressOperation,
     download_file_with_options,
 };
-use probe_rs::probe::{DebugProbeSelector, WireProtocol, list::Lister};
+use probe_rs::probe::{DebugProbeSelector, ScanFormat, WireProtocol, list::Lister};
 use probe_rs::{Permissions, config::TargetSelector};
 use serde::Serialize;
 use tracing::{Span, debug, info, info_span, warn};
@@ -42,6 +42,27 @@ impl Protocol {
     }
 }
 
+/// A scan format to hold cJTAG to.
+#[derive(Clone, Copy, PartialEq, Eq, Debug, clap::ValueEnum, Serialize)]
+#[serde(rename_all = "lowercase")]
+enum CjtagFormat {
+    Oscan1,
+    Oscan2,
+    Oscan5,
+    Oscan6,
+}
+
+impl CjtagFormat {
+    fn scan_format(self) -> ScanFormat {
+        match self {
+            Self::Oscan1 => ScanFormat::OScan1,
+            Self::Oscan2 => ScanFormat::OScan2,
+            Self::Oscan5 => ScanFormat::OScan5,
+            Self::Oscan6 => ScanFormat::OScan6,
+        }
+    }
+}
+
 #[derive(clap::Parser)]
 #[command(
     about = "Time erase, program and verify of an image through probe-rs, one fresh attach per run"
@@ -55,10 +76,14 @@ struct Cli {
     #[arg(long)]
     probe: String,
 
-    /// Debug wire protocol. cJTAG on a Verge probe goes through verge-probe's vendor commands; set
-    /// its scan formats with `verge cjtag --formats` before the run.
+    /// Debug wire protocol. cJTAG needs an MCU-Link running Verge.
     #[arg(long, value_enum)]
     protocol: Protocol,
+
+    /// With cJTAG, hold the target to one scan format: it switches to it where it has it, and stays
+    /// in OScan1 where not. Left out, the fastest format both it and the probe have.
+    #[arg(long, value_enum)]
+    cjtag_format: Option<CjtagFormat>,
 
     /// Wire clocks to sweep, in kHz.
     #[arg(long, value_delimiter = ',', default_values_t = [1000u32, 4000, 10000, 20000, 30000, 50000])]
@@ -108,6 +133,7 @@ struct Report<'a> {
     chip: &'a str,
     probe: &'a str,
     protocol: Protocol,
+    cjtag_format: Option<CjtagFormat>,
     host: &'static str,
     runs: &'a [Run],
 }
@@ -180,6 +206,10 @@ impl Phases {
 fn main() -> anyhow::Result<()> {
     let cli = <Cli as clap::Parser>::parse();
     anyhow::ensure!(cli.repeats > 0, "at least one run");
+    anyhow::ensure!(
+        cli.cjtag_format.is_none() || cli.protocol == Protocol::Cjtag,
+        "--cjtag-format needs --protocol cjtag"
+    );
     let selector: DebugProbeSelector = cli.probe.parse().context("--probe")?;
     for image in &cli.images {
         anyhow::ensure!(image.is_file(), "{} is not a file", image.display());
@@ -256,6 +286,7 @@ fn main() -> anyhow::Result<()> {
         chip: &cli.chip,
         probe: &cli.probe,
         protocol: cli.protocol,
+        cjtag_format: cli.cjtag_format,
         host: "probe-rs 17beb8e80",
         runs: &runs,
     };
@@ -276,13 +307,12 @@ fn run_once(
     let start = Instant::now();
     let mut probe = Lister::new().open(selector.clone()).context("open")?;
     run.open_s = Some(start.elapsed().as_secs_f64());
-    if cli.protocol == Protocol::Cjtag {
-        // Verge frames cJTAG through its own vendor commands. Any other probe keeps whatever cJTAG
-        // support probe-rs has for it, and select_protocol says if there is none.
-        if let Err(error) = escapement_verge_probe::install_cjtag_support(&mut probe) {
-            debug!("no Verge cJTAG support on this probe: {error}");
-        }
-    }
+    escapement_verge_probe::prepare_probe(
+        &mut probe,
+        (selector.vendor_id, selector.product_id),
+        cli.protocol.wire_protocol(),
+        cli.cjtag_format.map(CjtagFormat::scan_format),
+    )?;
     probe
         .select_protocol(cli.protocol.wire_protocol())
         .context("select protocol")?;

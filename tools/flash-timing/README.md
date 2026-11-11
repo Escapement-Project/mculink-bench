@@ -5,10 +5,9 @@ compares a probe running Verge with SEGGER's Flasher ARM. Results are in `result
 
 - `src/main.rs`: through probe-rs, as a library. Each run opens the probe, attaches, downloads with
   verify (read back over the wire), and resets the core. Each phase is timed from probe-rs's
-  progress events. cJTAG on a Verge probe goes through verge-probe's vendor commands. Limit the
-  scan formats first with `verge cjtag --formats`.
+  progress events. cJTAG needs a probe running Verge. `--cjtag-format` holds the target to one
+  scan format.
 - `ours_sweep.sh`: runs the tool on a Verge probe over JTAG, then over each cJTAG format alone.
-  OScan1 is always offered. On exit it offers every format again.
 - `make_images.py`: builds the two test images from `itm_counter.hex`, which comes from
   mculink-verge `tools/swo_target`. The second adds seeded random data from 0x2000 to 0x56000.
 - `flasher/jflash_sweep.py`: J-Flash production programming on the PC, one J-Flash process a run.

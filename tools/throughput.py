@@ -9,7 +9,7 @@
     uv run tools/throughput.py run --label stock --serial <serial> \
         --image <LinkServer>/MCU-LINK/probe_firmware/MCU-LINK_CMSIS-DAP_V3_172.s19
     uv run tools/throughput.py run --label now --serial <serial>    # whatever the probe runs
-    uv run tools/throughput.py run --label gcc-oscan5 --serial <serial> --protocol cjtag --formats oscan5
+    uv run tools/throughput.py run --label gcc-oscan5 --serial <serial> --protocol cjtag --cjtag-format oscan5
     uv run tools/throughput.py compare results/throughput/2026-10-20-*.json --clock 50
 
 Over SWD, two hosts measure each probe. tools/cmsis_dap.py sends one command over and over and
@@ -34,8 +34,7 @@ JTAG and cJTAG target is a CC1312R1, and probe-rs works on SRAM from 0x2000_8000
 trace source's control block at its start (mculink-verge tools/swo_target).
 
 `--image` flashes the probe through verge (`--verge` names its binary) and records verge's version.
-`--formats` holds our firmware to those cJTAG formats for the run and offers every format again
-afterwards.
+`--cjtag-format` holds a cJTAG run to one scan format, where the target has it.
 """
 
 import argparse
@@ -165,13 +164,15 @@ def identify(probe: dap.Probe) -> dict:
     return {"dap_info": info, "ours": ours}
 
 
-def attach(probe: dap.Probe, hz: int, ours: bool) -> int:
+def attach(probe: dap.Probe, hz: int, ours: dict | None) -> int:
     """Connect at `hz` with a line reset, as a host does when it changes the clock, and power up.
 
     Our firmware measures the target's read latency on the first transfer after a line reset at a
     clock where its default leaves no margin, so the reset belongs to every clock change.
     """
-    if ours:
+    if ours is not None and ours["format"] < 7:
+        # Before identify format 7, 0x83 mode 0 stops the cJTAG framing a session left on. From
+        # format 7 DAP_Connect stops it, and 0x83 is gone.
         probe.command(bytes([dap.DAP_VENDOR_CJTAG_CONTROL, 0]))
     if probe.connect(1) != 1:
         raise RuntimeError("DAP_Connect refused SWD")
@@ -245,7 +246,7 @@ def timed(probe: dap.Probe, serial: str, case: dict, request: bytes, commands: i
     return dap.pipelined_blocks(probe, request, commands, case["depth"], case["words"]), probe
 
 
-def custom_host(probe: dap.Probe, serial: str, ours: bool, quick: bool, run_seconds: float, progress: Progress,
+def custom_host(probe: dap.Probe, serial: str, ours: dict | None, quick: bool, run_seconds: float, progress: Progress,
                 console: Console) -> tuple[list, dict]:
     todo = cases(quick)
     overall = progress.add_task("cmsis_dap.py cases", total=len(todo))
@@ -377,7 +378,7 @@ def listed(serial: str) -> dict | None:
     return found[0] if found else None
 
 
-def probe_rs(serial: str, chip: str, protocol: str, quick: bool, console: Console) -> dict:
+def probe_rs(serial: str, chip: str, protocol: str, cjtag_format: str | None, quick: bool, console: Console) -> dict:
     """probe-rs's timed sweep, and at every clock it measured, the rounds of each check that came
     back right. `checks` is None when the sweep failed or did not check; `checks_skipped` says why
     a check never ran."""
@@ -389,6 +390,8 @@ def probe_rs(serial: str, chip: str, protocol: str, quick: bool, console: Consol
             os.remove(stale)
     sweep = ["--speeds", "1000,10000", "--sizes", "64,1024", "--repeats", "3", "--checks", "2",
              "--check-bytes", "4096"] if quick else []
+    if cjtag_format is not None:
+        sweep += ["--cjtag-format", cjtag_format]
     run = subprocess.run([binary, "--probe", f"{USB_ID[0]:04x}:{USB_ID[1]:04x}:{serial}", "--chip", chip,
                           "--protocol", protocol, "--base", f"0x{PROBE_RS_BASE[protocol]:08x}",
                           "--csv", csv_path, "--checks-csv", checks_path, *sweep],
@@ -453,13 +456,6 @@ def flash(verge: str, elf: str, serial: str) -> None:
         raise SystemExit(f"verge did not bring the image up:\n{flashed.stdout}{flashed.stderr}")
 
 
-def limit(verge: str, serial: str, offer: list[str]) -> None:
-    """Set the cJTAG formats our firmware offers a host, through verge."""
-    done = subprocess.run([verge, "cjtag", "--serial", serial, *offer], capture_output=True, text=True)
-    if done.returncode != 0:
-        raise SystemExit(f"verge cjtag {' '.join(offer)} failed:\n{done.stdout}{done.stderr}")
-
-
 def cmd_run(args) -> int:
     global USB_ID
     vid, _, pid = args.usb_id.partition(":")
@@ -481,9 +477,9 @@ def cmd_run(args) -> int:
     if not args.elf and USB_ID != (0x1FC9, 0x0143) and not dap.find(args.serial, *USB_ID):
         seen = listed(args.serial)
     if seen is not None:
-        if args.protocol == "swd" or args.stage is not None or args.formats is not None:
+        if args.protocol == "swd" or args.stage is not None:
             raise SystemExit(f"{args.serial} has no CMSIS-DAP v2 bulk interface ({seen['transport']}): the custom "
-                             "host, --stage and --formats need one; JTAG and cJTAG run through probe-rs alone")
+                             "host and --stage need one; JTAG and cJTAG run through probe-rs alone")
         probe, firmware = None, {"dap_info": None, "ours": None, "probe_rs_list": seen}
     else:
         probe = open_probe(args.serial)
@@ -494,8 +490,8 @@ def cmd_run(args) -> int:
         reply = probe.command(bytes([DAP_VENDOR_STAGE, args.stage]))
         if reply[1] != 0 or reply[2] != args.stage:
             raise SystemExit(f"vendor 0x8C answered {reply[:3].hex()}; this build may not stage commands")
-    if args.formats is not None and firmware["ours"] is None:
-        raise SystemExit("--formats needs our firmware")
+    if args.cjtag_format is not None and args.protocol != "cjtag":
+        raise SystemExit("--cjtag-format needs --protocol cjtag")
     chip = args.chip or ("MSPM0L1306" if args.protocol == "swd" else "CC1312R")
     matrix = MATRICES[args.protocol]
     console = Console(stderr=True)
@@ -503,25 +499,20 @@ def cmd_run(args) -> int:
         "matrix": f"{matrix}-quick" if args.quick else matrix, "label": args.label, "note": args.note,
         "taken": datetime.datetime.now().astimezone().isoformat(timespec="seconds"),
         "serial": args.serial, "usb_id": args.usb_id, "chip": chip, "firmware": firmware, "provenance": provenance(args.elf, args.verge),
-        "settings": {"protocol": args.protocol, "formats": args.formats, "clocks_mhz": CLOCKS_MHZ, "depths": DEPTHS,
+        "settings": {"protocol": args.protocol, "cjtag_format": args.cjtag_format, "clocks_mhz": CLOCKS_MHZ, "depths": DEPTHS,
                      "repeats": REPEATS, "run_seconds": args.run_seconds, "stage": args.stage},
     }
     if args.protocol == "swd":
         with Progress(TextColumn("{task.description}"), BarColumn(), MofNCompleteColumn(), TimeElapsedColumn(),
                       console=console) as progress:
-            record["custom_host"], record["target"] = custom_host(probe, args.serial, firmware["ours"] is not None,
+            record["custom_host"], record["target"] = custom_host(probe, args.serial, firmware["ours"],
                                                                   args.quick, args.run_seconds, progress, console)
     else:
         if probe is not None:
             probe.release()
         record["custom_host"], record["target"] = [], None
-    if args.formats is not None:
-        limit(args.verge, args.serial, ["--formats", args.formats])
-    try:
-        record["probe_rs"] = None if args.no_probe_rs else probe_rs(args.serial, chip, args.protocol, args.quick, console)
-    finally:
-        if args.formats is not None:
-            limit(args.verge, args.serial, ["--all"])
+    record["probe_rs"] = None if args.no_probe_rs else probe_rs(args.serial, chip, args.protocol, args.cjtag_format,
+                                                              args.quick, console)
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w") as f:
         json.dump(record, f, indent=1)
@@ -592,7 +583,8 @@ def main() -> int:
                      help="VID:PID in hex, for a probe that does not enumerate as an MCU-Link")
     run.add_argument("--protocol", choices=tuple(MATRICES), default="swd")
     run.add_argument("--chip", help="probe-rs's name for the target; MSPM0L1306 over SWD, CC1312R otherwise")
-    run.add_argument("--formats", help="ours, cJTAG: the formats to offer, as verge cjtag --formats takes them")
+    run.add_argument("--cjtag-format", choices=("oscan1", "oscan2", "oscan5", "oscan6"),
+                     help="cJTAG: hold the target to this scan format, where it has it")
     run.add_argument("--note", default="", help="free text kept with the result, such as the name of NXP's image")
     run.add_argument("--out", help="result path; default results/throughput/<date>-<label>.json")
     run.add_argument("--force", action="store_true", help="replace an existing result file")
