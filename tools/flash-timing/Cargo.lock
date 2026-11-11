@@ -576,6 +576,33 @@ dependencies = [
 ]
 
 [[package]]
+name = "escapement-verge-probe"
+version = "0.1.0"
+dependencies = [
+ "csv",
+ "dirs",
+ "hex",
+ "hidapi",
+ "humantime",
+ "minisign-verify",
+ "nusb",
+ "object",
+ "probe-rs",
+ "rblhost",
+ "same-file",
+ "semver",
+ "serde",
+ "serde_json",
+ "sha2",
+ "srec",
+ "tempfile",
+ "thiserror",
+ "tracing",
+ "ureq",
+ "zip",
+]
+
+[[package]]
 name = "fastrand"
 version = "2.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -593,6 +620,7 @@ version = "0.0.0"
 dependencies = [
  "anyhow",
  "clap",
+ "escapement-verge-probe",
  "indicatif",
  "probe-rs",
  "serde",
@@ -600,7 +628,6 @@ dependencies = [
  "tracing",
  "tracing-indicatif",
  "tracing-subscriber",
- "verge-probe",
 ]
 
 [[package]]
@@ -1936,33 +1963,6 @@ name = "valuable"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ba73ea9cf16a25df0c8caa16c51acb937d5712a8429db78a3ee29d5dcacd3a65"
-
-[[package]]
-name = "verge-probe"
-version = "0.1.0"
-dependencies = [
- "csv",
- "dirs",
- "hex",
- "hidapi",
- "humantime",
- "minisign-verify",
- "nusb",
- "object",
- "probe-rs",
- "rblhost",
- "same-file",
- "semver",
- "serde",
- "serde_json",
- "sha2",
- "srec",
- "tempfile",
- "thiserror",
- "tracing",
- "ureq",
- "zip",
-]
 
 [[package]]
 name = "virtue"

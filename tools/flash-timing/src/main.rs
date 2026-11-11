@@ -279,7 +279,7 @@ fn run_once(
     if cli.protocol == Protocol::Cjtag {
         // Verge frames cJTAG through its own vendor commands. Any other probe keeps whatever cJTAG
         // support probe-rs has for it, and select_protocol says if there is none.
-        if let Err(error) = verge_probe::install_cjtag_support(&mut probe) {
+        if let Err(error) = escapement_verge_probe::install_cjtag_support(&mut probe) {
             debug!("no Verge cJTAG support on this probe: {error}");
         }
     }

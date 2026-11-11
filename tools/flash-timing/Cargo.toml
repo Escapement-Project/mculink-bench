@@ -18,7 +18,7 @@ tracing = "0.1.44"
 tracing-indicatif = "0.3.14"
 tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 # Verge's cJTAG vendor commands. A path until the repositories are published, as in verge.
-verge-probe = { path = "../../../verge-probe" }
+escapement-verge-probe = { path = "../../../verge-probe" }
 
 [workspace]
 
