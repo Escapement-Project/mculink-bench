@@ -472,6 +472,11 @@ article.doc .codeblock:hover .copy, article.doc .codeblock .copy:focus-visible, 
    page's row in the header, its head, its controls, the chart code's marks, and tickwave's
    elements. The header, sections, figures, ruled rows and type come from base.css unchanged. */
 [hidden] { display: none !important; }
+/* The script fills in everything under the title, and a browser paints the page before the script
+   has run. So with scripts on, those parts stay hidden until it has, and appear in place. If the
+   script never runs, they appear after 4 s anyway. */
+@keyframes shown { to { visibility: visible; } }
+:root.js:not(.ready) main > :not(.page-head), :root.js:not(.ready) .page-head > :not(h1) { visibility: hidden; animation: shown 0s 4s forwards; }
 code { font: var(--code-weight) 14px/1.5 var(--font-code); font-stretch: var(--code-stretch); overflow-wrap: anywhere; }
 .quiet { color: var(--ink-2); font-size: 15px; }
 /* The page's own controls take the focus ring base.css gives links and buttons. */
@@ -587,9 +592,9 @@ tickwave-ref { cursor: help; }
 /* The page's own row in the header, under the shared row that every page shows: the wire, and
    the measurement set. The script makes it (.js). Buttons for the wire from 861 px, where they and
    the set's menu fit one row with room to spare; a menu below that. Every control is 32 px tall,
-   so the row is, in every browser. */
+   so the row is 32 px, held from the first paint, before the script fills it. */
 :root.js { --header: 101px; }
-.js header .wrap { grid-template-rows: 60px auto; grid-template-areas: "brand nav face" "tools tools tools"; row-gap: 0; padding-bottom: 8px; }
+.js header .wrap { grid-template-rows: 60px 32px; grid-template-areas: "brand nav face" "tools tools tools"; row-gap: 0; padding-bottom: 8px; }
 .dock { grid-area: tools; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; }
 .dock .wire { display: flex; align-items: center; gap: 8px 12px; }
 .dock .seg-row button { font-size: 13px; padding: 0 10px; height: 32px; min-height: 0; }
@@ -605,7 +610,7 @@ tickwave-ref { cursor: help; }
 }
 @media (max-width: 860px) {
   :root.js { --header: 89px; }
-  .js header .wrap { grid-template-rows: 34px auto; row-gap: 6px; }
+  .js header .wrap { grid-template-rows: 34px 32px; row-gap: 6px; }
   .dock .buttons { display: none; }
   .dock .menu { display: inline-flex; align-items: center; gap: 8px; }
   .figs { grid-template-columns: minmax(0, 1fr); }
@@ -614,7 +619,7 @@ tickwave-ref { cursor: help; }
   /* The shared header's two rows, the mark and the switch and then the places, and the page's row
      under them. Back on the way up (header.js): the mark and the places, then the page's row. The
      set's label is read out but not shown, so both controls share the row down to 320 px. */
-  .js header .wrap { grid-template-rows: 34px auto auto; grid-template-areas: "brand face" "nav nav" "tools tools"; row-gap: 10px; }
+  .js header .wrap { grid-template-rows: 34px auto 32px; grid-template-areas: "brand face" "nav nav" "tools tools"; row-gap: 10px; }
   .js.header-away header .wrap { grid-template-rows: auto auto; grid-template-areas: "brand nav" "tools tools"; row-gap: 8px; }
   .set-picker .set-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .headline { grid-template-columns: minmax(0, 1fr); grid-template-areas: "window" "claim" "versus" "same"; }
@@ -1792,7 +1797,13 @@ if (ALL.order.length > 1) {
     renderAll();
   });
 }
-renderAll();
+try {
+  renderAll();
+} finally {
+  document.documentElement.classList.add("ready");
+  // The page opened at a section was scrolled there before the script filled in what is above it.
+  if (location.hash) document.getElementById(decodeURIComponent(location.hash.slice(1)))?.scrollIntoView();
+}
 </script>
 </body>
 </html>
