@@ -558,9 +558,7 @@ def landing_data(data: dict) -> dict:
                "x": {k: v for k, v in write["x"].items() if k not in ("min", "max")},
                "y": {"name": "4 KiB writes", "unit": "KiB/s", "scale": "linear",
                      "max": dec((top / step).to_integral_value(rounding=ROUND_CEILING) * step), "step": dec(step)},
-               "series": series,
-               "limits": [{"x": mhz_text(stock_up), "series": "stock",
-                           "label": f"NXP's firmware reads right up to {mhz_text(stock_up)} MHz"}]}
+               "series": series}
     rows = []
     for lid, *_ in [LANDING_SERIES[0], LANDING_SERIES[2], LANDING_SERIES[1]]:
         s, up = page[lid], right_up_to(page[lid], recorded)
