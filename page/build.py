@@ -133,9 +133,10 @@ def wire_fragment(date: str, view_ids: list[str], recordings: pathlib.Path, reco
         f'src="{htmllib.escape(base + m.group(1))}.tickwave" annotations="{htmllib.escape(base + m.group(1))}.annotations.toml"'), text)
 
 
-def wire_charts(date: str, names: list[str], recordings: pathlib.Path, recordings_url: str) -> list[str]:
-    """The set's wire-clock charts in the recordings, as URLs, each point's evidence checked: its
-    recording's sidecar has the annotation (tools/wire/wire_chart.py writes them)."""
+def wire_charts(date: str, names: list[str], recordings: pathlib.Path, recordings_url: str) -> list[dict]:
+    """The set's wire-clock charts in the recordings, each as its URL and the number of series it
+    draws (the page reserves a readout line for each before the file arrives), each point's evidence
+    checked: its recording's sidecar has the annotation (tools/wire/wire_chart.py writes them)."""
     problems, urls = [], []
     for name in names:
         path = recordings / date / f"{name}.chart.json"
@@ -157,7 +158,8 @@ def wire_charts(date: str, names: list[str], recordings: pathlib.Path, recording
                     problems.append(f"{name}: no sidecar for {e['recording']}")
                 elif e["annotation"] not in sidecar_ids(recordings, date, rec):
                     problems.append(f"{name}: {rec} has no annotation {e['annotation']}")
-        urls.append(f"{recordings_url}{date}/{name}.chart.json")
+        urls.append({"src": f"{recordings_url}{date}/{name}.chart.json",
+                     "series": sum(1 for series in chart.get("series", []) if not series.get("hidden"))})
     if problems:
         raise SystemExit(f"sets.json {date} wire_charts:\n  " + "\n  ".join(problems))
     return urls

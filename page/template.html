@@ -94,6 +94,12 @@ summary:focus-visible, select:focus-visible, input:focus-visible { outline: var(
 .figs + .figs, .figs + .specs, .prose + .figs, .figs + .prose { margin-top: 44px; }
 .chart { padding: 14px 12px 10px; }
 .chart tickwave-chart { display: block; }
+/* Each chart's plot height, stated once: tickwave's sheet reserves it before the chart is defined,
+   and the chart draws at it. */
+#c-read, #c-write, #r-read, #r-write, #r-request, #w-read, #w-write, #w-fast { --tickwave-chart-height: 250px; }
+#c-rt, #c-cliff { --tickwave-chart-height: 230px; }
+#c-explore { --tickwave-chart-height: 330px; }
+#jlink-chart { --tickwave-chart-height: 300px; }
 /* The misread trace's SVG has the class "chart" too: there it is the drawing, not the panel. */
 svg.chart { width: 100%; height: auto; display: block; overflow: visible; background: none; padding: 0; border-radius: 0; position: static; }
 .prose p { max-width: 36em; }
@@ -216,9 +222,9 @@ __HEADER__
     <div>
       <div class="chart-key" id="chart-key" aria-label="Probes shown"></div>
       <div class="figs">
-        <figure><div class="chart"><tickwave-chart id="c-read" group="probe-rs" readout="below" sweep="off" height="250"></tickwave-chart></div><figcaption><b class="n"></b> probe-rs, 4 KiB reads. KiB/s, median of 7, attach excluded.</figcaption></figure>
-        <figure><div class="chart"><tickwave-chart id="c-write" group="probe-rs" readout="below" sweep="off" height="250"></tickwave-chart></div><figcaption><b class="n"></b> probe-rs, 4 KiB writes. KiB/s, median of 7, attach excluded.</figcaption></figure>
-        <figure id="m-rt"><div class="chart"><tickwave-chart id="c-rt" readout="below" sweep="off" height="230"></tickwave-chart></div><figcaption><b class="n"></b> Single-word read round trip. probe-rs, µs, median. <span id="rt-text"></span></figcaption></figure>
+        <figure><div class="chart"><tickwave-chart id="c-read" group="probe-rs" readout="below" sweep="off"></tickwave-chart></div><figcaption><b class="n"></b> probe-rs, 4 KiB reads. KiB/s, median of 7, attach excluded.</figcaption></figure>
+        <figure><div class="chart"><tickwave-chart id="c-write" group="probe-rs" readout="below" sweep="off"></tickwave-chart></div><figcaption><b class="n"></b> probe-rs, 4 KiB writes. KiB/s, median of 7, attach excluded.</figcaption></figure>
+        <figure id="m-rt"><div class="chart"><tickwave-chart id="c-rt" readout="below" sweep="off"></tickwave-chart></div><figcaption><b class="n"></b> Single-word read round trip. probe-rs, µs, median. <span id="rt-text"></span></figcaption></figure>
         <dl class="specs notes" id="notes"></dl>
       </div>
       <div class="part" id="custom-host">
@@ -226,10 +232,10 @@ __HEADER__
         <div class="figs">
           <figure class="wide" id="m-explore">
             <div class="controls" id="controls"></div>
-            <div class="chart"><tickwave-chart id="c-explore" readout="below" sweep="off" height="330"></tickwave-chart></div>
+            <div class="chart"><tickwave-chart id="c-explore" readout="below" sweep="off"></tickwave-chart></div>
             <figcaption><b class="n"></b> <span id="x-caption"></span>. KiB/s, median of 3, ~250 ms. <span id="x-peak"></span></figcaption>
           </figure>
-          <figure class="wide" id="m-cliff"><div class="chart"><tickwave-chart id="c-cliff" readout="below" sweep="off" height="230"></tickwave-chart></div><figcaption><b class="n"></b> One-word commands, 8 queued. AP read through DAP_Transfer, commands/s. <span id="cliff-text"></span></figcaption></figure>
+          <figure class="wide" id="m-cliff"><div class="chart"><tickwave-chart id="c-cliff" readout="below" sweep="off"></tickwave-chart></div><figcaption><b class="n"></b> One-word commands, 8 queued. AP read through DAP_Transfer, commands/s. <span id="cliff-text"></span></figcaption></figure>
           <figure class="wide" id="stock-errors">
             <div class="chart">
               <ul class="legend"><li><i class="sw" style="background: var(--hair);"></i>measured</li><li><i class="sw" style="background: var(--fault-fill);"></i>failed</li></ul>
@@ -248,7 +254,7 @@ __HEADER__
     <div class="head"><h2 id="jlink-title">J-Link Ultra</h2><p class="kicker">SEGGER workload</p></div>
     <div id="jlink-grid">
       <p id="jlink-description"></p>
-      <figure><div class="chart"><tickwave-chart id="jlink-chart" legend="above" readout="below" sweep="off" height="300"></tickwave-chart></div><figcaption><b class="n"></b> JLinkExe, TestRSpeed / TestWSpeed. KByte/s, as reported by SEGGER. <span id="jlink-tool-note"></span></figcaption></figure>
+      <figure><div class="chart"><tickwave-chart id="jlink-chart" legend="above" readout="below" sweep="off"></tickwave-chart></div><figcaption><b class="n"></b> JLinkExe, TestRSpeed / TestWSpeed. KByte/s, as reported by SEGGER. <span id="jlink-tool-note"></span></figcaption></figure>
     </div>
   </div>
 </section>
@@ -258,15 +264,15 @@ __HEADER__
     <div class="head"><h2>Measured SWD clock</h2><p class="kicker" id="wire-meta"></p></div>
     <div>
       <div class="figs" id="wire-recorded">
-        <figure><div class="chart"><tickwave-chart id="r-read" group="recorded" legend="above" readout="below" sweep="off" height="250"></tickwave-chart></div><figcaption><b class="n"></b> Read data bits. MHz on the wire, each read's median transfer.</figcaption></figure>
-        <figure><div class="chart"><tickwave-chart id="r-write" group="recorded" legend="above" readout="below" sweep="off" height="250"></tickwave-chart></div><figcaption><b class="n"></b> Write data bits. MHz on the wire, each read's median transfer.</figcaption></figure>
-        <figure><div class="chart"><tickwave-chart id="r-request" group="recorded" legend="above" readout="below" sweep="off" height="250"></tickwave-chart></div><figcaption><b class="n"></b> Request bits. MHz on the wire, each read's median transfer.</figcaption></figure>
+        <figure><div class="chart"><tickwave-chart id="r-read" group="recorded" legend="above" readout="below" sweep="off"></tickwave-chart></div><figcaption><b class="n"></b> Read data bits. MHz on the wire, each read's median transfer.</figcaption></figure>
+        <figure><div class="chart"><tickwave-chart id="r-write" group="recorded" legend="above" readout="below" sweep="off"></tickwave-chart></div><figcaption><b class="n"></b> Write data bits. MHz on the wire, each read's median transfer.</figcaption></figure>
+        <figure><div class="chart"><tickwave-chart id="r-request" group="recorded" legend="above" readout="below" sweep="off"></tickwave-chart></div><figcaption><b class="n"></b> Request bits. MHz on the wire, each read's median transfer.</figcaption></figure>
         <div class="prose"><h3>Recordings</h3><p>Each point is one 64 KiB flash read, recorded with the analyser's leads on the debug pins. They load the lines, so some reads sample a cycle later than they do without them. Pointing at a point shows its read; a click opens the recording below.</p></div>
       </div>
       <div class="figs" id="wire-clock">
-        <figure><div class="chart"><tickwave-chart id="w-read" group="wire" legend="above" readout="below" sweep="off" height="250"></tickwave-chart></div><figcaption><b class="n"></b> Read data bits. MHz on the wire, median data bit.</figcaption></figure>
-        <figure><div class="chart"><tickwave-chart id="w-write" group="wire" legend="above" readout="below" sweep="off" height="250"></tickwave-chart></div><figcaption><b class="n"></b> Write data bits. MHz on the wire, median data bit.</figcaption></figure>
-        <figure><div class="chart"><tickwave-chart id="w-fast" group="wire" legend="above" readout="below" sweep="off" height="250"></tickwave-chart></div><figcaption><b class="n"></b> Peak SWD rate. MHz, shortest mean period per transfer.</figcaption></figure>
+        <figure><div class="chart"><tickwave-chart id="w-read" group="wire" legend="above" readout="below" sweep="off"></tickwave-chart></div><figcaption><b class="n"></b> Read data bits. MHz on the wire, median data bit.</figcaption></figure>
+        <figure><div class="chart"><tickwave-chart id="w-write" group="wire" legend="above" readout="below" sweep="off"></tickwave-chart></div><figcaption><b class="n"></b> Write data bits. MHz on the wire, median data bit.</figcaption></figure>
+        <figure><div class="chart"><tickwave-chart id="w-fast" group="wire" legend="above" readout="below" sweep="off"></tickwave-chart></div><figcaption><b class="n"></b> Peak SWD rate. MHz, shortest mean period per transfer.</figcaption></figure>
         <div class="prose"><h3>Capture notes</h3><p class="quiet" id="w-how-caption"></p><div id="w-how"></div><p id="w-fast-text"></p></div>
       </div>
       <div class="figs" id="wire-errors">
@@ -344,13 +350,18 @@ const groupOf = (c) => c.getAttribute("group") || c.id;
 for (const c of document.querySelectorAll("tickwave-chart")) c.addEventListener("tickwave-pick", (e) => { if (e.detail.x != null) picked.add(groupOf(c)); });
 // What the page last gave each chart: the element's `data` reads back its parsed copy.
 const given = new Map();
-function setChart(id, { data, src, show, selected }) {
+function setChart(id, { data, src, series, show, selected }) {
   const c = $(id);
+  // A readout below holds a line for the x and one for each shown series. tickwave's sheet reserves
+  // them from this property before the chart is defined, and the chart warns at its first draw if
+  // the count is wrong. The series shown: those named, or else every one not hidden.
+  const shown = show ? show.length : data ? data.series.filter((s) => !s.hidden).length : series;
+  if (c.getAttribute("readout") === "below" && shown != null) c.style.setProperty("--tickwave-chart-readout-lines", String(1 + shown));
   chartsReady.then(() => {
     if (selected != null && !picked.has(groupOf(c))) c.setAttribute("selected", selected);
+    if (show) c.setAttribute("show", show.join(" "));
     if (src && c.getAttribute("src") !== src) c.setAttribute("src", src);
     if (data && given.get(id) !== data) { given.set(id, data); c.data = data; }
-    if (show) c.setAttribute("show", show.join(" "));
   });
 }
 // The setting a chart names for a clock in MHz: the shortest decimal, as extract.py writes it.
@@ -735,7 +746,7 @@ function renderWire() {
   $("wire-clock").hidden = !shown.length;
   if (recorded) {
     $("wire-meta").textContent = `Recordings, the analyser at 1 GS/s on the debug pins, taken ${SET}`;
-    for (const url of recorded) setChart(`r-${url.match(/wire-clock-(\w+)\.chart\.json$/)[1]}`, { src: url, selected: "50" });
+    for (const { src, series } of recorded) setChart(`r-${src.match(/wire-clock-(\w+)\.chart\.json$/)[1]}`, { src, series, selected: "50" });
   }
   if (!shown.length) {
     $("wire-errors").hidden = true;
