@@ -254,7 +254,7 @@ __HEADER__
     <div class="head"><h2 id="jlink-title">J-Link Ultra</h2><p class="kicker">SEGGER workload</p></div>
     <div id="jlink-grid">
       <p id="jlink-description"></p>
-      <figure><div class="chart"><tickwave-chart id="jlink-chart" legend="above" readout="below" sweep="off"></tickwave-chart></div><figcaption><b class="n"></b> JLinkExe, TestRSpeed / TestWSpeed. KByte/s, as reported by SEGGER. <span id="jlink-tool-note"></span></figcaption></figure>
+      <figure><div class="chart"><tickwave-chart id="jlink-chart" readout="below" sweep="off"></tickwave-chart></div><figcaption><b class="n"></b> JLinkExe, TestRSpeed / TestWSpeed. KByte/s, as reported by SEGGER. <span id="jlink-tool-note"></span></figcaption></figure>
     </div>
   </div>
 </section>
@@ -264,9 +264,9 @@ __HEADER__
     <div class="head"><h2>Measured SWD clock</h2><p class="kicker" id="wire-meta"></p></div>
     <div>
       <div class="figs" id="wire-recorded">
-        <figure><div class="chart"><tickwave-chart id="r-read" group="recorded" legend="above" readout="below" sweep="off"></tickwave-chart></div><figcaption><b class="n"></b> Read data bits. MHz on the wire, each read's median transfer.</figcaption></figure>
-        <figure><div class="chart"><tickwave-chart id="r-write" group="recorded" legend="above" readout="below" sweep="off"></tickwave-chart></div><figcaption><b class="n"></b> Write data bits. MHz on the wire, each read's median transfer.</figcaption></figure>
-        <figure><div class="chart"><tickwave-chart id="r-request" group="recorded" legend="above" readout="below" sweep="off"></tickwave-chart></div><figcaption><b class="n"></b> Request bits. MHz on the wire, each read's median transfer.</figcaption></figure>
+        <figure><div class="chart"><tickwave-chart id="r-read" group="recorded" readout="below" sweep="off"></tickwave-chart></div><figcaption><b class="n"></b> Read data bits. MHz on the wire, each read's median transfer. The dashed line is the clock asked for.</figcaption></figure>
+        <figure><div class="chart"><tickwave-chart id="r-write" group="recorded" readout="below" sweep="off"></tickwave-chart></div><figcaption><b class="n"></b> Write data bits. MHz on the wire, each read's median transfer. The dashed line is the clock asked for.</figcaption></figure>
+        <figure><div class="chart"><tickwave-chart id="r-request" group="recorded" readout="below" sweep="off"></tickwave-chart></div><figcaption><b class="n"></b> Request bits. MHz on the wire, each read's median transfer. The dashed line is the clock asked for.</figcaption></figure>
         <div class="prose"><h3>Recordings</h3><p>Each point is one 64 KiB flash read, recorded with the analyser's leads on the debug pins. They load the lines, so some reads sample a cycle later than they do without them. Pointing at a point shows its read; a click opens the recording below.</p></div>
       </div>
       <div class="figs" id="wire-clock">
