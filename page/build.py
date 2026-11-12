@@ -186,7 +186,7 @@ def main() -> None:
     template = (PAGE / "template.html").read_text()
     if template.count("__DATA__") != 1:
         raise SystemExit("template must contain exactly one __DATA__ placeholder")
-    for placeholder in ("__TOKENS__", "__BASE__", "__HEADER__", "__FOOTER__", "__FACEJS__", "__HEADERJS__", "__ICON__", "__WIRE__"):
+    for placeholder in ("__TOKENS__", "__BASE__", "__HEADER__", "__FOOTER__", "__FACEJS__", "__HEADERJS__", "__ICON__", "__WIRE__", "__TICKWAVE__"):
         if template.count(placeholder) != 1:
             raise SystemExit(f"template must contain exactly one {placeholder} placeholder")
     # Copies of the site's files (see README.md), inlined so the page carries them when opened from
@@ -224,7 +224,7 @@ def main() -> None:
     html = (template.replace("__TOKENS__", copy["tokens.css"]).replace("__BASE__", copy["base.css"])
             .replace("__HEADER__", header).replace("__FOOTER__", copy["footer.html"].strip())
             .replace("__FACEJS__", copy["face.js"]).replace("__HEADERJS__", copy["header.js"])
-            .replace("__ICON__", icon).replace("__WIRE__", wire).replace("__DATA__", json.dumps(data, separators=(",", ":"))))
+            .replace("__ICON__", icon).replace("__TICKWAVE__", htmllib.escape(args.tickwave_url)).replace("__WIRE__", wire).replace("__DATA__", json.dumps(data, separators=(",", ":"))))
     output = PAGE / "out" / "index.html"
     if args.check:
         # The page is what readers get: its copies of the site's files can be current while the

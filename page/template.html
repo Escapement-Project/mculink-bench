@@ -24,6 +24,9 @@
      inlined by build.py; then the page's own sheet. -->
 <style>__TOKENS__</style>
 <style>__BASE__</style>
+<!-- tickwave's sheet, from the version build.py pins: a view's summary laid out before tickwave.js
+     defines the element, so the rows hold their height. -->
+<link rel="stylesheet" href="__TICKWAVE__tickwave.css">
 <style>
 /* The page's own parts, after tokens.css and base.css (copies of the site's, inlined above): the
    page's row in the header, its head, its controls, the chart code's marks, and tickwave's
@@ -124,16 +127,14 @@ h3 { font: 600 17px/1.4 var(--font-text); margin: 0 0 4px; }
 .band:has(> .wrap > #on-the-wire[hidden]) { display: none; }
 #on-the-wire .wire-view { border: 0; padding: 0; }
 .recordings { margin-top: 32px; }
-.recordings tickwave-view { margin: 0; font-size: 15px; }
 /* A row per recording, as the site's repository index: its title, what it holds under it, and
-   the button that opens it. */
-.recordings tickwave-view::part(summary) { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 24px; align-items: center; padding: 14px 0; background: none; border: 0; border-top: 1px solid var(--hair); border-radius: 0; }
-.recordings tickwave-view::part(facts) { grid-row: 2; grid-column: 1; }
-.recordings tickwave-view::part(open-button) { grid-row: 1 / 3; grid-column: 2; }
-.recordings tickwave-view:last-child::part(summary) { border-bottom: 1px solid var(--hair); }
-.recordings tickwave-view::part(title) { font-weight: 600; font-size: 17px; overflow-wrap: anywhere; }
-.recordings tickwave-view::part(facts) { color: var(--ink-2); font-size: 15px; }
-.recordings tickwave-view::part(open-button) { font-size: 14px; padding: 5px 14px; min-height: 32px; }
+   the button that opens it. Set through tickwave's properties, which its sheet reads too, so a row
+   is the same before and after tickwave.js defines the view. */
+.recordings tickwave-view { margin: 0; font-size: 15px; --tickwave-summary-padding: 14px 0; --tickwave-summary-gap: 2px 24px;
+  --tickwave-summary-border-width: 1px 0 0; --tickwave-summary-background: none; --tickwave-summary-radius: 0;
+  --tickwave-title-size: 17px; --tickwave-facts-size: 15px;
+  --tickwave-open-button-size: 14px; --tickwave-open-button-padding: 5px 14px; --tickwave-open-button-height: 32px; }
+.recordings tickwave-view:last-child { --tickwave-summary-border-width: 1px 0; }
 .recordings tickwave-view::part(viewer) { background: var(--surface); border: 0; border-radius: 14px; margin: 14px 0; }
 tickwave-ref { cursor: help; }
 

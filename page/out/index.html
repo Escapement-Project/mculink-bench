@@ -464,6 +464,9 @@ article.doc .codeblock .copy { top: 8px; right: 10px; opacity: 0; transition: op
 article.doc .codeblock:hover .copy, article.doc .codeblock .copy:focus-visible, article.doc .codeblock.copied .copy { opacity: 1; }
 @media (hover: none) { article.doc .codeblock .copy { opacity: 1; } }
 </style>
+<!-- tickwave's sheet, from the version build.py pins: a view's summary laid out before tickwave.js
+     defines the element, so the rows hold their height. -->
+<link rel="stylesheet" href="https://escapement-project.github.io/tickwave/v0.1.0/tickwave.css">
 <style>
 /* The page's own parts, after tokens.css and base.css (copies of the site's, inlined above): the
    page's row in the header, its head, its controls, the chart code's marks, and tickwave's
@@ -564,16 +567,14 @@ h3 { font: 600 17px/1.4 var(--font-text); margin: 0 0 4px; }
 .band:has(> .wrap > #on-the-wire[hidden]) { display: none; }
 #on-the-wire .wire-view { border: 0; padding: 0; }
 .recordings { margin-top: 32px; }
-.recordings tickwave-view { margin: 0; font-size: 15px; }
 /* A row per recording, as the site's repository index: its title, what it holds under it, and
-   the button that opens it. */
-.recordings tickwave-view::part(summary) { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 24px; align-items: center; padding: 14px 0; background: none; border: 0; border-top: 1px solid var(--hair); border-radius: 0; }
-.recordings tickwave-view::part(facts) { grid-row: 2; grid-column: 1; }
-.recordings tickwave-view::part(open-button) { grid-row: 1 / 3; grid-column: 2; }
-.recordings tickwave-view:last-child::part(summary) { border-bottom: 1px solid var(--hair); }
-.recordings tickwave-view::part(title) { font-weight: 600; font-size: 17px; overflow-wrap: anywhere; }
-.recordings tickwave-view::part(facts) { color: var(--ink-2); font-size: 15px; }
-.recordings tickwave-view::part(open-button) { font-size: 14px; padding: 5px 14px; min-height: 32px; }
+   the button that opens it. Set through tickwave's properties, which its sheet reads too, so a row
+   is the same before and after tickwave.js defines the view. */
+.recordings tickwave-view { margin: 0; font-size: 15px; --tickwave-summary-padding: 14px 0; --tickwave-summary-gap: 2px 24px;
+  --tickwave-summary-border-width: 1px 0 0; --tickwave-summary-background: none; --tickwave-summary-radius: 0;
+  --tickwave-title-size: 17px; --tickwave-facts-size: 15px;
+  --tickwave-open-button-size: 14px; --tickwave-open-button-padding: 5px 14px; --tickwave-open-button-height: 32px; }
+.recordings tickwave-view:last-child { --tickwave-summary-border-width: 1px 0; }
 .recordings tickwave-view::part(viewer) { background: var(--surface); border: 0; border-radius: 14px; margin: 14px 0; }
 tickwave-ref { cursor: help; }
 
@@ -746,9 +747,9 @@ tickwave-ref { cursor: help; }
     <p>NXP's firmware, asked for 10 MHz, reads data at <tickwave-ref for="v-nxp" annotation="wire_swd/session/371629830">6.9 MHz</tickwave-ref> and writes at 7.1. Asked for 25 or 50 MHz, it reads at <tickwave-ref for="v-nxp" annotation="wire_swd/session/673495644">10.0 MHz</tickwave-ref> and writes at 10.7. About one read in a hundred <tickwave-ref for="v-nxp" annotation="wire_swd/stretch/608833767">stops for about 6 µs</tickwave-ref> in the middle of the word, and at 10 MHz so do <tickwave-ref for="v-nxp" annotation="wire_swd/stretch/376028193">13 of 108 writes</tickwave-ref>. Asked for 20 MHz with the leads on, it sent <tickwave-ref for="v-nxp" annotation="wire_swd/parity/562940199">a write with wrong parity</tickwave-ref>. The target answered the next write with <tickwave-ref for="v-nxp" annotation="wire_swd/fault/563004936">FAULT</tickwave-ref>, and the connect failed.</p>
   </div>
   <div class="recordings">
-    <tickwave-view id="v-verge" src="https://escapement-project.github.io/mculink-recordings/2026-11-04/gcc-swd-reads.tickwave" annotations="https://escapement-project.github.io/mculink-recordings/2026-11-04/gcc-swd-reads.annotations.toml" series="verge"></tickwave-view>
-    <tickwave-view id="v-capture" src="https://escapement-project.github.io/mculink-recordings/2026-11-04/gcc-swd-reads-capture100000.tickwave" annotations="https://escapement-project.github.io/mculink-recordings/2026-11-04/gcc-swd-reads-capture100000.annotations.toml" series="verge"></tickwave-view>
-    <tickwave-view id="v-nxp" src="https://escapement-project.github.io/mculink-recordings/2026-11-04/stock-swd-reads.tickwave" annotations="https://escapement-project.github.io/mculink-recordings/2026-11-04/stock-swd-reads.annotations.toml" series="nxp"></tickwave-view>
+    <tickwave-view id="v-verge" src="https://escapement-project.github.io/mculink-recordings/2026-11-04/gcc-swd-reads.tickwave" annotations="https://escapement-project.github.io/mculink-recordings/2026-11-04/gcc-swd-reads.annotations.toml" series="verge"><span slot="title">Verge (GCC): 64 KiB flash reads at 50, 37.5, 30 and 10 MHz</span><span slot="facts">928&nbsp;ms; 2 channels: SWCLK, SWDIO; 381&nbsp;KiB</span></tickwave-view>
+    <tickwave-view id="v-capture" src="https://escapement-project.github.io/mculink-recordings/2026-11-04/gcc-swd-reads-capture100000.tickwave" annotations="https://escapement-project.github.io/mculink-recordings/2026-11-04/gcc-swd-reads-capture100000.annotations.toml" series="verge"><span slot="title">Verge (GCC): 64 KiB flash reads at 50, 37.5 and 30 MHz, capturing energy at 100,000 pairs/s</span><span slot="facts">825&nbsp;ms; 2 channels: SWCLK, SWDIO; 369&nbsp;KiB</span></tickwave-view>
+    <tickwave-view id="v-nxp" src="https://escapement-project.github.io/mculink-recordings/2026-11-04/stock-swd-reads.tickwave" annotations="https://escapement-project.github.io/mculink-recordings/2026-11-04/stock-swd-reads.annotations.toml" series="nxp"><span slot="title">NXP's firmware: 64 KiB flash reads at 10, 20, 25 and 50 MHz</span><span slot="facts">825&nbsp;ms; 2 channels: SWCLK, SWDIO; 187&nbsp;KiB</span></tickwave-view>
   </div>
 </section>
 <section class="wire-view" data-view="jtag">
@@ -762,10 +763,10 @@ tickwave-ref { cursor: help; }
     <p>NXP's firmware runs TCK in bursts at two rates 14 ns apart, about half each. Asked for 10 MHz, its bursts run at <tickwave-ref for="v-jtag-nxp" annotation="wire_clock/clock/9976898813">173 ns</tickwave-ref> and <tickwave-ref for="v-jtag-nxp" annotation="wire_clock/clock/9976966337">187 ns</tickwave-ref>, 5.8 and 5.3 MHz. Asked for 20, 30 or 50 MHz to read 256 KiB, it drives <tickwave-ref for="v-jtag-nxp-reads" annotation="wire_clock/session/4218738324">the same wire each time</tickwave-ref>, and the read fails.</p>
   </div>
   <div class="recordings">
-    <tickwave-view id="v-jtag" src="https://escapement-project.github.io/mculink-recordings/2026-11-04/gcc-jtag-probe-rs.tickwave" annotations="https://escapement-project.github.io/mculink-recordings/2026-11-04/gcc-jtag-probe-rs.annotations.toml" series="verge"></tickwave-view>
-    <tickwave-view id="v-jtag-capture" src="https://escapement-project.github.io/mculink-recordings/2026-11-04/gcc-jtag-capture100000.tickwave" annotations="https://escapement-project.github.io/mculink-recordings/2026-11-04/gcc-jtag-capture100000.annotations.toml" series="verge"></tickwave-view>
-    <tickwave-view id="v-jtag-nxp" src="https://escapement-project.github.io/mculink-recordings/2026-11-04/stock-jtag-probe-rs.tickwave" annotations="https://escapement-project.github.io/mculink-recordings/2026-11-04/stock-jtag-probe-rs.annotations.toml" series="nxp"></tickwave-view>
-    <tickwave-view id="v-jtag-nxp-reads" src="https://escapement-project.github.io/mculink-recordings/2026-11-04/stock-reads.tickwave" annotations="https://escapement-project.github.io/mculink-recordings/2026-11-04/stock-reads.annotations.toml" series="nxp"></tickwave-view>
+    <tickwave-view id="v-jtag" src="https://escapement-project.github.io/mculink-recordings/2026-11-04/gcc-jtag-probe-rs.tickwave" annotations="https://escapement-project.github.io/mculink-recordings/2026-11-04/gcc-jtag-probe-rs.annotations.toml" series="verge"><span slot="title">Verge (GCC): probe-rs JTAG throughput</span><span slot="facts">10.8&nbsp;s; 4 channels: TCK, TMS, TDI, TDO; 4.2&nbsp;MiB</span></tickwave-view>
+    <tickwave-view id="v-jtag-capture" src="https://escapement-project.github.io/mculink-recordings/2026-11-04/gcc-jtag-capture100000.tickwave" annotations="https://escapement-project.github.io/mculink-recordings/2026-11-04/gcc-jtag-capture100000.annotations.toml" series="verge"><span slot="title">Verge (GCC): probe-rs JTAG throughput, capturing energy at 100,000 pairs/s</span><span slot="facts">10.9&nbsp;s; 4 channels: TCK, TMS, TDI, TDO; 5.8&nbsp;MiB</span></tickwave-view>
+    <tickwave-view id="v-jtag-nxp" src="https://escapement-project.github.io/mculink-recordings/2026-11-04/stock-jtag-probe-rs.tickwave" annotations="https://escapement-project.github.io/mculink-recordings/2026-11-04/stock-jtag-probe-rs.annotations.toml" series="nxp"><span slot="title">NXP's firmware: probe-rs JTAG throughput</span><span slot="facts">11.1&nbsp;s; 4 channels: TCK, TMS, TDI, TDO; 2.8&nbsp;MiB</span></tickwave-view>
+    <tickwave-view id="v-jtag-nxp-reads" src="https://escapement-project.github.io/mculink-recordings/2026-11-04/stock-reads.tickwave" annotations="https://escapement-project.github.io/mculink-recordings/2026-11-04/stock-reads.annotations.toml" series="nxp"><span slot="title">NXP's firmware: 256 KiB JTAG reads at 1, 10, 20, 30 and 50 MHz</span><span slot="facts">4.43&nbsp;s; 4 channels: TCK, TMS, TDI, TDO; 1.3&nbsp;MiB</span></tickwave-view>
   </div>
 </section>
 <section class="wire-view" data-view="cjtag-oscan1">
@@ -777,7 +778,7 @@ tickwave-ref { cursor: help; }
     <p>In cJTAG every JTAG bit is a frame of packets on TMSC. In OScan1 a frame has three: inverted TDI, TMS and TDO. With packets at 50 MHz, Verge's frames take <tickwave-ref for="v-oscan1" annotation="wire_cjtag/frame/28412491163">127 ns</tickwave-ref> or <tickwave-ref for="v-oscan1" annotation="wire_cjtag/frame/28420785224">133 ns</tickwave-ref>, a JTAG clock of 7.9 or 7.5 MHz. The TDO packet is the long one: the probe waits out <tickwave-ref for="v-oscan1" annotation="wire_cjtag/tdo/28412491210">the target's TDO delay</tickwave-ref> before ending it.</p>
   </div>
   <div class="recordings">
-    <tickwave-view id="v-oscan1" src="https://escapement-project.github.io/mculink-recordings/2026-11-04/gcc-oscan1-probe-rs.tickwave" annotations="https://escapement-project.github.io/mculink-recordings/2026-11-04/gcc-oscan1-probe-rs.annotations.toml" channels="TCKC TMSC" series="verge"></tickwave-view>
+    <tickwave-view id="v-oscan1" src="https://escapement-project.github.io/mculink-recordings/2026-11-04/gcc-oscan1-probe-rs.tickwave" annotations="https://escapement-project.github.io/mculink-recordings/2026-11-04/gcc-oscan1-probe-rs.annotations.toml" channels="TCKC TMSC" series="verge"><span slot="title">Verge (GCC): probe-rs cJTAG OScan1 throughput</span><span slot="facts">29.5&nbsp;s; 2 of 3 channels: TCKC, TMSC; 11&nbsp;MiB</span></tickwave-view>
   </div>
 </section>
 <section class="wire-view" data-view="cjtag-oscan2">
@@ -789,7 +790,7 @@ tickwave-ref { cursor: help; }
     <p>In cJTAG every JTAG bit is a frame of packets on TMSC. In OScan2, as in OScan1, most frames have three. With packets at 50 MHz, Verge's frames take <tickwave-ref for="v-oscan2" annotation="wire_cjtag/frame/26344840323">127 ns</tickwave-ref> or <tickwave-ref for="v-oscan2" annotation="wire_cjtag/frame/26354443789">133 ns</tickwave-ref>, a JTAG clock of 7.9 or 7.5 MHz. The TDO packet is the long one: the probe waits out <tickwave-ref for="v-oscan2" annotation="wire_cjtag/tdo/26344840370">the target's TDO delay</tickwave-ref> before ending it.</p>
   </div>
   <div class="recordings">
-    <tickwave-view id="v-oscan2" src="https://escapement-project.github.io/mculink-recordings/2026-11-04/gcc-oscan2-probe-rs.tickwave" annotations="https://escapement-project.github.io/mculink-recordings/2026-11-04/gcc-oscan2-probe-rs.annotations.toml" channels="TCKC TMSC" series="verge"></tickwave-view>
+    <tickwave-view id="v-oscan2" src="https://escapement-project.github.io/mculink-recordings/2026-11-04/gcc-oscan2-probe-rs.tickwave" annotations="https://escapement-project.github.io/mculink-recordings/2026-11-04/gcc-oscan2-probe-rs.annotations.toml" channels="TCKC TMSC" series="verge"><span slot="title">Verge (GCC): probe-rs cJTAG OScan2 throughput</span><span slot="facts">27.4&nbsp;s; 2 of 3 channels: TCKC, TMSC; 9.6&nbsp;MiB</span></tickwave-view>
   </div>
 </section>
 <section class="wire-view" data-view="cjtag-oscan5">
@@ -801,7 +802,7 @@ tickwave-ref { cursor: help; }
     <p>In cJTAG every JTAG bit is a frame of packets on TMSC. In OScan5 a shift needs two packets a bit, TDI and TDO. Verge's two-packet frames take <tickwave-ref for="v-oscan5" annotation="wire_cjtag/frame/21271888413">100 ns</tickwave-ref> or <tickwave-ref for="v-oscan5" annotation="wire_cjtag/frame/21278618968">107 ns</tickwave-ref>, a JTAG clock of 10.0 or 9.4 MHz. The TDO packet is the long one: the probe waits out <tickwave-ref for="v-oscan5" annotation="wire_cjtag/tdo/21278618995">the target's TDO delay</tickwave-ref> before ending it.</p>
   </div>
   <div class="recordings">
-    <tickwave-view id="v-oscan5" src="https://escapement-project.github.io/mculink-recordings/2026-11-04/gcc-oscan5-probe-rs.tickwave" annotations="https://escapement-project.github.io/mculink-recordings/2026-11-04/gcc-oscan5-probe-rs.annotations.toml" channels="TCKC TMSC" series="verge"></tickwave-view>
+    <tickwave-view id="v-oscan5" src="https://escapement-project.github.io/mculink-recordings/2026-11-04/gcc-oscan5-probe-rs.tickwave" annotations="https://escapement-project.github.io/mculink-recordings/2026-11-04/gcc-oscan5-probe-rs.annotations.toml" channels="TCKC TMSC" series="verge"><span slot="title">Verge (GCC): probe-rs cJTAG OScan5 throughput</span><span slot="facts">22.3&nbsp;s; 2 of 3 channels: TCKC, TMSC; 8.8&nbsp;MiB</span></tickwave-view>
   </div>
 </section>
 <section class="wire-view" data-view="cjtag-oscan6">
@@ -813,7 +814,7 @@ tickwave-ref { cursor: help; }
     <p>In cJTAG every JTAG bit is a frame of packets on TMSC. In OScan6, as in OScan5, a shift needs two packets a bit. Verge's two-packet frames take <tickwave-ref for="v-oscan6" annotation="wire_cjtag/frame/19381325954">100 ns</tickwave-ref> or <tickwave-ref for="v-oscan6" annotation="wire_cjtag/frame/19388202838">107 ns</tickwave-ref>, a JTAG clock of 10.0 or 9.4 MHz. The TDO packet is the long one: the probe waits out <tickwave-ref for="v-oscan6" annotation="wire_cjtag/tdo/19388202865">the target's TDO delay</tickwave-ref> before ending it.</p>
   </div>
   <div class="recordings">
-    <tickwave-view id="v-oscan6" src="https://escapement-project.github.io/mculink-recordings/2026-11-04/gcc-oscan6-probe-rs.tickwave" annotations="https://escapement-project.github.io/mculink-recordings/2026-11-04/gcc-oscan6-probe-rs.annotations.toml" channels="TCKC TMSC" series="verge"></tickwave-view>
+    <tickwave-view id="v-oscan6" src="https://escapement-project.github.io/mculink-recordings/2026-11-04/gcc-oscan6-probe-rs.tickwave" annotations="https://escapement-project.github.io/mculink-recordings/2026-11-04/gcc-oscan6-probe-rs.annotations.toml" channels="TCKC TMSC" series="verge"><span slot="title">Verge (GCC): probe-rs cJTAG OScan6 throughput</span><span slot="facts">20.4&nbsp;s; 2 of 3 channels: TCKC, TMSC; 7.7&nbsp;MiB</span></tickwave-view>
   </div>
 </section>
 </template>

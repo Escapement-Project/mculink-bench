@@ -97,9 +97,14 @@ wire view it covers (`swd`, `jtag`, `cjtag-oscan1` and so on), shown with that v
 its recordings, `<tickwave-view id="v" data-recording="gcc-swd-reads">`, and cites annotations in
 them, `<tickwave-ref for="v" annotation="wire_swd/read/380567201">37.5 MHz</tickwave-ref>`. Hovering
 or tapping a reference opens an inset of that stretch of wire; the recordings stay collapsed until
-opened. tickwave draws them: the page loads its elements from tickwave's site at the version
-`build.py` pins, and the recordings from the `mculink-recordings` repository's site, at
-`<date>/<name>.tickwave` beside each recording's annotations.
+opened. tickwave draws them: the page loads its elements and its sheet, `tickwave.css`, from
+tickwave's site at the version `build.py` pins, and the recordings from the `mculink-recordings`
+repository's site, at `<date>/<name>.tickwave` beside each recording's annotations.
+
+Each view holds its recording's title and facts, `<span slot="title">` and `<span slot="facts">`, as
+tickwave gives them. tickwave's sheet lays them out before its script loads, so a row keeps its
+height. Once a recording's head is in, tickwave warns in the console where the page's text differs
+from the recording's.
 
 The build checks every reference against the annotations in a checkout of `mculink-recordings`,
 beside this repository by default (`--recordings DIR`). It fails on a reference that names an
