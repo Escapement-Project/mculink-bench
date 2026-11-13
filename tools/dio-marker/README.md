@@ -8,6 +8,10 @@ pin 11.
   spins for `BUSY_US` microseconds (2,000 by default), and both fall. The rest of the period it
   sleeps. When the LaunchPad runs from the Pro's target supply, a recording's current steps where
   the marker's edges are. Before the first period, PA12 and the LED stay high for 50 ms while the
+  CPU spins, then low for 20 ms. No period repeats that pulse, so a Verge recording and an analyser
+  recording of the same boot line up on its rising edge; the 10 ms marker alone can't tell one
+  period from the next. Start both recordings, then cycle the LaunchPad's supply (`verge power off`,
+  then `on`) or reset it.
 - `MODE=toggle`: PA12 toggles from a busy loop, `TOGGLE_HZ` full periods a second (47,500 by
   default), so twice that many edges reach the Pro. The loop's own instructions make the rate a
   little lower than asked.

@@ -5,7 +5,9 @@
 //!   CPU spins for `BUSY_US` (2 ms by default), and both fall; the rest of the period it sleeps. The current step and the
 //!   marker's edges come from the same moments, so a recording shows how well they line up. The
 //!   time driver times both phases, to its 30.5 us tick: `asm::delay` only promises at least the
-//!   cycles asked for, and its 2 ms ran about 6.
+//!   cycles asked for, and its 2 ms ran about 6. Before the first period, PA12 and the LED stay
+//!   high for `START_MS` while the CPU spins: a pulse no period repeats, so two instruments that
+//!   recorded the same boot line up on one edge of it.
 //! - `MODE=toggle`: PA12 toggles as fast as `TOGGLE_HZ` full periods a second, by a busy loop, so
 //!   twice that many edges reach the Pro.
 #![no_std]
@@ -15,7 +17,7 @@ use defmt::info;
 use defmt_rtt as _;
 use embassy_executor::Spawner;
 use embassy_mspm0::gpio::{Level, Output};
-use embassy_time::{Duration, Ticker, block_for};
+use embassy_time::{Duration, Ticker, Timer, block_for};
 use panic_probe as _;
 
 /// MCLK out of reset, from SYSOSC.
@@ -38,6 +40,9 @@ const fn parse(digits: Option<&str>, default: u32) -> u32 {
 }
 
 const TOGGLE_HZ: u32 = parse(option_env!("TOGGLE_HZ"), 47_500);
+/// The marker's start pulse, and the quiet after it before the first period.
+const START_MS: u64 = 50;
+const START_QUIET_MS: u64 = 20;
 /// How long the marker's CPU spins each period, to the time driver's tick.
 const BUSY_US: u32 = parse(option_env!("BUSY_US"), 2_000);
 const fn same(a: &str, b: &str) -> bool {
@@ -79,7 +84,16 @@ async fn main(_spawner: Spawner) -> ! {
             cortex_m::asm::delay(half);
         }
     }
-    info!("marking {} us of every 10 ms on PA12, with LED2 red", BUSY_US);
+    info!(
+        "a {} ms start pulse, then {} us of every 10 ms on PA12, with LED2 red",
+        START_MS, BUSY_US
+    );
+    marker.set_high();
+    led.set_high();
+    block_for(Duration::from_millis(START_MS));
+    led.set_low();
+    marker.set_low();
+    Timer::after(Duration::from_millis(START_QUIET_MS)).await;
     let mut ticker = Ticker::every(Duration::from_millis(10));
     loop {
         marker.set_high();
