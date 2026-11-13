@@ -16,7 +16,7 @@ use probe_rs::flashing::{
     DownloadOptions, FlashProgress, HexLoader, ProgressEvent, ProgressOperation,
     download_file_with_options,
 };
-use probe_rs::probe::{DebugProbeSelector, ScanFormat, WireProtocol, list::Lister};
+use probe_rs::probe::{DebugProbeSelector, WireProtocol, cmsisdap::ScanFormat, list::Lister};
 use probe_rs::{Permissions, config::TargetSelector};
 use serde::Serialize;
 use tracing::{Span, debug, info, info_span, warn};
@@ -159,6 +159,7 @@ impl Phases {
 
     fn name(operation: ProgressOperation) -> &'static str {
         match operation {
+            ProgressOperation::Compare => "compare",
             ProgressOperation::Fill => "fill",
             ProgressOperation::Erase => "erase",
             ProgressOperation::Program => "program",
@@ -309,7 +310,10 @@ fn run_once(
     run.open_s = Some(start.elapsed().as_secs_f64());
     escapement_verge_probe::prepare_probe(
         &mut probe,
-        (selector.vendor_id, selector.product_id),
+        {
+            let DebugProbeSelector::Usb(usb) = &selector;
+            (usb.vendor_id, usb.product_id)
+        },
         cli.protocol.wire_protocol(),
         cli.cjtag_format.map(CjtagFormat::scan_format),
     )?;

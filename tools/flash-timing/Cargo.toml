@@ -9,9 +9,9 @@ publish = false
 anyhow = "1.0.104"
 clap = { version = "4.6.7", features = ["derive"] }
 indicatif = "0.18.6"
-# probe-rs's default features without its hidapi backend: verge-probe's hidapi selects one, and
-# two fail the build.
-probe-rs = { git = "https://github.com/CordlessCoder/probe-rs", rev = "17beb8e80", default-features = false, features = ["builtin-targets", "builtin-formats", "cmsisdap_v1"] }
+# probe-rs's default features without cmsisdap_v1: its hidapi always selects a Linux backend,
+# verge-probe's selects another, and hidapi refuses two. The bench uses the bulk interface.
+probe-rs = { git = "https://github.com/CordlessCoder/probe-rs", rev = "fc3d3095f3f05c18c366e00ac180646f87aed786", default-features = false, features = ["builtin-targets", "builtin-formats"] }
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.154"
 tracing = "0.1.44"

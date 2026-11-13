@@ -20,7 +20,9 @@ use std::time::{Duration, Instant};
 
 use anyhow::Context as _;
 use indicatif::ProgressStyle;
-use probe_rs::probe::{DebugProbeSelector, ScanFormat, WireProtocol, list::Lister};
+use probe_rs::probe::{
+    DebugProbeSelector, ProbeTransport, WireProtocol, cmsisdap::ScanFormat, list::Lister,
+};
 use probe_rs::{MemoryInterface, Permissions, Session, config::TargetSelector};
 use tracing::{Span, info, info_span, warn};
 use tracing_indicatif::IndicatifLayer;
@@ -219,17 +221,14 @@ fn main() -> anyhow::Result<()> {
     );
     if cli.list {
         for probe in Lister::new().list_all() {
+            let ProbeTransport::Usb(usb) = &probe.transport;
             println!(
                 "{:04x}:{:04x}:{}\t{}\t{}",
-                probe.vendor_id,
-                probe.product_id,
-                probe.serial_number.as_deref().unwrap_or(""),
+                usb.vendor_id,
+                usb.product_id,
+                usb.serial_number.as_deref().unwrap_or(""),
                 probe.identifier,
-                if probe.is_hid_interface {
-                    "hid"
-                } else {
-                    "bulk"
-                },
+                if usb.is_hid_interface { "hid" } else { "bulk" },
             );
         }
         return Ok(());
@@ -696,7 +695,10 @@ fn attach(cli: &Cli, speed_khz: u32) -> anyhow::Result<(Session, u32)> {
                     "{} probes found, pass --probe: {}",
                     many.len(),
                     many.iter()
-                        .map(|p| format!("{:04x}:{:04x}", p.vendor_id, p.product_id))
+                        .map(|p| {
+                            let ProbeTransport::Usb(usb) = &p.transport;
+                            format!("{:04x}:{:04x}", usb.vendor_id, usb.product_id)
+                        })
                         .collect::<Vec<_>>()
                         .join(", ")
                 ),
@@ -705,7 +707,8 @@ fn attach(cli: &Cli, speed_khz: u32) -> anyhow::Result<(Session, u32)> {
         }
     };
 
-    let usb_id = (selector.vendor_id, selector.product_id);
+    let DebugProbeSelector::Usb(usb) = &selector;
+    let usb_id = (usb.vendor_id, usb.product_id);
     let mut probe = lister.open(selector)?;
     escapement_verge_probe::prepare_probe(
         &mut probe,
