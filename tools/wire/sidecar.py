@@ -3,6 +3,7 @@ sidecar file (tickwave's ANNOTATIONS.md, version 1)."""
 import hashlib
 import json
 import subprocess
+from fractions import Fraction
 from pathlib import Path
 
 import numpy as np
@@ -12,12 +13,22 @@ class Sidecar:
     def __init__(self, tickwave: str, recording: Path, source: str, script: Path, channels: list[str]):
         info = json.loads(subprocess.run([tickwave, "info", str(recording), "--json"], capture_output=True,
                                          text=True, check=True).stdout)["header"]
-        names = [c["name"] for c in info["channels"]]
-        if not set(channels) <= set(names):
-            raise SystemExit(f"{recording}: channels {names}, expected {channels}")
+        by_name = {c["name"]: c for c in info["channels"]}
+        if not set(channels) <= set(by_name):
+            raise SystemExit(f"{recording}: channels {list(by_name)}, expected {channels}")
+        # One decode reads one source's times, so its channels must share a source and an offset.
+        places = {(by_name[c]["source"], by_name[c].get("offset", 0)) for c in channels}
+        if len(places) != 1:
+            raise SystemExit(f"{recording}: channels {channels} differ in source or offset")
+        (index, self.offset), = places
+        src = info["sources"][index]
         self.recording, self.source, self.channels = recording, source, channels
-        self.begin = info["source"]["begin_s"]
-        self.num, self.den = info["timebase"]
+        self.begin, self.origin = src["begin_s"], src["origin"]
+        self.num, self.den = src["timebase"]
+        f = Fraction(*info["timebase"]) / Fraction(self.num, self.den)
+        if f.denominator != 1:
+            raise SystemExit(f"{recording}: timebase {info['timebase']} is no multiple of the source's")
+        self.factor = f.numerator
         # The version covers everything that shapes the output: the decoder, this module and the
         # export reader beside it.
         digest = hashlib.sha256()
@@ -27,8 +38,8 @@ class Sidecar:
                      "version": "sha256:" + digest.hexdigest()[:12], "recording_id": info["content_id"]}
 
     def tick(self, x: float) -> int:
-        """tickwave's rule: round((t - begin) * rate)."""
-        return int(round((x - self.begin) * self.num / self.den))
+        """tickwave's rule: f * round((t - begin_s) * rate) + origin + offset."""
+        return self.factor * int(round((x - self.begin) * self.num / self.den)) + self.origin + self.offset
 
     def span(self, t: np.ndarray, a: int, z: int) -> tuple[int, int, int]:
         """Rises t[a..z], padded at each end by half the shorter of the periods on either side of
