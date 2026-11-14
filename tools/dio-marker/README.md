@@ -25,7 +25,7 @@ BUSY_US=200 cargo build --release --target-dir target-burst
 Between bursts the default build idles on embassy-executor's `WFE`, where the LaunchPad draws about
 1.1 mA. Built with embassy-mspm0's own executor and its `low-power` feature, it idles in deep sleep
 instead. The LaunchPad then drew about 166 µA between bursts, not the few µA expected; what draws
-the rest has not been found. That is still under the 0.36 mA where the Pro's high current range
+the rest has not been found. That is still under 0.65 mA, the lowest current the Pro's high current
 range reads reliably:
 
 ```
