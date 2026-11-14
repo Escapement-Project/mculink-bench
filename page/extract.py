@@ -479,6 +479,9 @@ LANDING_SERIES = [("clang", "clang", "Clang build", "Verge, Clang build", "Verge
                   ("stock", "stock", "Stock V3.174", "NXP's firmware V3.174", "NXP"),
                   ("gcc", "gcc", "GCC build", "Verge, GCC build", "GCC")]
 WORDS = {1: "one", 2: "two", 3: "three", 4: "four", 5: "five"}
+# What the site says of the probe-rs behind its figures. A set taken through a probe-rs not listed
+# here stops the extract until it has its sentence.
+HOSTS = {"17beb8e80": "a build of the project's fork with changes for speed that the probe-rs under verge does not have"}
 
 
 def landing_data(data: dict) -> dict:
@@ -541,7 +544,11 @@ def landing_data(data: dict) -> dict:
                    + (f", and its runs failed: {', '.join(fails)}" if fails else "") + f". Its line ends at {mhz_text(last)} MHz.")
 
     runs = page[ours_id]["runs"]
-    source = (f"mculink-bench results/throughput/{date}: {view['title']}, probe-rs 4 KiB writes on an {view['meta']['chip']}, "
+    rev = view["meta"]["probe_rs"]
+    if rev not in HOSTS:
+        sys.exit(f"extract.py: the {date} set ran through probe-rs {rev}, which HOSTS does not describe")
+    host_note = f"The host was probe-rs {rev}, {HOSTS[rev]}."
+    source = (f"mculink-bench results/throughput/{date}: {view['title']}, probe-rs {rev} 4 KiB writes on an {view['meta']['chip']}, "
               f"the median of {WORDS[runs]} runs; stock reads right up to {mhz_text(stock_up)} MHz")
     # Figure 1: the view's write chart, its series under the landing's names, without the ranges.
     by_id = {s["id"]: s for s in write["series"]}
@@ -565,7 +572,7 @@ def landing_data(data: dict) -> dict:
         rows.append({"id": lid, "name": names[lid][0], "role": s["role"], "table": table[lid]}
                     | ({"rightUpTo": int(up) // 1000 if up is not None else 0} if up is not UNKNOWN else {}))
     return {"source": source, "date": date, "clocks": [int(k) // 1000 if k % 1000 == 0 else k / 1000 for k in clocks],
-            "series": rows, "tableNote": " ".join(notes), "figureNote": figure_note,
+            "series": rows, "tableNote": " ".join(notes), "figureNote": figure_note, "hostNote": host_note,
             "headline": {"ratio": f"{ours[1]['kib'] / theirs[1]['kib']:.2f}", "ours": f"{round(ours[1]['kib']):,}",
                          "oursAt": ours[1]["khz"] // 1000, "oursName": names[ours_id][0],
                          "stock": f"{round(theirs[1]['kib']):,}", "stockAt": theirs[1]["khz"] // 1000},
