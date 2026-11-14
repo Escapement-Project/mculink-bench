@@ -34,7 +34,8 @@ JTAG and cJTAG target is a CC1312R1, and probe-rs works on SRAM from 0x2000_8000
 trace source's control block at its start (mculink-verge tools/swo_target).
 
 `--image` flashes the probe through verge (`--verge` names its binary) and records verge's version.
-`--cjtag-format` holds a cJTAG run to one scan format, where the target has it.
+`--cjtag-format` picks the scan format a cJTAG run connects in, OScan1 when left out. Nothing
+checks that the target has it.
 """
 
 import argparse
@@ -584,7 +585,7 @@ def main() -> int:
     run.add_argument("--protocol", choices=tuple(MATRICES), default="swd")
     run.add_argument("--chip", help="probe-rs's name for the target; MSPM0L1306 over SWD, CC1312R otherwise")
     run.add_argument("--cjtag-format", choices=("oscan1", "oscan2", "oscan5", "oscan6"),
-                     help="cJTAG: hold the target to this scan format, where it has it")
+                     help="cJTAG: the scan format to connect in, OScan1 when left out")
     run.add_argument("--note", default="", help="free text kept with the result, such as the name of NXP's image")
     run.add_argument("--out", help="result path; default results/throughput/<date>-<label>.json")
     run.add_argument("--force", action="store_true", help="replace an existing result file")

@@ -110,8 +110,8 @@ struct Cli {
     #[arg(long, value_enum, default_value_t = Protocol::Swd)]
     protocol: Protocol,
 
-    /// With cJTAG, hold the target to one scan format: it switches to it where it has it, and stays
-    /// in OScan1 where not. Left out, the fastest format both it and the probe have.
+    /// With cJTAG, the scan format to connect in. OScan1 when left out. Nothing checks that the
+    /// target has the format.
     #[arg(long, value_enum)]
     cjtag_format: Option<CjtagFormat>,
 

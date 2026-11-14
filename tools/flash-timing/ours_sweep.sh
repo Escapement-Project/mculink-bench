@@ -2,7 +2,7 @@
 # Our probe (the Pro) through the probe-rs in Cargo.toml: JTAG, then each cJTAG format, both
 # images, every clock, 5 runs (BACKLOG 70). Run as one bench slot:
 #   ./ours_sweep.sh [formats...]
-# Each cJTAG run holds the target to its format with --cjtag-format; nothing is left on the probe.
+# Each cJTAG run connects in its format with --cjtag-format; nothing is left on the probe.
 set -euo pipefail
 cd "$(dirname "$0")"
 SERIAL=CJ8C2F60A3
