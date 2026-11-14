@@ -134,8 +134,32 @@ struct Report<'a> {
     probe: &'a str,
     protocol: Protocol,
     cjtag_format: Option<CjtagFormat>,
-    host: &'static str,
+    host: String,
     runs: &'a [Run],
+}
+
+/// The probe-rs this tool is built on, from its lock file, so that a report names the host that
+/// took it: the git revision, or the version from crates.io.
+fn host() -> String {
+    let lock = include_str!("../Cargo.lock");
+    let package = lock
+        .split("[[package]]")
+        .find(|package| package.contains("\nname = \"probe-rs\"\n"));
+    let field = |name: &str| {
+        package?.lines().find_map(|line| {
+            line.strip_prefix(name)?
+                .strip_prefix(" = \"")?
+                .strip_suffix('"')
+        })
+    };
+    match (
+        field("source").and_then(|source| source.rsplit_once('#')),
+        field("version"),
+    ) {
+        (Some((_, rev)), _) => format!("probe-rs {}", rev.get(..9).unwrap_or(rev)),
+        (None, Some(version)) => format!("probe-rs {version}"),
+        (None, None) => "probe-rs".to_owned(),
+    }
 }
 
 /// Time spent in each flash operation, from probe-rs's progress events.
@@ -288,7 +312,7 @@ fn main() -> anyhow::Result<()> {
         probe: &cli.probe,
         protocol: cli.protocol,
         cjtag_format: cli.cjtag_format,
-        host: "probe-rs 17beb8e80",
+        host: host(),
         runs: &runs,
     };
     std::fs::write(&cli.json, serde_json::to_string_pretty(&report)? + "\n")
@@ -403,5 +427,18 @@ fn summarise(cli: &Cli, runs: &[Run]) {
                 median(&mut totals).map_or_else(|| "-".to_owned(), |m| format!("{m:.3}")),
             );
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn the_host_is_the_probe_rs_in_the_manifest() {
+        let manifest = include_str!("../Cargo.toml");
+        let rev = manifest
+            .split_once("rev = \"")
+            .and_then(|(_, rest)| rest.get(..9))
+            .expect("Cargo.toml pins probe-rs to a git rev");
+        assert_eq!(super::host(), format!("probe-rs {rev}"));
     }
 }
