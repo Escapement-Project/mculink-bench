@@ -31,8 +31,10 @@ sys.path.insert(0, str(PAGE))
 from extract import build_data
 
 # Where the published page finds the recordings and tickwave's elements. The recordings repository
-# serves <date>/<name>.tickwave beside each recording's sidecar; tickwave's site serves a pinned
-# version of tickwave.js, which loads its worker and decoder from beside itself.
+# serves <date>/<name>.tickwave, which carries its annotations. The references are checked against
+# its sidecar's files beside it, and that repository's check.py holds each recording to carry those
+# same files. tickwave's site serves a pinned version of tickwave.js, which loads its worker and
+# decoder from beside itself.
 RECORDINGS_URL = "https://escapement-project.github.io/mculink-recordings/"
 TICKWAVE_URL = "https://escapement-project.github.io/tickwave/v0.1.0/"
 
@@ -99,7 +101,7 @@ class Fragment(HTMLParser):
 
 def wire_fragment(date: str, view_ids: list[str], recordings: pathlib.Path, recordings_url: str) -> str | None:
     """The set's wire fragment, every reference checked, recordings resolved to URLs; None
-    without one.
+    without one. A view takes only the recording: it carries its annotations.
 
     A part shows with its wire view. In it, a view names its recording, <tickwave-view id="v"
     data-recording="NAME">, and a reference names a view of its own part and an annotation of that
@@ -129,8 +131,7 @@ def wire_fragment(date: str, view_ids: list[str], recordings: pathlib.Path, reco
     if problems:
         raise SystemExit(f"wire/{date}.html:\n  " + "\n  ".join(problems))
     base = f"{recordings_url}{date}/"
-    return re.sub(r'data-recording="([^"]+)"', lambda m: (
-        f'src="{htmllib.escape(base + m.group(1))}.tickwave" annotations="{htmllib.escape(base + m.group(1))}.annotations.toml"'), text)
+    return re.sub(r'data-recording="([^"]+)"', lambda m: f'src="{htmllib.escape(base + m.group(1))}.tickwave"', text)
 
 
 def wire_charts(date: str, names: list[str], recordings: pathlib.Path, recordings_url: str) -> list[dict]:
