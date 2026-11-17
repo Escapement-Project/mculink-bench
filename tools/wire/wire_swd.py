@@ -113,6 +113,12 @@ def decode(t: np.ndarray, b: np.ndarray):
             free = i + 13  # rise 12 is the turnaround after the acknowledge
 
 
+def after(times: np.ndarray, x: float) -> float:
+    """The first of `times` after `x`, or infinity."""
+    k = np.searchsorted(times, x, side="right")
+    return float(times[k]) if k < len(times) else float("inf")
+
+
 def mhz(period_s: float) -> float:
     return 1e-6 / period_s if period_s > 0 else float("nan")
 
@@ -169,7 +175,7 @@ def word(b: np.ndarray, first: int) -> int:
     return sum(int(b[first + k]) << k for k in range(32))
 
 
-def annotate(args, t: np.ndarray, b: np.ndarray) -> int:
+def annotate(args, t: np.ndarray, b: np.ndarray, falls: np.ndarray, dio: np.ndarray) -> int:
     """The sidecar, in this order (a view steps through the first kind):
 
     session: each burst between pauses of --sessions-ms (default 20), labelled by --labels in turn
@@ -188,7 +194,14 @@ def annotate(args, t: np.ndarray, b: np.ndarray) -> int:
       12-44, a write's 13-45: the 32 bits and parity). The measure's fences leave a long period
       out of the data's rate. Then stretch: a data period a cycle or more longer than the typical,
       in the example if it has one, else in the group's first transfer that does, the label
-      carrying how many transfers of the group have one.
+      carrying how many transfers of the group have one. Last, drive: who drives SWDIO across the
+      example, rise k being the one that clocks bit k. The probe drives until rise 7, the park
+      bit's, and neither does until rise 8, the turnaround's, where the target starts its
+      acknowledge. The target drives until the rise that clocks its last bit: 44 in a read (the
+      parity), 11 in a write (the acknowledge's last). Neither drives until the probe takes the
+      line back: where SWDIO moves before the fall after the next rise, at that move, which only
+      the probe can make, and otherwise at that rise. Then the probe. Each paints with a role sidecar.py's ROLES declares
+      in the file's first line.
     wait, fault, no-ack (the line left high), bad-ack (any other pattern): the first --examples
       transfers of each, the label carrying the count; parity: the same for read and write data
       parity failures.
@@ -293,6 +306,23 @@ def annotate(args, t: np.ndarray, b: np.ndarray) -> int:
                 block.append(sc.note("stretch", span(a, a + 1),
                                      f"A {kind}-data period of {ns(t[a + 1] - t[a])} among mostly {ns(p)} ones; "
                                      f"{len(stretched[cyc]):,} of {len(members):,} {kind}s have one", "SWCLK", "period"))
+            # Who drives SWDIO. The probe lets go after the park bit's rise, 7, and the target
+            # drives from the turnaround's rise, 8. The target lets go at the rise after its last
+            # bit: 44 after a read's parity, 11 after a write's acknowledge. The probe has the line
+            # back by the fall after the next rise, where it sets its next bit. Where SWDIO moves
+            # before that fall, only the probe can have moved it, so the take-back goes at the move:
+            # exact where the probe's level differs from the one the target left, which is all the
+            # wire can show. Elsewhere the rise stands for it.
+            se, last = span(i, i + 45), (44 if kind == "read" else 11)
+            r = lambda k: sc.tick(t[i + k])
+            moved = after(dio, t[i + last])
+            back = sc.tick(moved) if moved < after(falls, t[i + last + 1]) else r(last + 1)
+            block += [sc.paint("probe", se[0], r(7), "SWDIO", at=se[2]),
+                      sc.paint("neither", r(7), r(8), "SWDIO"),
+                      sc.paint("target", r(8), r(last), "SWDIO"),
+                      sc.paint("neither", r(last), min(back, se[1]), "SWDIO")]
+            if back < se[1]:
+                block.append(sc.paint("probe", back, se[1], "SWDIO"))
             blocks.append(block)
     for block in sorted(blocks, key=lambda bl: bl[0]["start"]):
         out.extend(block)
@@ -334,7 +364,8 @@ def main() -> int:
     if args.annotate:
         if not args.sessions_ms:
             args.sessions_ms = 20.0
-        return annotate(args, t, b)
+        falls = np.asarray(times[(1 if initial == 0 else 0)::2])
+        return annotate(args, t, b, falls, np.asarray(edges(args.dir / f"digital_{args.dio}.bin")[1]))
     print(f"{args.dir.name}: {len(t)} SWCLK rises")
     if args.sessions_ms > 0:
         cut = np.flatnonzero(np.diff(t) > args.sessions_ms * 1e-3) + 1
