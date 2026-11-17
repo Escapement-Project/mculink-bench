@@ -75,4 +75,7 @@ comparison. Record any stock version change separately.
 
 ## Licence
 
-Apache-2.0, in `LICENSE`.
+Apache-2.0, in `LICENSE`. The page's copies of the Escapement Project's marks, the dial and Verge's
+V, are under CC BY 4.0 in `page/CC-BY-4.0.txt`. Credit the Escapement Project. Use the marks to
+refer to the project or its tools. Don't use them, changed or not, as another project's mark, or to
+suggest that the project made or endorses something it didn't.
