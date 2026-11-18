@@ -86,7 +86,11 @@ struct Cli {
     cjtag_format: Option<CjtagFormat>,
 
     /// Wire clocks to sweep, in kHz.
-    #[arg(long, value_delimiter = ',', default_values_t = [1000u32, 4000, 10000, 20000, 30000, 50000])]
+    #[arg(
+        long,
+        value_delimiter = ',',
+        default_value = "1000,4000,10000,20000,30000,50000"
+    )]
     speeds: Vec<u32>,
 
     /// HEX images to flash, each at every clock.
@@ -101,7 +105,7 @@ struct Cli {
     #[arg(long)]
     label: String,
 
-    /// Write every run here as JSON.
+    /// Write every run here as JSON: at the start, and again after every run.
     #[arg(long)]
     json: PathBuf,
 }
@@ -239,6 +243,7 @@ fn main() -> anyhow::Result<()> {
     for image in &cli.images {
         anyhow::ensure!(image.is_file(), "{} is not a file", image.display());
     }
+    start_report(&cli)?;
 
     let indicatif = IndicatifLayer::new();
     tracing_subscriber::registry()
@@ -295,6 +300,7 @@ fn main() -> anyhow::Result<()> {
                     );
                 }
                 runs.push(run);
+                write_report(&cli, &runs)?;
                 // A clock that fails once is a result about that clock. The rest of its runs would
                 // repeat the failure, so the sweep moves on.
                 if failed {
@@ -306,6 +312,21 @@ fn main() -> anyhow::Result<()> {
     }
     drop(sweep);
 
+    summarise(&cli, &runs);
+    Ok(())
+}
+
+/// Creates the report's directory and writes a report with no runs, so that a path that cannot be
+/// written stops the sweep before the first run rather than after the last.
+fn start_report(cli: &Cli) -> anyhow::Result<()> {
+    if let Some(parent) = cli.json.parent().filter(|p| !p.as_os_str().is_empty()) {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    write_report(cli, &[])
+}
+
+fn write_report(cli: &Cli, runs: &[Run]) -> anyhow::Result<()> {
     let report = Report {
         label: &cli.label,
         chip: &cli.chip,
@@ -313,12 +334,10 @@ fn main() -> anyhow::Result<()> {
         protocol: cli.protocol,
         cjtag_format: cli.cjtag_format,
         host: host(),
-        runs: &runs,
+        runs,
     };
     std::fs::write(&cli.json, serde_json::to_string_pretty(&report)? + "\n")
-        .with_context(|| format!("writing {}", cli.json.display()))?;
-    summarise(&cli, &runs);
-    Ok(())
+        .with_context(|| format!("writing {}", cli.json.display()))
 }
 
 fn run_once(
@@ -432,6 +451,42 @@ fn summarise(cli: &Cli, runs: &[Run]) {
 
 #[cfg(test)]
 mod tests {
+    use super::Cli;
+
+    fn cli(json: &std::path::Path) -> Cli {
+        <Cli as clap::Parser>::try_parse_from([
+            "flash-timing",
+            "--probe",
+            "1fc9:0143:CJ00000000",
+            "--protocol",
+            "jtag",
+            "--image",
+            "x.hex",
+            "--label",
+            "test",
+            "--json",
+            json.to_str().unwrap(),
+        ])
+        .unwrap()
+    }
+
+    #[test]
+    fn start_report_makes_the_directory_and_an_empty_report() {
+        let scratch = std::env::temp_dir().join(format!("flash-timing-{}", std::process::id()));
+        let json = scratch.join("runs").join("x.json");
+        super::start_report(&cli(&json)).unwrap();
+        let report: serde_json::Value =
+            serde_json::from_str(&std::fs::read_to_string(&json).unwrap()).unwrap();
+        assert_eq!(report["runs"], serde_json::json!([]));
+
+        // A file where the directory should be: refused at the start.
+        let blocked = scratch.join("x.json").join("y.json");
+        std::fs::write(scratch.join("x.json"), "").unwrap();
+        let error = super::start_report(&cli(&blocked)).unwrap_err();
+        std::fs::remove_dir_all(&scratch).unwrap();
+        assert!(format!("{error:#}").starts_with("creating "), "{error:#}");
+    }
+
     #[test]
     fn the_host_is_the_probe_rs_in_the_manifest() {
         let manifest = include_str!("../Cargo.toml");

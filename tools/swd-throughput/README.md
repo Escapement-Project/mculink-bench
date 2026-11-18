@@ -2,6 +2,9 @@
 
 Measures throughput through probe-rs and estimates fixed and per-byte transfer costs.
 
+It builds against verge-probe, cloned beside this repository as `../verge-probe`. The first build
+fetches the probe-rs fork pinned in `Cargo.toml`.
+
 ```
 cargo run --release --manifest-path tools/swd-throughput/Cargo.toml -- \
     --probe 1fc9:0143 --chip MSPM0L1306 --csv sweep.csv

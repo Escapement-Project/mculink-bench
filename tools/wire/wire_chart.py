@@ -39,7 +39,7 @@ CHARTS = {
             {"recording": "gcc-swd-reads-capture100000", "id": "gcc-a0e17c8-capture100000",
              "name": "Verge, GCC build, capturing energy at 100,000 samples/s", "short": "Verge, capturing",
              "colour": "verge", "pattern": "second-build", "marker": "square", "capture": True},
-            {"recording": "stock-swd-reads", "id": "stock-v3174", "name": "NXP's firmware V3.174", "short": "NXP",
+            {"recording": "stock-swd-reads", "id": "stock-v3174", "name": "Stock V3.174", "short": "Stock",
              "colour": "nxp", "pattern": "solid", "marker": "circle",
              # Marked so the failure reads apart from a clock nobody recorded.
              "fails": "mark",

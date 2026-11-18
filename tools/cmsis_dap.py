@@ -52,6 +52,10 @@ INFO_FIELDS = {
 }
 
 
+class UnknownCommand(RuntimeError):
+    """The probe answered 0xFF, CMSIS-DAP's reply to a command the firmware does not have."""
+
+
 class Probe:
     """One CMSIS-DAP v2 probe, held open on its bulk pair."""
 
@@ -82,10 +86,12 @@ class Probe:
     def command(self, request: bytes, timeout: int = 2000) -> bytes:
         self.out_ep.write(request, timeout)
         reply = bytes(self.in_ep.read(self.in_ep.wMaxPacketSize, timeout))
-        if not reply or reply[0] != request[0]:
-            raise RuntimeError(
-                f"asked for 0x{request[0]:02x}, got 0x{reply[0]:02x} -- the probe is out of step"
-            )
+        if not reply:
+            raise RuntimeError(f"0x{request[0]:02x}: no reply")
+        if reply[0] == 0xFF and request[0] != 0xFF:
+            raise UnknownCommand(f"0x{request[0]:02x}: the firmware does not have this command")
+        if reply[0] != request[0]:
+            raise RuntimeError(f"asked for 0x{request[0]:02x}, got 0x{reply[0]:02x}: the probe is out of step")
         return reply
 
     def info(self, field: int) -> bytes:

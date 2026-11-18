@@ -59,7 +59,7 @@ def main() -> int:
     if firmware is None or not firmware["build"].endswith("+timing"):
         raise SystemExit("flash a DAP_TIMING_DIAGNOSTICS build first")
 
-    dpidr = tp.attach(probe, args.clock_mhz * 1_000_000, True)
+    dpidr = tp.attach(probe, args.clock_mhz * 1_000_000, firmware)
     if dpidr != dap.MSPM0_DPIDR:
         raise SystemExit(f"expected MSPM0 DPIDR {dap.MSPM0_DPIDR:#x}, got {dpidr:#x}")
     dap.power_up_and_halt(probe, 0)

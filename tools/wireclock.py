@@ -3,7 +3,7 @@
 # requires-python = ">=3.11"
 # dependencies = ["capstone", "libusb1", "numpy", "pyusb", "rich", "unicorn"]
 # ///
-"""The SWD clock on the wire against the clock asked for, from a logic analyser, kept in results/wireclock/.
+r"""The SWD clock on the wire against the clock asked for, from a logic analyser, kept in results/wireclock/.
 
     uv run tools/wireclock.py run --label gcc --serial <serial> --image ../mculink-verge/build/mculink_cjtag.elf
     uv run tools/wireclock.py run --label stock --serial <serial> --image <stock .s19>
@@ -30,7 +30,8 @@ so SWDIO changes on every data bit, and a bit lasts a whole period rather than o
 commands on CPU 1's image, position by position. The emulator is mculink-verge's: `--firmware`
 names a checkout of it.
 
-The analyser is driven through Logic 2's local automation endpoint, MCP over HTTP.
+The analyser is driven through Logic 2's MCP server, which Logic 2 must have on. It listens at
+127.0.0.1:10530 unless --analyser names another address.
 """
 
 import argparse
@@ -44,6 +45,7 @@ import struct
 import sys
 import tempfile
 import time
+import urllib.error
 import urllib.request
 
 import numpy as np
@@ -94,7 +96,7 @@ READ_ROLES = ("ap-read", "rdbuff", "dp-read")
 
 
 class Analyser:
-    """Logic 2's automation tools, called over its local MCP endpoint."""
+    """Logic 2's automation tools, called over its MCP server."""
 
     def __init__(self, url: str):
         self.url = url
@@ -113,6 +115,16 @@ class Analyser:
         if result.get("isError"):
             raise RuntimeError(f"{name}: {result['content'][0]['text']}")
         return result.get("structuredContent") or {}
+
+    def devices(self) -> list[dict]:
+        """The analysers Logic 2 sees, by model. A result is published, and a unit's serial tells a
+        reader nothing."""
+        try:
+            found = self.call("get_devices").get("devices", [])
+        except urllib.error.URLError as error:
+            raise SystemExit(f"no Logic 2 MCP server at {self.url} ({error.reason}): start Logic 2 with its MCP "
+                             "server on, or give its address with --analyser") from None
+        return [{k: v for k, v in d.items() if k != "deviceId"} for d in found]
 
     def capture(self, channels: list[int]) -> int:
         return self.call("start_capture",
@@ -171,7 +183,7 @@ def host_summary(request: bytes, replies: list[bytes], dpidr: int) -> dict:
     return {"commands": len(replies), "ok": ok, "failures": failures}
 
 
-def measure_clock(probe: dap.Probe, mhz: float, ours: bool, analyser: Analyser, channels: list[int],
+def measure_clock(probe: dap.Probe, mhz: float, ours: dict | None, analyser: Analyser, channels: list[int],
                   directory: str) -> tuple[list[dict], dap.Probe]:
     """Every kind at one clock, captured. Attaching happens before the capture starts."""
     dpidr = throughput.attach(probe, int(mhz * 1e6), ours)
@@ -615,18 +627,14 @@ def cmd_run(args) -> int:
     path = args.out or os.path.join(RESULTS, f"{datetime.date.today().isoformat()}-{args.label}.json")
     if os.path.exists(path) and not args.force:
         raise SystemExit(f"{path} exists; pass --force to replace it")
-    if args.elf:
-        throughput.flash(args.verge, args.elf, args.serial)
-        time.sleep(2)
-        attached = [p.serial for p in dap.find()]
-        if args.serial not in attached and len(attached) == 1:
-            args.serial = attached[0]
+    # Before the probe is touched, so a run with no analyser stops before it flashes anything.
     analyser = Analyser(args.analyser)
-    # The model, not the serial: a result is published, and the unit's identity tells a reader nothing.
-    devices = [{k: v for k, v in d.items() if k != "deviceId"} for d in analyser.call("get_devices").get("devices", [])]
+    devices = analyser.devices()
+    if args.image:
+        args.serial = throughput.flash_and_follow(args.verge, args.image, args.serial)
     probe = throughput.open_probe(args.serial)
     firmware = throughput.identify(probe)
-    ours = firmware["ours"] is not None
+    ours = firmware["ours"]
     channels = sorted((args.swdio, args.swclk))
     clocks = tuple(args.clock) if args.clock else CLOCKS_MHZ
     keep = args.keep or tempfile.mkdtemp(prefix="wireclock-")
@@ -634,7 +642,8 @@ def cmd_run(args) -> int:
     record = {
         "matrix": MATRIX, "label": args.label, "note": args.note,
         "taken": datetime.datetime.now().astimezone().isoformat(timespec="seconds"),
-        "serial": args.serial, "chip": args.chip, "firmware": firmware, "provenance": provenance(args.elf, args.verge),
+        "serial": args.serial, "chip": args.chip, "firmware": firmware,
+        "provenance": provenance(args.image, args.verge),
         "analyser": {"devices": devices, "sample_rate": SAMPLE_RATE, "swdio": args.swdio, "swclk": args.swclk},
         "settings": {"kinds": [{"name": n, "request": r.hex(), "commands": c, "depth": d} for n, r, c, d in KINDS],
                      "pattern": f"0x{PATTERN:08x}"},
@@ -705,7 +714,12 @@ def cmd_analyse(args) -> int:
     record = json.load(open(args.result)) if args.result else None
     # By content as this run loaded it, before anything can change the file under it.
     analysing = {p: hashlib.sha256(open(os.path.join(REPO, p), "rb").read()).hexdigest() for p in ("tools/wireclock.py",)}
-    for directory in sorted((d for d in os.listdir(args.dir) if d.endswith("MHz")), key=lambda d: float(d[:-3])):
+    if not os.path.isdir(args.dir):
+        raise SystemExit(f"{args.dir} is not a directory: give the directory `run --keep` wrote")
+    directories = sorted((d for d in os.listdir(args.dir) if d.endswith("MHz")), key=lambda d: float(d[:-3]))
+    if not directories:
+        raise SystemExit(f"no <clock>MHz directories in {args.dir}: give the directory `run --keep` wrote")
+    for directory in directories:
         log = json.load(open(os.path.join(args.dir, directory, "log.json")))
         entry = {"clock_mhz": float(directory[:-3]),
                  **analyse_capture(os.path.join(args.dir, directory), log, args.swdio, args.swclk)}
@@ -756,7 +770,12 @@ def cmd_compare(args) -> int:
 def cmd_positions(args) -> int:
     """Every position's period and phases for one clock of one result, by kind and role."""
     record = json.load(open(args.file))
-    c = next(c for c in record["clocks"] if c["clock_mhz"] == args.clock)
+    c = next((c for c in record["clocks"] if c["clock_mhz"] == args.clock), None)
+    if c is None:
+        clocks = ", ".join(f"{c['clock_mhz']:g}" for c in record["clocks"])
+        raise SystemExit(f"no clock {args.clock:g} MHz in {args.file}; it has {clocks}")
+    if "error" in c:
+        raise SystemExit(f"{args.clock:g} MHz in {args.file} failed: {c['error']}")
     for k in c["kinds"]:
         for role, r in k["wire"].get("roles", {}).items():
             print(f"\n{k['name']}, {role}, {r['transfers']} transfers: position period/high/low ns (min period)")
@@ -853,27 +872,29 @@ def cmd_model(args) -> int:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    summary, _, rest = __doc__.partition("\n")
+    ap = argparse.ArgumentParser(description=summary, epilog=rest.strip("\n"),
+                                 formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(required=True)
     run = sub.add_parser("run", help="record every clock and write one result file")
     run.add_argument("--label", required=True, help="names the result: gcc, clang, stock")
-    run.add_argument("--elf", "--image", dest="elf",
+    run.add_argument("--image", metavar="FILE",
                      help="flash this image first, ours or an S-record of NXP's firmware; leave out to measure what runs")
     run.add_argument("--verge", default="verge", help="the verge binary that flashes --image")
     run.add_argument("--serial", required=True, help="the probe to measure, as it is before --image flashes it")
-    run.add_argument("--chip", default="MSPM0L1306")
+    run.add_argument("--chip", default="MSPM0L1306", help="the target's name, recorded with the result")
     run.add_argument("--clock", type=float, action="append", help="MHz asked; repeat for several, default the table")
-    run.add_argument("--note", default="")
+    run.add_argument("--note", default="", help="free text kept with the result")
     run.add_argument("--out", help="result path; default results/wireclock/<date>-<label>.json")
     run.add_argument("--force", action="store_true", help="replace an existing result file")
     run.add_argument("--keep", help="keep each clock's exported recording and probe log in this directory")
-    run.add_argument("--analyser", default=ANALYSER, help="Logic 2's automation endpoint")
+    run.add_argument("--analyser", default=ANALYSER, help="Logic 2's MCP server")
     run.set_defaults(run=cmd_run)
     analyse = sub.add_parser("analyse", help="analyse recordings kept with --keep")
     for p in (run, analyse):
         p.add_argument("--swdio", type=int, default=6, help="the analyser channel on SWDIO")
         p.add_argument("--swclk", type=int, default=7, help="the analyser channel on SWCLK")
-    analyse.add_argument("dir")
+    analyse.add_argument("dir", help="the directory `run --keep` wrote")
     analyse.add_argument("--result", help="rewrite this result file's analysis from the recordings")
     analyse.add_argument("--verbose", action="store_true")
     analyse.set_defaults(run=cmd_analyse)

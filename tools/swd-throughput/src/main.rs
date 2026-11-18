@@ -116,11 +116,16 @@ struct Cli {
     cjtag_format: Option<CjtagFormat>,
 
     /// Wire clock speeds to sweep, in kHz.
-    #[arg(long, value_delimiter = ',', default_values_t = [1000u32, 2000, 5000, 10000, 20000, 30000, 50000])]
+    #[arg(
+        long,
+        value_delimiter = ',',
+        default_value = "1000,2000,5000,10000,20000,30000,50000"
+    )]
     speeds: Vec<u32>,
 
-    /// Transfer sizes to measure at each speed, in bytes. Two or more are needed for the fit.
-    #[arg(long, value_delimiter = ',', default_values_t = [64usize, 256, 1024, 4096])]
+    /// Transfer sizes to measure at each speed, in bytes, each a whole number of 32-bit words. Two
+    /// or more are needed for the fit.
+    #[arg(long, value_delimiter = ',', default_value = "64,256,1024,4096")]
     sizes: Vec<usize>,
 
     /// Timed runs per point. The median is reported.
@@ -234,7 +239,19 @@ fn main() -> anyhow::Result<()> {
         return Ok(());
     }
     anyhow::ensure!(cli.sizes.len() >= 2, "two sizes or more, for the fit");
+    anyhow::ensure!(
+        cli.sizes.iter().all(|&bytes| bytes > 0 && bytes % 4 == 0),
+        "--sizes are whole 32-bit words: give multiples of 4 bytes, from 4"
+    );
     anyhow::ensure!(cli.repeats > 0, "at least one timed run");
+    anyhow::ensure!(
+        cli.round_trips > 0,
+        "--round-trips needs at least one read to time"
+    );
+    anyhow::ensure!(
+        cli.checks == 0 || cli.ram_reads > 0,
+        "--ram-reads 0 would pass every RAM check without a read: give 1 or more, or --checks 0"
+    );
 
     let indicatif = IndicatifLayer::new();
     tracing_subscriber::registry()
@@ -282,6 +299,7 @@ fn main() -> anyhow::Result<()> {
     let sweep = sweep.entered();
 
     for &speed_khz in &cli.speeds {
+        Span::current().pb_set_message(&format!("{speed_khz} kHz"));
         // One session per speed. Setting the clock before attaching means the whole connection,
         // including the vendor's sequence, runs at the speed being reported.
         // A speed the wire cannot carry fails at attach. That is a result about this clock, not a
@@ -692,12 +710,17 @@ fn attach(cli: &Cli, speed_khz: u32) -> anyhow::Result<(Session, u32)> {
                 [one] => one,
                 [] => anyhow::bail!("no probe found"),
                 many => anyhow::bail!(
-                    "{} probes found, pass --probe: {}",
+                    "{} probes found; pass --probe with one of: {}",
                     many.len(),
                     many.iter()
                         .map(|p| {
                             let ProbeTransport::Usb(usb) = &p.transport;
-                            format!("{:04x}:{:04x}", usb.vendor_id, usb.product_id)
+                            match &usb.serial_number {
+                                Some(serial) => {
+                                    format!("{:04x}:{:04x}:{serial}", usb.vendor_id, usb.product_id)
+                                }
+                                None => format!("{:04x}:{:04x}", usb.vendor_id, usb.product_id),
+                            }
                         })
                         .collect::<Vec<_>>()
                         .join(", ")

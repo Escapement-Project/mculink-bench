@@ -3,7 +3,7 @@
 # requires-python = ">=3.11"
 # dependencies = ["libusb1", "pyusb", "rich"]
 # ///
-"""Throughput of the attached probe, the same cases every time, kept in results/throughput/.
+r"""Throughput of the attached probe, the same cases every time, kept in results/throughput/.
 
     uv run tools/throughput.py run --label gcc --serial <serial> --image ../mculink-verge/build/mculink_cjtag.elf
     uv run tools/throughput.py run --label stock --serial <serial> \
@@ -357,7 +357,8 @@ def swd_throughput() -> str:
     build = subprocess.run(["cargo", "build", "--release", "--quiet", "--manifest-path",
                             os.path.join(SWD_THROUGHPUT, "Cargo.toml")])
     if build.returncode != 0:
-        raise SystemExit("tools/swd-throughput did not build")
+        raise SystemExit("tools/swd-throughput did not build (cargo's error is above). It needs verge-probe "
+                         "cloned beside this repository; --no-probe-rs leaves the probe-rs half out")
     return os.path.join(SWD_THROUGHPUT, "target", "release", "swd-throughput")
 
 
@@ -379,11 +380,11 @@ def listed(serial: str) -> dict | None:
     return found[0] if found else None
 
 
-def probe_rs(serial: str, chip: str, protocol: str, cjtag_format: str | None, quick: bool, console: Console) -> dict:
+def probe_rs(binary: str, serial: str, chip: str, protocol: str, cjtag_format: str | None, quick: bool,
+             console: Console) -> dict:
     """probe-rs's timed sweep, and at every clock it measured, the rounds of each check that came
     back right. `checks` is None when the sweep failed or did not check; `checks_skipped` says why
     a check never ran."""
-    binary = swd_throughput()
     csv_path = os.path.join(SWD_THROUGHPUT, "target", "last-sweep.csv")
     checks_path = os.path.join(SWD_THROUGHPUT, "target", "last-checks.csv")
     for stale in (csv_path, checks_path):
@@ -457,25 +458,36 @@ def flash(verge: str, elf: str, serial: str) -> None:
         raise SystemExit(f"verge did not bring the image up:\n{flashed.stdout}{flashed.stderr}")
 
 
+def flash_and_follow(verge: str, image: str, serial: str) -> str:
+    """Flash `image` onto the unit `serial`, and return the serial it has afterwards.
+
+    Stock and ours give the same unit different serials. The unit is followed when it is the only
+    serial that appeared, so other probes on the bench do not hide it.
+    """
+    before = {p.serial for p in dap.find(None, *USB_ID)} - {serial}
+    flash(verge, image, serial)
+    time.sleep(2)
+    appeared = [p.serial for p in dap.find(None, *USB_ID) if p.serial not in before]
+    if serial not in appeared and len(appeared) == 1:
+        return appeared[0]
+    return serial
+
+
 def cmd_run(args) -> int:
     global USB_ID
-    vid, _, pid = args.usb_id.partition(":")
-    USB_ID = (int(vid, 16), int(pid, 16))
+    USB_ID = args.usb_id
     path = args.out or os.path.join(RESULTS, f"{datetime.date.today().isoformat()}-{args.label}.json")
     if os.path.exists(path) and not args.force:
         raise SystemExit(f"{path} exists; pass --force to replace it")
-    if args.elf:
-        before = {p.serial for p in dap.find(None, *USB_ID)} - {args.serial}
-        flash(args.verge, args.elf, args.serial)
-        time.sleep(2)
-        # Stock and ours give the same unit different serials: follow it when it is the only new one.
-        appeared = [p.serial for p in dap.find(None, *USB_ID) if p.serial not in before]
-        if args.serial not in appeared and len(appeared) == 1:
-            args.serial = appeared[0]
+    # Built before the probe is touched: a build that fails after the custom host's half would
+    # discard that half.
+    binary = None if args.no_probe_rs else swd_throughput()
+    if args.image:
+        args.serial = flash_and_follow(args.verge, args.image, args.serial)
     # A probe with no CMSIS-DAP v2 bulk interface runs probe-rs's half only, identified by probe-rs.
     # An MCU-Link always has one, ours or stock, so failing to open it is a fault, not a reference.
     seen = None
-    if not args.elf and USB_ID != (0x1FC9, 0x0143) and not dap.find(args.serial, *USB_ID):
+    if not args.image and USB_ID != (0x1FC9, 0x0143) and not dap.find(args.serial, *USB_ID):
         seen = listed(args.serial)
     if seen is not None:
         if args.protocol == "swd" or args.stage is not None:
@@ -488,18 +500,20 @@ def cmd_run(args) -> int:
     if args.stage is not None:
         if firmware["ours"] is None:
             raise SystemExit("--stage needs our firmware")
-        reply = probe.command(bytes([DAP_VENDOR_STAGE, args.stage]))
+        try:
+            reply = probe.command(bytes([DAP_VENDOR_STAGE, args.stage]))
+        except dap.UnknownCommand:
+            raise SystemExit("this build does not stage commands: it has no vendor 0x8C") from None
         if reply[1] != 0 or reply[2] != args.stage:
             raise SystemExit(f"vendor 0x8C answered {reply[:3].hex()}; this build may not stage commands")
-    if args.cjtag_format is not None and args.protocol != "cjtag":
-        raise SystemExit("--cjtag-format needs --protocol cjtag")
     chip = args.chip or ("MSPM0L1306" if args.protocol == "swd" else "CC1312R")
     matrix = MATRICES[args.protocol]
     console = Console(stderr=True)
     record = {
         "matrix": f"{matrix}-quick" if args.quick else matrix, "label": args.label, "note": args.note,
         "taken": datetime.datetime.now().astimezone().isoformat(timespec="seconds"),
-        "serial": args.serial, "usb_id": args.usb_id, "chip": chip, "firmware": firmware, "provenance": provenance(args.elf, args.verge),
+        "serial": args.serial, "usb_id": f"{USB_ID[0]:04x}:{USB_ID[1]:04x}", "chip": chip, "firmware": firmware,
+        "provenance": provenance(args.image, args.verge),
         "settings": {"protocol": args.protocol, "cjtag_format": args.cjtag_format, "clocks_mhz": CLOCKS_MHZ, "depths": DEPTHS,
                      "repeats": REPEATS, "run_seconds": args.run_seconds, "stage": args.stage},
     }
@@ -512,17 +526,28 @@ def cmd_run(args) -> int:
         if probe is not None:
             probe.release()
         record["custom_host"], record["target"] = [], None
-    record["probe_rs"] = None if args.no_probe_rs else probe_rs(args.serial, chip, args.protocol, args.cjtag_format,
-                                                              args.quick, console)
+    record["probe_rs"] = None
+    if binary is not None:
+        try:
+            record["probe_rs"] = probe_rs(binary, args.serial, chip, args.protocol, args.cjtag_format, args.quick,
+                                          console)
+        except Exception as error:  # the custom host's half is kept whatever happens here
+            record["probe_rs"] = {"exit": None, "error": str(error)}
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w") as f:
         json.dump(record, f, indent=1)
         f.write("\n")
     failed = sum(1 for c in record["custom_host"] if c["error"])
-    probe_rs_exit = "skipped" if record["probe_rs"] is None else record["probe_rs"]["exit"]
+    if record["probe_rs"] is None:
+        probe_rs_result = "skipped"
+    elif record["probe_rs"].get("error"):
+        probe_rs_result = record["probe_rs"]["error"]
+    else:
+        probe_rs_result = f"exit {record['probe_rs']['exit']}"
     print(f"wrote {os.path.relpath(path, REPO)}: {len(record['custom_host']) - failed} cases measured, {failed} failed,"
-          f" probe-rs {probe_rs_exit}")
-    return 0
+          f" probe-rs {probe_rs_result}")
+    all_failed = record["custom_host"] and failed == len(record["custom_host"])
+    return 1 if all_failed or record["probe_rs"] is not None and record["probe_rs"]["exit"] != 0 else 0
 
 
 def cmd_compare(args) -> int:
@@ -539,48 +564,77 @@ def cmd_compare(args) -> int:
     def keep(mhz: float, depth: int | None = None) -> bool:
         return (not args.clock or mhz in args.clock) and (depth is None or not args.depth or depth in args.depth)
 
+    def markdown(title: str, columns: list[str], table: dict, cell) -> None:
+        """One table, or nothing when no result has a row for it. Each row is a key and a value per
+        result: a figure, "failed" for a case the result ran and failed, or None for one it never ran."""
+        if not table:
+            return
+        print(f"{title} (--: not in that result)\n")
+        print("| " + " | ".join(columns + labels) + " |")
+        print("| --- " * (len(columns) + len(labels)) + "|")
+        for key in sorted(table):
+            cells = ["--" if v is None else v if v == "failed" else cell(v) for v in table[key]]
+            print("| " + " | ".join(f"{k:g}" if isinstance(k, float) else str(k) for k in key) + " | "
+                  + " | ".join(cells) + " |")
+        print()
+
     if args.host in ("all", "dap"):
         table = {}
         for i, r in enumerate(records):
             for c in r["custom_host"]:
                 if keep(c["clock_mhz"], c["depth"]):
                     key = (c["command"], c["access"], c["depth"], c["clock_mhz"], c["words"])
-                    table.setdefault(key, [None] * len(records))[i] = None if c["error"] else c[metric]
-        print(f"tools/cmsis_dap.py, {unit}\n")
-        print("| command | access | depth | MHz | words | " + " | ".join(labels) + " |")
-        print("| --- " * (5 + len(labels)) + "|")
-        for key in sorted(table):
-            cells = ["--" if v is None else f"{v:.0f}" if v >= 100 else f"{v:.1f}" for v in table[key]]
-            print("| " + " | ".join(str(k) for k in key) + " | " + " | ".join(cells) + " |")
-        print()
+                    table.setdefault(key, [None] * len(records))[i] = "failed" if c["error"] else c[metric]
+        markdown(f"tools/cmsis_dap.py, {unit}", ["command", "access", "depth", "MHz", "words"], table,
+                 lambda v: f"{v:.0f}" if v >= 100 else f"{v:.1f}")
     if args.host in ("all", "probe-rs"):
-        table = {}
+        rates, round_trips, failed = {}, {}, []
         for i, r in enumerate(records):
-            for p in (r["probe_rs"] or {"points": []})["points"]:
+            points = (r["probe_rs"] or {}).get("points", [])
+            # A clock probe-rs failed at fails every arm at it.
+            failed.append({p["speed_khz"] / 1000 for p in points if p["arm"] == "failed"})
+            for p in points:
                 mhz = p["speed_khz"] / 1000
-                if keep(mhz) and p["arm"] != "failed":  # a failed clock shows as missing
-                    key = (p["arm"], int(p["bytes"]), mhz)
-                    value = p["median_us"] if p["arm"] == "rt" else p["bytes_per_second"] / 1024
-                    table.setdefault(key, [None] * len(records))[i] = value
-        print("probe-rs through tools/swd-throughput, KiB/s (rt: us a single-word read)\n")
-        print("| arm | bytes | MHz | " + " | ".join(labels) + " |")
-        print("| --- " * (3 + len(labels)) + "|")
-        for key in sorted(table):
-            cells = ["--" if v is None else f"{v:.1f}" for v in table[key]]
-            print(f"| {key[0]} | {key[1]} | {key[2]:g} | " + " | ".join(cells) + " |")
+                if not keep(mhz) or p["arm"] == "failed":
+                    continue
+                if p["arm"] == "rt":
+                    round_trips.setdefault((mhz,), [None] * len(records))[i] = p["median_us"]
+                else:
+                    rates.setdefault((p["arm"], int(p["bytes"]), mhz), [None] * len(records))[i] = (
+                        p["bytes_per_second"] / 1024)
+        for table in (rates, round_trips):
+            for key, row in table.items():
+                for i, value in enumerate(row):
+                    if value is None and key[-1] in failed[i]:
+                        row[i] = "failed"
+        markdown("probe-rs through tools/swd-throughput, KiB/s", ["arm", "bytes", "MHz"], rates, lambda v: f"{v:.1f}")
+        markdown("probe-rs through tools/swd-throughput, us a single-word read (rt)", ["MHz"], round_trips,
+                 lambda v: f"{v:.1f}")
     return 0
 
 
+def usb_id(text: str) -> tuple[int, int]:
+    vid, colon, pid = text.partition(":")
+    try:
+        if colon:
+            return int(vid, 16), int(pid, 16)
+    except ValueError:
+        pass
+    raise argparse.ArgumentTypeError(f"{text!r}: give VID:PID in hex, such as 1fc9:0143")
+
+
 def main() -> int:
-    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    summary, _, rest = __doc__.partition("\n")
+    ap = argparse.ArgumentParser(description=summary, epilog=rest.strip("\n"),
+                                 formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(required=True)
     run = sub.add_parser("run", help="measure the attached probe and write one result file")
     run.add_argument("--label", required=True, help="names the result: gcc, clang, stock")
-    run.add_argument("--elf", "--image", dest="elf",
+    run.add_argument("--image", metavar="FILE",
                      help="flash this image first, ours or an S-record of NXP's firmware; leave out to measure what runs")
     run.add_argument("--verge", default="verge", help="the verge binary that flashes --image")
     run.add_argument("--serial", required=True, help="the probe to measure, as it is before --image flashes it")
-    run.add_argument("--usb-id", default="1fc9:0143",
+    run.add_argument("--usb-id", type=usb_id, default=USB_ID, metavar="VID:PID",
                      help="VID:PID in hex, for a probe that does not enumerate as an MCU-Link")
     run.add_argument("--protocol", choices=tuple(MATRICES), default="swd")
     run.add_argument("--chip", help="probe-rs's name for the target; MSPM0L1306 over SWD, CC1312R otherwise")
@@ -604,6 +658,8 @@ def main() -> int:
     compare.add_argument("--depth", type=int, action="append")
     compare.set_defaults(run=cmd_compare)
     args = ap.parse_args()
+    if args.run is cmd_run and args.cjtag_format is not None and args.protocol != "cjtag":
+        run.error("--cjtag-format needs --protocol cjtag")
     return args.run(args)
 
 
