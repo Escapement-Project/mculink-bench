@@ -26,19 +26,32 @@ jobs:
           uv run tools/throughput.py --help > /dev/null
           uv run tools/wireclock.py --help > /dev/null
 
+      - name: The tools against a fake probe, analyser and probe-rs
+        run: uv run tools/tools_test.py
+
       # Every set page/sets.json names.
       - name: The committed page is the one the results make
-        run: |
-          uv run --no-project python -I page/build.py
-          git diff --exit-code page/index.html
+        run: uv run --no-project python -I page/build.py --check
 
   swd-throughput:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: tools/swd-throughput
+        working-directory: mculink-bench/tools/swd-throughput
     steps:
+      # swd-throughput builds against verge-probe beside this repository, and verge-probe against
+      # tickwave beside it.
       - uses: actions/checkout@v7
+        with:
+          path: mculink-bench
+      - uses: actions/checkout@v7
+        with:
+          repository: Escapement-Project/verge-probe
+          path: verge-probe
+      - uses: actions/checkout@v7
+        with:
+          repository: Escapement-Project/tickwave
+          path: tickwave
 
       - name: probe-rs's USB stack needs libudev
         run: sudo apt-get update && sudo apt-get install -y libudev-dev pkg-config
