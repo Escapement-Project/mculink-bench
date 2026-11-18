@@ -1,8 +1,9 @@
 # /// script
 # dependencies = ["pyserial", "rich"]
 # ///
-r"""Time the Flasher's own stand-alone programming, #AUTO over its virtual COM port, per interface,
-image and clock (BACKLOG 70). Run it alone, with nothing else using the bench:
+r"""Time the Flasher's own stand-alone programming, #AUTO over its virtual COM port.
+
+It times each interface, image and clock in turn. Run it alone, with nothing else using the bench:
 
     uv run --no-project --with pyserial --with rich python -I standalone_sweep.py \
         --flasher-serial <serial> --out runs/standalone.json

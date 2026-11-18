@@ -1,6 +1,7 @@
 # swd-throughput
 
-Measures throughput through probe-rs and estimates fixed and per-byte transfer costs.
+swd-throughput measures throughput through probe-rs and estimates fixed and per-byte transfer
+costs.
 
 It builds against verge-probe, cloned beside this repository as `../verge-probe`. The first build
 fetches the probe-rs fork pinned in `Cargo.toml`.

@@ -748,7 +748,9 @@ def cmd_compare(args) -> int:
     clocks = sorted({c["clock_mhz"] for r in records for c in r["clocks"]})
     for title, key in (("read data bits", "read_data_ns"), ("write data bits", "write_data_ns"),
                        ("fastest period anywhere", "fastest")):
-        print(f"{title}, MHz on the wire (s: timed from SWDIO, every other figure from SWCLK)\n")
+        # The fastest-period table's cells never carry the s mark.
+        legend = "" if key == "fastest" else " (s: timed from SWDIO, every other figure from SWCLK)"
+        print(f"{title}, MHz on the wire{legend}\n")
         print("| asked | " + " | ".join(labels) + " |")
         print("| --- " * (1 + len(labels)) + "|")
         for mhz in clocks:

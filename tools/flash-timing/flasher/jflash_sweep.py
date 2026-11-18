@@ -1,8 +1,9 @@
 # /// script
 # dependencies = ["rich"]
 # ///
-"""Time J-Flash production programming (erase, program, verify) on the Flasher, per interface,
-image and clock (BACKLOG 70). Run it alone, with nothing else using the bench:
+"""Time J-Flash production programming (erase, program, verify) on the Flasher.
+
+It times each interface, image and clock in turn. Run it alone, with nothing else using the bench:
 
     uv run --no-project --with rich python -I jflash_sweep.py --flasher-serial <serial> --out runs/jflash.json
 

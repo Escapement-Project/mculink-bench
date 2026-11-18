@@ -10,8 +10,9 @@ and target.
 - `tools/wireclock.py` compares the SWD clock asked for with logic analyser recordings. Results are
   in `results/wireclock/`.
 - `tools/wire/` decodes analyser recordings into tickwave's annotations: SWD transfers
-  (`wire_swd.py`), cJTAG frames (`wire_cjtag.py`) and clock bursts (`wire_clock.py`). `wire_chart.py`
-  charts a set's session figures. The recordings are in the mculink-recordings repository.
+  (`wire_swd.py`), cJTAG frames (`wire_cjtag.py`) and clock bursts (`wire_clock.py`).
+  `wire_chart.py` charts a set's session figures. The recordings are in the mculink-recordings
+  repository.
 - `tools/flash-timing/` times flash programming of a CC1312R1 through probe-rs, and through SEGGER's
   Flasher ARM for comparison. Results are in `results/flash-timing/`.
 - `page/` builds the results page from the throughput and wire-clock results.
@@ -20,9 +21,10 @@ and target.
 - `tools/dio-marker/` is firmware that makes an LP-MSPM0L1306 an edge source for the MCU-Link
   Pro's DIO edges.
 
-`--image` flashes Verge, or NXP's firmware as an S-record, through `verge` before measuring. Put
-`verge` on the PATH or select it with `--verge`. `wireclock.py model` also needs the firmware
-source: `--firmware` names a checkout of mculink-verge, whose emulator it runs.
+In `throughput.py run` and `wireclock.py run`, `--image` flashes Verge, or NXP's firmware as an
+S-record, through `verge` before measuring. Put `verge` on the PATH or select it with `--verge`.
+`wireclock.py model` also needs the firmware source: `--firmware` names a checkout of mculink-verge,
+whose emulator it runs.
 
 The Rust tools, `tools/swd-throughput/` and `tools/flash-timing/`, build against verge-probe: clone
 [verge-probe](https://github.com/Escapement-Project/verge-probe) beside this repository, as
