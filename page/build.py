@@ -131,7 +131,11 @@ def wire_fragment(date: str, view_ids: list[str], recordings: pathlib.Path, reco
     if problems:
         raise SystemExit(f"wire/{date}.html:\n  " + "\n  ".join(problems))
     base = f"{recordings_url}{date}/"
-    return re.sub(r'data-recording="([^"]+)"', lambda m: f'src="{htmllib.escape(base + m.group(1))}.tickwave"', text)
+    text = re.sub(r'data-recording="([^"]+)"', lambda m: f'src="{htmllib.escape(base + m.group(1))}.tickwave"', text)
+    # A view's download links are tickwave's script's: without scripts, a link after the view.
+    return re.sub(r'(<tickwave-view [^>]*src="([^"]+)"[^>]*\bdownload\b[^>]*>.*?</tickwave-view>)',
+                  lambda m: f'{m[1]}<noscript><p class="download"><a href="{m[2]}" download>Download '
+                            f'{htmllib.escape(m[2].rsplit("/", 1)[-1])}</a></p></noscript>', text)
 
 
 def wire_charts(date: str, names: list[str], recordings: pathlib.Path, recordings_url: str) -> list[dict]:
@@ -219,11 +223,18 @@ def main() -> None:
     header = (header.replace(link, group).replace("{{mark}}", mark).replace("{{base}}", "")
               .replace('data-page="verge"', 'data-page="verge" aria-current="true"')
               .replace('data-page="verge/measurements"', 'data-page="verge/measurements" aria-current="page"'))
-    # Each set's wire section as an inert template; the page shows the part for the view shown.
-    wire = "".join(f'<template id="wire-{d}">\n{frag}</template>\n' for d in dates
-                   if (frag := wire_fragment(d, [v["id"] for v in data["sets"][d]["views"]], args.recordings,
-                                             args.recordings_url)) is not None)
-    wire = f'<div id="on-the-wire" data-tickwave="{htmllib.escape(args.tickwave_url)}"></div>\n{wire}'
+    # Each set's wire section as an inert template; the page shows the part for the view shown. The
+    # part the page opens on, the last set's first view, is in the page too, for a reader without
+    # scripts.
+    frags = {d: frag for d in dates
+             if (frag := wire_fragment(d, [v["id"] for v in data["sets"][d]["views"]], args.recordings,
+                                       args.recordings_url)) is not None}
+    wire = "".join(f'<template id="wire-{d}">\n{frag}</template>\n' for d, frag in frags.items())
+    first, view = dates[-1], data["sets"][dates[-1]]["views"][0]["id"]
+    part = next((m[0] for m in re.finditer(r'<section class="wire-view" data-view="([^"]+)">.*?\n</section>',
+                                           frags.get(first, ""), re.S) if m[1] == view), None)
+    shown = f' data-shown="{first}|{view}"' if part else " hidden"
+    wire = f'<div id="on-the-wire" data-tickwave="{htmllib.escape(args.tickwave_url)}"{shown}>{part or ""}</div>\n{wire}'
     html = (template.replace("__TOKENS__", copy["tokens.css"]).replace("__BASE__", copy["base.css"])
             .replace("__HEADER__", header).replace("__FOOTER__", copy["footer.html"].strip())
             .replace("__FACEJS__", copy["face.js"]).replace("__HEADERJS__", copy["header.js"])

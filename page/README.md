@@ -82,7 +82,8 @@ with another probe's best host, such as our CMSIS-DAP host against SEGGER's DLL.
 probe against a vendor's own host on another says more about the hosts than the probes.
 
 The headline shows our peak 4 KiB probe-rs write throughput on the wire shown, in a window of lume.
-After it, a sentence gives that peak as a multiple of stock's. Stock counts only up to the fastest clock it reads right at:
+After it, a sentence gives that peak as a multiple of stock's, and says that stock, the charts' name
+for it, is NXP's own firmware. Stock counts only up to the fastest clock it reads right at:
 faster, it misreads, reporting errors or returning wrong data. The comparison names that clock.
 Results from `throughput.py` say at each clock they measured whether the data came back right, and
 the page applies the same limit to any series that has them. For sets taken before those checks,
@@ -100,6 +101,10 @@ or tapping a reference opens an inset of that stretch of wire; the recordings st
 opened. tickwave draws them: the page loads its elements and its sheet, `tickwave.css`, from
 tickwave's site at the version `build.py` pins, and the recordings from the `mculink-recordings`
 repository's site, at `<date>/<name>.tickwave` beside each recording's annotations.
+
+The page holds the part it opens on, the last set's first view, outside its template, so a reader
+without scripts gets that wire section, with a link under each recording to download it. The bands
+only the script fills stay out without one.
 
 Each view holds its recording's title and facts, `<span slot="title">` and `<span slot="facts">`, as
 tickwave gives them. tickwave's sheet lays them out before its script loads, so a row keeps its

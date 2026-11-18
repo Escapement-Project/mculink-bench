@@ -14,7 +14,7 @@
 <meta property="og:image" content="https://escapement-project.github.io/preview.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="The Escapement Project's card: open firmware for NXP's MCU-Link, and Verge's measured write rate against NXP's firmware.">
+<meta property="og:image:alt" content="Escapement Project. Open debug tools that are correct, fast and easy to use. We build tools for debugging embedded targets, starting with Verge and tickwave. We publish the measurements behind every claim we make, with the code that takes them.">
 <meta name="twitter:card" content="summary_large_image">
 <title>MCU-Link throughput – Verge – Escapement Project</title>
 <!-- The face chosen on an earlier visit, before the first paint; and .js, which tells the sheets the
@@ -148,6 +148,13 @@ h3 { font: 600 17px/1.4 var(--font-text); margin: 0 0 4px; }
 .recordings tickwave-view:last-child { --tickwave-summary-border-width: 1px 0; }
 .recordings tickwave-view::part(viewer) { background: var(--surface); border: 0; border-radius: 14px; margin: 14px 0; }
 tickwave-ref { cursor: help; }
+/* Without scripts a recording has no buttons of tickwave's, and the page gives its download link
+   under it (build.py). */
+.recordings .download { margin: 0 0 14px; font-size: 15px; }
+/* Without scripts the page is its wire section for the set and wire it opens on: the figures that
+   only the script fills stay out, and so do the hints to point at what only tickwave.js makes
+   live. */
+html:not(.js) :is(#throughput, #jlink-head, #wire-results, .headline, #conditions, #results-row, .wire-hint) { display: none; }
 
 /* The page's own row in the header, under the shared row that every page shows: the wire, and
    the measurement set. The script makes it (.js). Buttons for the wire from 861 px, where they and
@@ -306,7 +313,7 @@ __HEADER__
     <div class="head"><h2>Sources</h2></div>
     <div>
       <dl class="specs">
-        <div><dt>Results</dt><dd id="results-path"></dd></div>
+        <div id="results-row"><dt>Results</dt><dd id="results-path"></dd></div>
         <div><dt>Tools</dt><dd><code>throughput.py</code>, <code>swd-throughput</code>, <code>wireclock.py</code>, <code>dap.py</code></dd></div>
       </dl>
     </div>
@@ -581,8 +588,7 @@ function renderTop() {
   // Lead with our speed in its window; the comparison follows it as sentences.
   const versus = $("headline-versus");
   if (peak) {
-    // No thousands separator in the headline: at its size the comma widens it more than it helps.
-    $("headline-value").innerHTML = `${peak.kib.toLocaleString("en-US", { maximumFractionDigits: 0, useGrouping: false })}<small>KiB/s</small>`;
+    $("headline-value").innerHTML = `${fmt(peak.kib)}<small>KiB/s</small>`;
     // A non-breaking hyphen: the label must not wrap inside "probe-rs".
     $("headline-claim").textContent = `Fastest 4 KiB write over ${V.title}, through probe‑rs. Verge built with ${short(peak.s)}, at ${peak.khz / 1000} MHz.`;
     if (ratio != null) {
@@ -590,12 +596,13 @@ function renderTop() {
       : PR_FAILED(stock, stockUpTo) ? "its write did not complete" : "this set did not measure it";
     const where = stockPeak.khz === stockUpTo ? ", the fastest clock it reads right at"
       : `. Stock reads right up to ${stockUpTo / 1000} MHz, where ${there}`;
-      versus.textContent = `${fmt(ratio, 2)}× against stock. ${short(stock)}: ${fmt(stockPeak.kib, 1)} KiB/s at ${stockPeak.khz / 1000} MHz${where}.`;
+      versus.textContent = `${fmt(ratio, 2)}× against stock, NXP's own firmware. ${short(stock)}: ${fmt(stockPeak.kib, 1)} KiB/s at ${stockPeak.khz / 1000} MHz${where}.`;
     } else {
-      const why = !stock ? (V.protocol === "cjtag" ? "Stock does not run cJTAG." : "No stock run on this wire in this set.")
-        : stockUpTo === undefined ? "No record of the clocks stock reads right at."
-        : stockUpTo === null ? "Stock read wrong at every clock."
-        : `No completed stock write at a clock it reads right at (up to ${stockUpTo / 1000} MHz).`;
+      // "Stock" is the charts' name for NXP's firmware: each sentence here is the first to use it.
+      const why = !stock ? (V.protocol === "cjtag" ? "NXP's firmware does not run cJTAG." : "No run of stock, NXP's own firmware, on this wire in this set.")
+        : stockUpTo === undefined ? "No record of the clocks stock, NXP's own firmware, reads right at."
+        : stockUpTo === null ? "Stock, NXP's own firmware, read wrong at every clock."
+        : `No completed write from stock, NXP's own firmware, at a clock it reads right at (up to ${stockUpTo / 1000} MHz).`;
       versus.textContent = why;
     }
   } else {
@@ -654,6 +661,8 @@ const GROUPS = [
 let explorerKey = null, explorerData = null;
 const customSeries = () => visible().filter((s) => Object.keys(s.custom || {}).length);
 function words() { return WORDS[state.command][state.access.endsWith("write") ? "write" : "read"][state.words]; }
+// A control's value as its button names it.
+const labelOf = (key, value) => GROUPS.find(([k]) => k === key)[2].find(([v]) => String(v) === String(value))[1];
 function drawExplorer() {
   const list = customSeries();
   // The custom host's part shows with a matrix to draw or a failure map.
@@ -666,7 +675,7 @@ function drawExplorer() {
   if (key !== explorerKey) {
     explorerKey = key;
     explorerData = matrixChart(xs, (s, m) => C(s, state.command, state.access, w, state.depth, m), idx,
-      state.metric === "kib" ? "KiB/s" : "commands/s", `${state.command === "block" ? "DAP_TransferBlock" : "DAP_Transfer"}, ${state.access.replace("-", " ")}, ${w} words, depth ${state.depth}`);
+      state.metric === "kib" ? "KiB/s" : "commands/s", `${labelOf("command", state.command)}, ${labelOf("access", state.access)}, ${w} words, depth ${state.depth}`);
   }
   $("x-caption").textContent = explorerData.y.name;
   setChart("c-explore", { data: explorerData, show: list.map((s) => s.id), selected: mhzText(xs.at(-1)) });
@@ -676,7 +685,7 @@ function drawExplorer() {
   }
   if (peak) {
     const [command, access, words, depth, mhz] = peak.key.split("|");
-    $("x-peak").textContent = `Peak: ${fmt(peak.value)} KiB/s, ${short(peak.s)}, ${words}-word ${command} ${access.replace("-", " ")}, ${mhz} MHz, depth ${depth}.`;
+    $("x-peak").textContent = `Peak: ${fmt(peak.value)} KiB/s, ${short(peak.s)}, ${words}-word ${labelOf("command", command)} ${labelOf("access", access)}, ${mhz} MHz, depth ${depth}.`;
   } else $("x-peak").textContent = "No custom-host memory-throughput result is available.";
 }
 $("controls").innerHTML = GROUPS.map(([key, label, opts]) => `
@@ -750,7 +759,7 @@ function renderWire() {
   $("wire-recorded").hidden = !recorded;
   $("wire-clock").hidden = !shown.length;
   if (recorded) {
-    $("wire-meta").textContent = `Recordings, the analyser at 1 GS/s on the debug pins, taken ${SET}`;
+    $("wire-meta").textContent = `Recordings, the analyser at 1 ns on the debug pins, taken ${SET}`;
     for (const { src, series } of recorded) setChart(`r-${src.match(/wire-clock-(\w+)\.chart\.json$/)[1]}`, { src, series, selected: "50" });
   }
   if (!shown.length) {
@@ -759,7 +768,7 @@ function renderWire() {
   }
   const xs = [...new Set(shown.flatMap((w) => w.rows.map((r) => r.mhz)))].sort((a, b) => a - b);
   const at = (fw, mhz) => W[fw]?.rows.find((r) => r.mhz === mhz);
-  $("wire-meta").textContent = [["Matrix", shown[0].matrix], ["analyser", "100 MS/s at the target"], ["taken", shown[0].taken.slice(0, 10)]]
+  $("wire-meta").textContent = [["Matrix", shown[0].matrix], ["analyser", "at 10 ns at the target"], ["taken", shown[0].taken.slice(0, 10)]]
     .map(([k, v]) => `${k} ${v}`).join(", ");
   const sel = xs.includes(50) ? "50" : mhzText(xs.at(-1));
   for (const [id, key] of [["w-read", "read"], ["w-write", "write"], ["w-fast", "fastest"]]) setChart(id, { data: D.wire_charts[key], selected: sel });
@@ -873,10 +882,14 @@ function renderOnTheWire() {
   if (wireShown === `${SET}|${VIEW}`) return;
   wireShown = `${SET}|${VIEW}`;
   const box = $("on-the-wire");
-  const part = document.getElementById(`wire-${SET}`)?.content.querySelector(`.wire-view[data-view="${VIEW}"]`);
-  box.replaceChildren(...(part ? [part.cloneNode(true)] : []));
-  box.hidden = !part;
-  if (part && !tickwaveLoad) tickwaveLoad = import(`${box.dataset.tickwave}tickwave.js`).catch((e) => console.warn("tickwave did not load:", e));
+  // The page is built holding the part it opens on, for a reader without scripts.
+  if (box.dataset.shown !== wireShown) {
+    const part = document.getElementById(`wire-${SET}`)?.content.querySelector(`.wire-view[data-view="${VIEW}"]`);
+    box.replaceChildren(...(part ? [part.cloneNode(true)] : []));
+    box.dataset.shown = wireShown;
+  }
+  box.hidden = !box.childElementCount;
+  if (!box.hidden && !tickwaveLoad) tickwaveLoad = import(`${box.dataset.tickwave}tickwave.js`).catch((e) => console.warn("tickwave did not load:", e));
 }
 
 function renderAll() {
