@@ -56,7 +56,7 @@ def series_of(label: str, record: dict) -> dict:
         name = listed.get("identifier") or (fw.get("dap_info") or {}).get("product") or base
         build = (fw.get("dap_info") or {}).get("firmware version") or ""
     sid = base + (f"-capture{rate}" if rate else "")
-    condition = f"capture at {int(rate):,} pairs/s" if rate else None
+    condition = f"capture at {int(rate):,} samples/s" if rate else None
     return {"id": sid, "name": name + (f", {condition}" if condition else ""), "role": role, "style": style,
             "condition": condition, "build": build}
 
@@ -549,7 +549,7 @@ def landing_data(data: dict) -> dict:
         sys.exit(f"extract.py: the {date} set ran through probe-rs {rev}, which HOSTS does not describe")
     host_note = f"The host was probe-rs {rev}, {HOSTS[rev]}."
     source = (f"mculink-bench results/throughput/{date}: {view['title']}, probe-rs {rev} 4 KiB writes on an {view['meta']['chip']}, "
-              f"the median of {WORDS[runs]} runs; stock reads right up to {mhz_text(stock_up)} MHz")
+              f"the median of {WORDS[runs]} runs; NXP's firmware reads right up to {mhz_text(stock_up)} MHz")
     # Figure 1: the view's write chart, its series under the landing's names, without the ranges.
     by_id = {s["id"]: s for s in write["series"]}
     series = []

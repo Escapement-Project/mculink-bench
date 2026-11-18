@@ -13,9 +13,9 @@ be served as it is. The project's site serves it at `/verge/measurements/`.
 
 The page shows the project's shared header and footer, the same as every page of the project's
 site, with Measurements marked as the page shown. Under the header's row of places, a row of the
-page's own holds the wire and the measurement set; a new wire keeps the reader in the section they
-were reading, or the nearest section above it the new wire shows. Opened from disk, the header's
-links go to the published site.
+page's own holds the wire and the measurement set. A new wire keeps the reader in the section they
+were reading, or in the nearest section above it that the new wire shows. Opened from disk, the
+header's links go to the published site.
 
 The page's colours, type, line patterns, mark and favicon come from the project's design tokens,
 and its header, footer and base styles from the site. These are copies of the site repository's
@@ -31,9 +31,8 @@ files:
 
 The build inlines all but the fonts into the page, and fills the header in: the mark, links that
 start at the site's root, and Verge's group in place of Verge's link, with Measurements marked as
-this page. `template.html` holds only the
-page's own markup, styles and script. To check the copies are current, run this from the site
-repository (`escapement-project.github.io`):
+this page. `template.html` holds only the page's own markup, styles and script. To check the copies
+are current, run this from the site repository (`escapement-project.github.io`):
 
 ```sh
 uv run design/build.py --check ../mculink-bench/page/tokens.css ../mculink-bench/page/out/fonts/* \
@@ -69,22 +68,23 @@ uv run python -I extract.py --chart 2026-11-04 swd read read.chart.json
 
 `sets.json` says which result files make up each date's set, by their labels. A set splits into one
 view per wire: SWD, JTAG, and each cJTAG format. A view shows every probe measured on that wire:
-ours built with GCC and with Clang, stock, and any reference probe whose results the set names. A
-reference needs nothing more than a `throughput.py` result with its label in `sets.json`; a probe
-with no CMSIS-DAP bulk interface, such as an XDS110 set up for HID, is measured through probe-rs
-alone. Repeat runs of one probe merge, and the readout gives their range. Runs under energy capture
-are series of their own, off until ticked in the key. The custom host's matrix, the stock failure
-map and the wire-clock section appear on SWD, the only wire they cover.
+ours built with GCC and with Clang, NXP's firmware, and any reference probe whose results the set
+names. A reference needs nothing more than a `throughput.py` result with its label in `sets.json`.
+A probe with no CMSIS-DAP bulk interface, such as an XDS110 set up for HID, is measured through
+probe-rs alone. Repeat runs of one probe merge, and the readout gives their range. Runs under
+energy capture are series of their own, off until ticked in the key. The custom host's matrix, the
+failure map of NXP's firmware and the wire-clock section appear on SWD, the only wire they cover.
 
-Every comparison on the page holds the host fixed. Verge, stock and the reference probes are
-compared through the same probe-rs revision and workload. A probe's own best host is compared only
-with another probe's best host, such as our CMSIS-DAP host against SEGGER's DLL. probe-rs on one
-probe against a vendor's own host on another says more about the hosts than the probes.
+Every comparison on the page holds the host fixed. Verge, NXP's firmware and the reference probes
+are compared through the same probe-rs revision and workload. A probe's own best host is compared
+only with another probe's best host, such as our CMSIS-DAP host against SEGGER's DLL. probe-rs on
+one probe against a vendor's own host on another says more about the hosts than the probes.
 
 The headline shows our peak 4 KiB probe-rs write throughput on the wire shown, in a window of lume.
-After it, a sentence gives that peak as a multiple of stock's, and says that stock, the charts' name
-for it, is NXP's own firmware. Stock counts only up to the fastest clock it reads right at:
-faster, it misreads, reporting errors or returning wrong data. The comparison names that clock.
+After it, a sentence gives that peak as a multiple of the peak of NXP's own firmware, and names
+that firmware "stock", the charts' name for it. Stock counts only up to the fastest clock it reads
+right at: faster, it misreads, reporting errors or returning wrong data. The comparison names that
+clock.
 Results from `throughput.py` say at each clock they measured whether the data came back right, and
 the page applies the same limit to any series that has them. For sets taken before those checks,
 `stock_reads_right` in `sets.json` gives stock's fastest right clock per wire, with the published
@@ -96,11 +96,12 @@ A set can have a section on the wire: prose whose figures open the analyser reco
 from. Its text is `wire/<date>.html`, one `<section class="wire-view" data-view="...">` for each
 wire view it covers (`swd`, `jtag`, `cjtag-oscan1` and so on), shown with that view. A part names
 its recordings, `<tickwave-view id="v" data-recording="gcc-swd-reads">`, and cites annotations in
-them, `<tickwave-ref for="v" annotation="wire_swd/read/380567201">37.5 MHz</tickwave-ref>`. Hovering
-or tapping a reference opens an inset of that stretch of wire; the recordings stay collapsed until
-opened. tickwave draws them: the page loads its elements and its sheet, `tickwave.css`, from
-tickwave's site at the version `build.py` pins, and the recordings from the `mculink-recordings`
-repository's site, at `<date>/<name>.tickwave` beside each recording's annotations.
+them, `<tickwave-ref for="v" annotation="wire_swd/read/380567201">37.5 MHz</tickwave-ref>`. Pointing
+at, tapping or tabbing to a reference opens an inset of that stretch of wire; the recordings stay
+collapsed until opened. tickwave draws them: the page loads its elements and its sheet,
+`tickwave.css`, from tickwave's site at the version `build.py` pins, and the recordings from the
+`mculink-recordings` repository's site, at `<date>/<name>.tickwave` beside each recording's
+annotations.
 
 The page holds the part it opens on, the last set's first view, outside its template, so a reader
 without scripts gets that wire section, with a link under each recording to download it. The bands
@@ -122,6 +123,6 @@ them.
 The J-Link data lives in `reference/jlink-2026-10-22.json`. Its probe-rs results use the same
 revision, 4 KiB workload, target and 10-pin connection as the 2026-10 MCU-Link measurements. They
 appear as the series "J-Link Ultra, 2026-10-22", off until ticked, only in SWD views measured
-through that probe-rs revision. The J-Link section below
-graphs SEGGER's `TestRSpeed` and `TestWSpeed` results in their reported KByte/s units. Those
-commands use a different workload. See the reference note for calculations and target state.
+through that probe-rs revision. The J-Link section below graphs SEGGER's `TestRSpeed` and
+`TestWSpeed` results in their reported KByte/s units. Those commands use a different workload. See
+the reference note for calculations and target state.

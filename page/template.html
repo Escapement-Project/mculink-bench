@@ -253,7 +253,7 @@ __HEADER__
               <ul class="legend"><li><i class="sw" style="background: var(--hair);"></i>measured</li><li><i class="sw" style="background: var(--fault-fill);"></i>failed</li></ul>
               <div class="pips" id="pips"></div>
             </div>
-            <figcaption><b class="n"></b> <span id="fault-heading">Stock measurement status</span>: <span id="fault-count"></span> <span id="fault-title">cases without a timed result</span>. Rows: requested clock. Marks: command, access, words, depth.</figcaption>
+            <figcaption><b class="n"></b> <span id="fault-heading">Stock measurement status</span>: <span id="fault-count"></span> <span id="fault-title">cases without a timed result</span>. Rows: clock asked for. Marks: command, access, words, depth.</figcaption>
           </figure>
         </div>
       </div>
@@ -285,7 +285,7 @@ __HEADER__
         <figure><div class="chart"><tickwave-chart id="w-read" group="wire" legend="above" readout="below" sweep="off"></tickwave-chart></div><figcaption><b class="n"></b> Read data bits. MHz on the wire, median data bit.</figcaption></figure>
         <figure><div class="chart"><tickwave-chart id="w-write" group="wire" legend="above" readout="below" sweep="off"></tickwave-chart></div><figcaption><b class="n"></b> Write data bits. MHz on the wire, median data bit.</figcaption></figure>
         <figure><div class="chart"><tickwave-chart id="w-fast" group="wire" legend="above" readout="below" sweep="off"></tickwave-chart></div><figcaption><b class="n"></b> Peak SWD rate. MHz, shortest mean period per transfer.</figcaption></figure>
-        <div class="prose"><h3>Capture notes</h3><p class="quiet" id="w-how-caption"></p><div id="w-how"></div><p id="w-fast-text"></p></div>
+        <div class="prose"><h3>Recording notes</h3><p class="quiet" id="w-how-caption"></p><div id="w-how"></div><p id="w-fast-text"></p></div>
       </div>
       <div class="figs" id="wire-errors">
         <figure class="wide"><div class="chart"><div id="trace"></div></div><figcaption><b class="n"></b> <span id="mis-heading">Stock acknowledgement errors</span>: <span id="mis-count"></span> <span id="mis-title">misread acknowledgements</span>. <span id="trace-caption"></span>.</figcaption></figure>
@@ -337,9 +337,9 @@ let V = D.views[0];
 // dated J-Link reference start hidden.
 const shown = {};
 const fmt = (v, d = 0) => v == null ? "–" : v.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
-const relativePercent = (ratio) => {
+const relativeSpeed = (ratio) => {
   const change = Math.round((ratio - 1) * 100);
-  return `${change < 0 ? "−" : "+"}${fmt(Math.abs(change))}%`;
+  return change === 0 ? "level with" : `${fmt(Math.abs(change))}% ${change < 0 ? "slower" : "faster"} than`;
 };
 const $ = (id) => document.getElementById(id);
 const NS = "http://www.w3.org/2000/svg";
@@ -574,7 +574,7 @@ function renderTop() {
   $("results-path").innerHTML = [
     `<code>results/throughput/${SET}-*.json</code>`,
     V.protocol === "swd" && D.wire && Object.keys(D.wire).length && `<code>results/wireclock/${SET}-*.json</code>`,
-    evidence && `stock's reads: <code>${evidence}</code>`,
+    evidence && `Clocks stock reads right at: <code>${evidence}</code>`,
   ].filter(Boolean).join("<br>");
   $("target-state").hidden = !D.context;
   $("target-state").textContent = D.context || "";
@@ -590,13 +590,13 @@ function renderTop() {
   if (peak) {
     $("headline-value").innerHTML = `${fmt(peak.kib)}<small>KiB/s</small>`;
     // A non-breaking hyphen: the label must not wrap inside "probe-rs".
-    $("headline-claim").textContent = `Fastest 4 KiB write over ${V.title}, through probe‑rs. Verge built with ${short(peak.s)}, at ${peak.khz / 1000} MHz.`;
+    $("headline-claim").textContent = `This is Verge's fastest 4 KiB write over ${V.title} through probe‑rs: the ${short(peak.s)} build, at ${peak.khz / 1000} MHz.`;
     if (ratio != null) {
     const there = PR(stock, "write32", 4096, stockUpTo) ? "it wrote slower"
       : PR_FAILED(stock, stockUpTo) ? "its write did not complete" : "this set did not measure it";
     const where = stockPeak.khz === stockUpTo ? ", the fastest clock it reads right at"
       : `. Stock reads right up to ${stockUpTo / 1000} MHz, where ${there}`;
-      versus.textContent = `${fmt(ratio, 2)}× against stock, NXP's own firmware. ${short(stock)}: ${fmt(stockPeak.kib, 1)} KiB/s at ${stockPeak.khz / 1000} MHz${where}.`;
+      versus.textContent = `That is ${fmt(ratio, 2)}× the rate of stock, NXP's own firmware. ${short(stock)} writes ${fmt(stockPeak.kib, 1)} KiB/s at ${stockPeak.khz / 1000} MHz${where}.`;
     } else {
       // "Stock" is the charts' name for NXP's firmware: each sentence here is the first to use it.
       const why = !stock ? (V.protocol === "cjtag" ? "NXP's firmware does not run cJTAG." : "No run of stock, NXP's own firmware, on this wire in this set.")
@@ -607,7 +607,7 @@ function renderTop() {
     }
   } else {
     $("headline-value").innerHTML = "–";
-    $("headline-claim").textContent = "No completed 4 KiB write";
+    $("headline-claim").textContent = "No 4 KiB write completed.";
     versus.innerHTML = "";
   }
 
@@ -615,9 +615,10 @@ function renderTop() {
   const khz = 10_000;
   const mine = peak && PR(peak.s, "write32", 4096, khz);
   const others = allSeries().filter((s) => s.role !== "ours" && !s.condition).map((s) => ({ s, p: PR(s, "write32", 4096, khz) })).filter((o) => o.p && o.p.kib > 0);
+  const against = mine ? others.map((o) => `${relativeSpeed(mine.kib / o.p.kib)} ${short(o.s)} at ${fmt(o.p.kib, 1)} KiB/s${o.s.external ? ", also through probe-rs" : ""}`) : [];
   $("same-clock").innerHTML = mine && others.length
-    ? others.map((o) => `${relativePercent(mine.kib / o.p.kib)} vs ${short(o.s)}${o.s.external ? ", both through probe-rs" : ""}`).join(", ")
-      + ` at 10 MHz. 4 KiB probe-rs writes: ${short(peak.s)} ${fmt(mine.kib, 1)}, ${others.map((o) => `${short(o.s)} ${fmt(o.p.kib, 1)}`).join(", ")} KiB/s.`
+    ? `At 10 MHz, through probe-rs, Verge built with ${short(peak.s)} writes 4 KiB at ${fmt(mine.kib, 1)} KiB/s: `
+      + (against.length > 1 ? `${against.slice(0, -1).join(", ")} and ${against.at(-1)}` : against[0]) + "."
     : "";
   $("same-clock").hidden = !(mine && others.length);
 }
@@ -773,17 +774,17 @@ function renderWire() {
   const sel = xs.includes(50) ? "50" : mhzText(xs.at(-1));
   for (const [id, key] of [["w-read", "read"], ["w-write", "write"], ["w-fast", "fastest"]]) setChart(id, { data: D.wire_charts[key], selected: sel });
 
-  const overList = (fw) => (W[fw]?.rows || []).filter((r) => r.fastest > r.mhz * 1.005).map((r) => `${r.mhz} MHz requested (${fmt(r.fastest, 1)} MHz measured)`);
+  const overList = (fw) => (W[fw]?.rows || []).filter((r) => r.fastest > r.mhz * 1.005).map((r) => `${r.mhz} MHz asked for (${fmt(r.fastest, 1)} MHz measured)`);
   const g50 = at("gcc", 50) || at("clang", 50);
   const so = overList("stock"), go = overList("gcc");
   $("w-fast-text").textContent = [
-    so.length ? `Stock exceeds the requested clock during parts of a transfer: ${so.join(", ")}.` : "",
-    go.length ? `Verge exceeds the requested clock during parts of a transfer: ${go.join(", ")}.` : "No measured Verge peak is more than 0.5% above the requested clock.",
+    so.length ? `Stock runs faster than the clock asked for during parts of a transfer: ${so.join(", ")}.` : "",
+    go.length ? `Verge runs faster than the clock asked for during parts of a transfer: ${go.join(", ")}.` : "No measured Verge peak is more than 0.5% above the clock asked for.",
   ].filter(Boolean).join(" ");
   const delay = stock?.rows.find((r) => r.delay != null)?.delay;
   $("w-how-caption").textContent = `${xs.length} clocks: ${WIRE_FW.filter((fw) => W[fw]).join(", ")}`;
   $("w-how").innerHTML = [
-    `At a requested 50 MHz, Verge reads at ${fmt(g50?.read, 1)} MHz and writes at ${fmt(g50?.write, 1)} MHz.`,
+    `Asked for 50 MHz, Verge reads at ${fmt(g50?.read, 1)} MHz and writes at ${fmt(g50?.write, 1)} MHz.`,
     "Read timing matches the emulator within a few ns, apart from one edge. GCC and Clang traces match.",
     "Above 25 MHz, the analyser cannot resolve every pulse. Circled Verge points are timed from SWDIO edges using a 0x55555555 pattern.",
     delay != null ? `The target reply reaches its pins ${delay} ns after the request edge.` : "",
@@ -797,7 +798,7 @@ function renderWire() {
   $("mis-count").innerHTML = `${mis}`;
   $("wire-errors").hidden = !t || mis === 0;
   if (t) {
-    $("trace-caption").textContent = `SWCLK around the acknowledgement, ${t.mhz} MHz requested, positions ${t.positions[0]} to ${t.positions[t.positions.length - 1]}, ns`;
+    $("trace-caption").textContent = `SWCLK around the acknowledgement, ${t.mhz} MHz asked for, positions ${t.positions[0]} to ${t.positions[t.positions.length - 1]}, ns`;
     const WW = 1200, HH = 190, L = 92, R = 16, CAP = 160, PH = 28;
     const svg = el("svg", { viewBox: `0 0 ${WW} ${HH}`, class: "chart", role: "img", "aria-label": "SWCLK as usual and in a misread transfer" });
     $("trace").appendChild(svg);
@@ -850,7 +851,7 @@ function renderNotes() {
   const notes = [];
   const gcc = ours.find((s) => s.style === "gcc"), clang = ours.find((s) => s.style === "clang");
   if (peak && gcc && clang) {
-    const same = gcc.build === clang.build ? "Same firmware commit." : `Builds ${gcc.build} and ${clang.build}.`;
+    const same = gcc.build === clang.build ? "Both are built from the same commit." : `The builds are ${gcc.build} and ${clang.build}.`;
     notes.push(["mark-clang", "Compiler builds", `At ${peak.khz / 1000} MHz, GCC writes ${fmt(PR(gcc, "write32", 4096, peak.khz)?.kib, 1)} KiB/s and Clang ${fmt(PR(clang, "write32", 4096, peak.khz)?.kib, 1)} KiB/s. ${same}`]);
   }
   const top = (list, arm) => {
@@ -859,9 +860,9 @@ function renderNotes() {
   };
   const stock = stockSeries();
   const g50 = V.protocol === "swd" ? D.wire.gcc?.rows.find((r) => r.mhz === 50) : null;
-  notes.push(["", "Highest completed clock requests", `4 KiB writes: Verge ${top(ours, "write32")}${stock ? `, stock ${top([stock], "write32")}` : ""}. Verge reads: ${top(ours, "read32")}.${g50 ? ` At a requested 50 MHz, measured wire rates are ${fmt(g50.read, 1)} MHz read / ${fmt(g50.write, 1)} MHz write.` : ""}`]);
+  notes.push(["", "Fastest clocks completed", `4 KiB writes completed up to ${top(ours, "write32")} on Verge${stock ? ` and ${top([stock], "write32")} on stock` : ""}, and Verge's reads up to ${top(ours, "read32")}.${g50 ? ` Asked for 50 MHz, Verge reads at ${fmt(g50.read, 1)} MHz and writes at ${fmt(g50.write, 1)} MHz on the wire.` : ""}`]);
   const conds = V.series.filter((s) => s.condition);
-  if (conds.length) notes.push(["", "Under energy capture", `${conds.map((s) => s.name).join("; ")}: tick them in the key to compare with the runs without capture.`]);
+  if (conds.length) notes.push(["", "Under energy capture", `${conds.map((s) => s.name).join("; ")}: tick ${conds.length > 1 ? "them" : "it"} in the key to compare with the runs without capture.`]);
   $("notes").innerHTML = notes.map(([, h, p]) => `<div><dt>${h}</dt><dd>${p}</dd></div>`).join("");
 }
 
