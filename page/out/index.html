@@ -1352,6 +1352,19 @@ let D = ALL.sets[SET];
 let VIEW = D.views[0].id;
 let WANT = VIEW;  // the wire last picked, kept through a set that lacks it
 let V = D.views[0];
+// A link names a set and a wire (?set=2026-11-04&wire=jtag), so a copied address opens on what its
+// reader saw. A set or wire this page doesn't have is ignored.
+const asked = new URLSearchParams(location.search);
+if (Object.hasOwn(ALL.sets, asked.get("set") ?? "")) SET = asked.get("set");
+if (asked.get("wire")) WANT = asked.get("wire");
+// After a pick, the address names what the page shows. Opened from disk, a browser may refuse to
+// change the address, and the page goes on without it.
+function rememberPick() {
+  const q = new URLSearchParams(location.search);
+  q.set("set", SET);
+  q.set("wire", VIEW);
+  try { history.replaceState(null, "", `${location.pathname}?${q}${location.hash}`); } catch {}
+}
 // The user's choices of which series to show, by view and series; otherwise conditions and the
 // dated J-Link reference start hidden.
 const shown = {};
@@ -1559,6 +1572,7 @@ const pickView = (id) => {
   picked.delete("c-rt");
   renderAll();
   keepInView(was);
+  rememberPick();
 };
 wire.addEventListener("click", (e) => {
   const b = e.target.closest("button[data-view]");
@@ -1941,6 +1955,7 @@ if (ALL.order.length > 1) {
   $("set-select").addEventListener("change", (e) => {
     SET = e.target.value;
     renderAll();
+    rememberPick();
   });
 }
 try {
