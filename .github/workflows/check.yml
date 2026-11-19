@@ -16,6 +16,18 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # The page cites the recordings' annotations and charts. Only those small files are checked
+      # out; the recordings themselves stay on that repository's own site.
+      - uses: actions/checkout@v7
+        with:
+          repository: Escapement-Project/mculink-recordings
+          path: mculink-recordings
+          sparse-checkout: |
+            /*/*.annotations.toml
+            /*/*.jsonl
+            /*/*.chart.json
+          sparse-checkout-cone-mode: false
+
       - name: Install uv
         run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -31,7 +43,7 @@ jobs:
 
       # Every set page/sets.json names.
       - name: The committed page is the one the results make
-        run: uv run --no-project python -I page/build.py --check
+        run: uv run --no-project python -I page/build.py --check --recordings mculink-recordings
 
   swd-throughput:
     runs-on: ubuntu-latest
