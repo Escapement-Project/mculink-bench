@@ -87,7 +87,8 @@ summary:focus-visible, select:focus-visible, input:focus-visible { outline: var(
 
 /* The key: which probes every figure shows. A swatch is drawn with its chart line's own classes. */
 .chart-key { display: flex; flex-wrap: wrap; gap: 6px 22px; margin: 0 0 28px; font-size: 15px; }
-.chart-key label { display: inline-flex; align-items: center; white-space: nowrap; cursor: pointer; }
+/* A label stays on one line while it fits the row; at a large text size it wraps inside. */
+.chart-key label { display: inline-flex; align-items: center; cursor: pointer; }
 .chart-key input { margin: 0 8px 0 0; width: 16px; height: 16px; accent-color: var(--ink); }
 .chart-key label.off { color: var(--ink-2); }
 .chart-key label.off .swatch { opacity: .5; }
