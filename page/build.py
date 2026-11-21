@@ -36,7 +36,7 @@ from extract import build_data
 # same files. tickwave's site serves a pinned version of tickwave.js, which loads its worker and
 # decoder from beside itself.
 RECORDINGS_URL = "https://escapement-project.github.io/mculink-recordings/"
-TICKWAVE_URL = "https://escapement-project.github.io/tickwave/v0.1.0/"
+TICKWAVE_URL = "https://escapement-project.github.io/tickwave/v0.1.2/"
 
 
 def sidecar_ids(recordings: pathlib.Path, date: str, name: str) -> set[str]:
