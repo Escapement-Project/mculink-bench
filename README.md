@@ -59,6 +59,22 @@ has a note beside its result files, which says what was measured and under what 
 The page keeps the older sets for comparison, with their original firmware versions and test
 conditions.
 
+### Builds in the result files
+
+The result files name mculink-verge commits by their hashes from before the firmware's history was
+published. Publishing rewrote that history and gave every commit a new hash. Each hash in the result
+files, with its published commit:
+
+| in the result files | published | sets |
+| --- | --- | --- |
+| `14d05d4` | `4a7ca13` | throughput 2026-10-20; wire clock 2026-10-20 and 2026-10-21 |
+| `5f5e6bc` | `49633f3` | 2026-10-21, the MCU-Link Pro against the standalone MCU-Link |
+| `3ff5b88` | `a93b60c` | 2026-10-21, staging on and off |
+| `92a0748` | `34431f1` | throughput 2026-10-21 |
+| `0dbc951` | `e7c7acf` | throughput 2026-10-24 |
+| `115ab3f` | `2edfec6` | throughput 2026-10-25 |
+| `a0e17c8` | `df11e14` | throughput 2026-11-04; flash programming 2026-11-05 |
+
 ## Retaking
 
 Retake with the same matrices and commands. Compare results with the same matrix name (`swd-1`,
