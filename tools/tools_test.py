@@ -22,7 +22,6 @@ from unittest import mock
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import cmsis_dap as dap  # noqa: E402
-import path_timing  # noqa: E402
 import throughput  # noqa: E402
 import wireclock  # noqa: E402
 
@@ -103,7 +102,7 @@ def wireclock_args(out: str, **changes) -> argparse.Namespace:
 def throughput_args(out: str, **changes) -> argparse.Namespace:
     args = dict(label="test", out=out, force=False, image=None, verge="verge", serial="CJ00000000",
                 usb_id=throughput.USB_ID, protocol="jtag", chip=None, cjtag_format=None, note="", quick=True,
-                run_seconds=0.01, no_probe_rs=False, stage=None)
+                run_seconds=0.01, no_probe_rs=False)
     return argparse.Namespace(**{**args, **changes})
 
 
@@ -148,14 +147,6 @@ class Attach(Quiet):
         self.assertIsNone(record["firmware"]["ours"])
         self.assertEqual(record["clocks"], [{"clock_mhz": 10.0, "error": "no analyser in this test"}])
         self.assertEqual(probe.count(0x82) + probe.count(dap.DAP_VENDOR_CJTAG_CONTROL), 0)
-
-    def test_path_timing(self):
-        probe = FakeProbe(identify=identify_reply(8, "v0.3.0+timing"))
-        argv = ["path_timing.py", "--serial", probe.serial, "--out", self.out]
-        with mock.patch.object(throughput, "open_probe", lambda serial: probe), mock.patch.object(sys, "argv", argv):
-            # The fake target is no MSPM0, which path_timing finds out only after attaching.
-            with self.assertRaisesRegex(SystemExit, "expected MSPM0 DPIDR"):
-                path_timing.main()
 
 
 class BeforeTheProbe(Quiet):
