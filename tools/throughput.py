@@ -96,7 +96,6 @@ DP_SELECT_WRITE = 0x08
 DAP_TRANSFER_CONFIGURE = 0x04
 DAP_SWD_CONFIGURE = 0x13
 DAP_VENDOR_IDENTIFY = 0x82
-DAP_VENDOR_STAGE = 0x8C
 # The probe's VID and PID; `run --usb-id` sets them for firmware that enumerates as another device.
 USB_ID = (0x1FC9, 0x0143)
 
@@ -490,22 +489,13 @@ def cmd_run(args) -> int:
     if not args.image and USB_ID != (0x1FC9, 0x0143) and not dap.find(args.serial, *USB_ID):
         seen = listed(args.serial)
     if seen is not None:
-        if args.protocol == "swd" or args.stage is not None:
+        if args.protocol == "swd":
             raise SystemExit(f"{args.serial} has no CMSIS-DAP v2 bulk interface ({seen['transport']}): the custom "
-                             "host and --stage need one; JTAG and cJTAG run through probe-rs alone")
+                             "host needs one; JTAG and cJTAG run through probe-rs alone")
         probe, firmware = None, {"dap_info": None, "ours": None, "probe_rs_list": seen}
     else:
         probe = open_probe(args.serial)
         firmware = identify(probe)
-    if args.stage is not None:
-        if firmware["ours"] is None:
-            raise SystemExit("--stage needs our firmware")
-        try:
-            reply = probe.command(bytes([DAP_VENDOR_STAGE, args.stage]))
-        except dap.UnknownCommand:
-            raise SystemExit("this build does not stage commands: it has no vendor 0x8C") from None
-        if reply[1] != 0 or reply[2] != args.stage:
-            raise SystemExit(f"vendor 0x8C answered {reply[:3].hex()}; this build may not stage commands")
     chip = args.chip or ("MSPM0L1306" if args.protocol == "swd" else "CC1312R")
     matrix = MATRICES[args.protocol]
     console = Console(stderr=True)
@@ -515,7 +505,7 @@ def cmd_run(args) -> int:
         "serial": args.serial, "usb_id": f"{USB_ID[0]:04x}:{USB_ID[1]:04x}", "chip": chip, "firmware": firmware,
         "provenance": provenance(args.image, args.verge),
         "settings": {"protocol": args.protocol, "cjtag_format": args.cjtag_format, "clocks_mhz": CLOCKS_MHZ, "depths": DEPTHS,
-                     "repeats": REPEATS, "run_seconds": args.run_seconds, "stage": args.stage},
+                     "repeats": REPEATS, "run_seconds": args.run_seconds},
     }
     if args.protocol == "swd":
         with Progress(TextColumn("{task.description}"), BarColumn(), MofNCompleteColumn(), TimeElapsedColumn(),
@@ -647,8 +637,6 @@ def main() -> int:
     run.add_argument("--run-seconds", type=float, default=RUN_SECONDS,
                      help="each timed run's length; shorter for a wire recording of every case, not comparable")
     run.add_argument("--no-probe-rs", action="store_true", help="leave out the probe-rs half")
-    run.add_argument("--stage", type=int, choices=(0, 1),
-                     help="ours: whether CPU 0 stages commands for CPU 1 (vendor 0x8C); left as it is if absent")
     run.set_defaults(run=cmd_run)
     compare = sub.add_parser("compare", help="set result files side by side as markdown tables")
     compare.add_argument("files", nargs="+")
