@@ -1820,7 +1820,7 @@ function renderWire() {
   $("w-how").innerHTML = [
     `Asked for 50 MHz, Verge reads at ${fmt(g50?.read, 1)} MHz and writes at ${fmt(g50?.write, 1)} MHz.`,
     "Read timing matches the emulator within a few ns, apart from one edge. GCC and Clang traces match.",
-    "Above 25 MHz, the analyser cannot resolve every pulse. Circled Verge points are timed from SWDIO edges using a 0x55555555 pattern.",
+    "Above 25 MHz, the analyser cannot resolve every pulse. Verge figures marked <q>from SWDIO</q> are timed from SWDIO edges using a 0x55555555 pattern.",
     delay != null ? `The target reply reaches its pins ${delay} ns after the request edge.` : "",
   ].filter(Boolean).map((t) => `<p>${t}</p>`).join("");
 
